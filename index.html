@@ -281,7 +281,7 @@ th{font-size:.75rem;color:var(--muted);font-weight:700}
   .chat{height:70vh}
   .msg{max-width:90%}
 }
-@media (pointer:coarse){.chip{padding:9px 15px}.btn{min-height:44px}.x{padding:10px 12px}input[type=text],input[type=number],input[type=date],select,textarea{font-size:16px}}
+@media (pointer:coarse){.chip{padding:9px 15px}.quick .chip{padding:8px 12px}.btn{min-height:44px}.x{padding:10px 12px}input[type=text],input[type=number],input[type=date],select,textarea{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* Meals list (Today) */
@@ -369,8 +369,8 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .msg{font-size:.98rem}
 .msg.ai{border-bottom-left-radius:6px;border-top-left-radius:20px}
 .msg.me{border-bottom-right-radius:6px;border-top-right-radius:20px;max-width:82%}
-.quick{display:flex;gap:8px;padding:0 16px 10px;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}
-.quick .chip{flex:none;border-color:var(--accent);color:var(--accent-deep);background:var(--surface)}
+.quick{display:flex;flex-wrap:wrap;gap:6px;padding:2px 16px 10px}
+.quick .chip{border-color:var(--accent);color:var(--accent-deep);background:var(--surface);padding:6px 12px;font-size:.84rem;line-height:1.25;text-align:left}
 .chat-err{margin:0 16px 10px}
 .chatbar{display:flex;align-items:flex-end;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
 .chatbar textarea{overflow-y:hidden;border-radius:22px;min-height:46px;max-height:132px;padding:12px 16px;resize:none;line-height:1.4;font-size:1rem}
@@ -389,6 +389,12 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
   body.on-coach .view{gap:0}
   .chat{height:calc(100dvh - 10px - 76px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px));border-radius:22px}
   .msg-row{max-width:94%}
+}
+
+/* While typing on a phone, hide the bottom menu so the keyboard has room */
+@media (max-width:820px){
+  body.typing .rail{display:none}
+  body.typing.on-coach .chat{height:calc(100dvh - 10px - env(safe-area-inset-top,0px))}
 }
 </style>
 </head>
@@ -1383,6 +1389,10 @@ document.addEventListener('click', e => {
     S.chat = { turns:[] }; S.plan = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
   }
 });
+// Hide the bottom menu while a text field has focus (keyboard open on phones).
+const isField = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox','range','file','date'].includes(el.type)));
+document.addEventListener('focusin', e => { if (isField(e.target)) document.body.classList.add('typing'); });
+document.addEventListener('focusout', e => { if (isField(e.target)) setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 50); });
 
 // === main.js ===
 // Boot: connect sign-in, restore the last tab, register the offline worker

@@ -101,3 +101,7 @@ document.addEventListener('click', e => {
     S.chat = { turns:[] }; S.plan = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
   }
 });
+// Hide the bottom menu while a text field has focus (keyboard open on phones).
+const isField = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox','range','file','date'].includes(el.type)));
+document.addEventListener('focusin', e => { if (isField(e.target)) document.body.classList.add('typing'); });
+document.addEventListener('focusout', e => { if (isField(e.target)) setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('typing'); }, 50); });
