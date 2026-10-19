@@ -202,7 +202,7 @@ input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var
 .day-btn:hover{transform:translateY(-1px)}
 .day-btn b{display:block;font-size:1.05rem;font-weight:800}
 .day-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.meal{display:grid;grid-template-columns:132px minmax(0,1fr) auto;gap:18px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+.meal{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
 .meal:last-of-type{border-bottom:0}
 .meal .when{display:flex;flex-direction:column;gap:6px}
 .meal .title{font-weight:800;font-size:1.04rem;letter-spacing:-.01em}
@@ -398,6 +398,7 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 }
 
 /* Dish photos in the week plan */
+.meal.with-photo{grid-template-columns:132px minmax(0,1fr) auto}
 .dish{margin:0;position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;background:var(--surface-2)}
 .dish img{width:100%;height:100%;object-fit:cover;display:block}
 .dish figcaption{position:absolute;right:6px;bottom:6px;max-width:calc(100% - 12px)}
@@ -411,7 +412,7 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .photo-credit{font-size:.75rem;color:var(--muted);margin-top:10px}
 .photo-credit a{color:inherit}
 @media (max-width:820px){
-  .meal{grid-template-columns:minmax(0,1fr);gap:12px}
+  .meal,.meal.with-photo{grid-template-columns:minmax(0,1fr);gap:12px}
   .dish{aspect-ratio:16/9}
 }
 
@@ -1257,7 +1258,7 @@ function vPlan(){
   <div class="days" role="group" aria-label="Day">${S.plan.days.map((d, i) => { const k = d.meals.reduce((a, m) => a + r0(m.kcal), 0); return `<button class="day-btn" data-act="day" data-i="${i}" aria-pressed="${i === di}"><b>${esc(d.day)}</b><span class="num" style="font-size:.74rem;opacity:.75">${k} kcal</span></button>`; }).join('')}</div>
   <section class="card">
     ${day.meals.map((m, j) => { const key = di + '-' + j, rec = S.plan.recipes?.[key], open = S.openRecipe === key; return `
-      <div class="meal">
+      <div class="meal ${S.plan.photos?.[key] ? 'with-photo' : ''}">
         ${dishPhoto(key, m)}
         <div class="meal-body">
           <div class="meal-tags"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
@@ -1273,8 +1274,7 @@ function vPlan(){
 
 function dishPhoto(key, m){
   const p = S.plan.photos?.[key];
-  const slotIcon = typeof mealIcon === 'function' && MEAL_ICON[m.slot] ? mealIcon(m.slot) : '';
-  if (!p) return `<div class="dish ph ${key in (S.plan.photos || {}) || S.photosOff ? '' : 'loading'}" aria-hidden="true">${slotIcon}</div>`;
+  if (!p) return '';
   return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)} · Pexels</a></figcaption></figure>`;
 }
 

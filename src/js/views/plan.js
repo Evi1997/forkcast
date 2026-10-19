@@ -12,7 +12,7 @@ function vPlan(){
   <div class="days" role="group" aria-label="Day">${S.plan.days.map((d, i) => { const k = d.meals.reduce((a, m) => a + r0(m.kcal), 0); return `<button class="day-btn" data-act="day" data-i="${i}" aria-pressed="${i === di}"><b>${esc(d.day)}</b><span class="num" style="font-size:.74rem;opacity:.75">${k} kcal</span></button>`; }).join('')}</div>
   <section class="card">
     ${day.meals.map((m, j) => { const key = di + '-' + j, rec = S.plan.recipes?.[key], open = S.openRecipe === key; return `
-      <div class="meal">
+      <div class="meal ${S.plan.photos?.[key] ? 'with-photo' : ''}">
         ${dishPhoto(key, m)}
         <div class="meal-body">
           <div class="meal-tags"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
@@ -28,7 +28,6 @@ function vPlan(){
 
 function dishPhoto(key, m){
   const p = S.plan.photos?.[key];
-  const slotIcon = typeof mealIcon === 'function' && MEAL_ICON[m.slot] ? mealIcon(m.slot) : '';
-  if (!p) return `<div class="dish ph ${key in (S.plan.photos || {}) || S.photosOff ? '' : 'loading'}" aria-hidden="true">${slotIcon}</div>`;
+  if (!p) return '';
   return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)} · Pexels</a></figcaption></figure>`;
 }
