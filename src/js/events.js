@@ -35,6 +35,7 @@ document.addEventListener('click', e => {
   else if (a === 'quick') sendChat(el.dataset.q);
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
+  else if (a === 'nophoto') { S.logPhoto = null; render(); }
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);

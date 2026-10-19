@@ -28,12 +28,14 @@ function vToday(){
     </section>
   ${focusCard()}
   <section class="card stack" aria-label="Log food">
-    <div class="row" style="justify-content:space-between"><h2>Log what you ate</h2><div class="row">${SLOTS.map(s => `<button class="chip" data-act="slot" data-s="${s}" aria-pressed="${S.logSlot === s}">${s}</button>`).join('')}</div></div>
-    <div class="composer">
-      <textarea id="logText" rows="2" placeholder="e.g. 2 eggs, avocado toast and a cappuccino"></textarea>
-      <div class="tools">
-        ${S.canImages ? `<label class="btn" for="photo" title="Add a photo">${S.logPhoto ? `<img class="thumb" alt="" src="${URL.createObjectURL(S.logPhoto)}" style="width:22px;height:22px">` : '📷'}<span>${S.logPhoto ? 'Photo added' : 'Photo'}</span></label><input class="hidden-file" type="file" id="photo" accept="image/*">` : ''}
-        <button class="btn primary" data-act="log" ${S.busy.log ? 'disabled' : ''}>${S.busy.log ? '<span class="spinner"></span> Counting…' : 'Count it'}</button>
+    <h2>Log what you ate</h2>
+    <div class="segmented" role="group" aria-label="Meal">${SLOTS.map(s => `<button data-act="slot" data-s="${s}" aria-pressed="${S.logSlot === s}">${s}</button>`).join('')}</div>
+    <div class="logbox">
+      <textarea id="logText" rows="3" placeholder="What did you have? e.g. 2 eggs, avocado toast and a cappuccino" aria-label="What you ate"></textarea>
+      ${S.logPhoto ? `<div class="logphoto"><img class="thumb" alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span>Photo added</span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button></div>` : ''}
+      <div class="logbar">
+        ${S.canImages ? `<label class="iconbtn" for="photo" title="Add a photo" aria-label="Add a photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></label><input class="hidden-file" type="file" id="photo" accept="image/*">` : ''}
+        <button class="btn primary logsend" data-act="log" ${S.busy.log ? 'disabled' : ''}>${S.busy.log ? '<span class="spinner"></span> Counting…' : 'Count it'}</button>
       </div>
     </div>
     ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
