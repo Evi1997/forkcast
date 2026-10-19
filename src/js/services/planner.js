@@ -31,3 +31,27 @@ async function loadRecipe(key, meal){
   } catch (e) { hardFail(e); S.err.plan = errText(e); S.openRecipe = null; }
   S.busy.recipe = null; render();
 }
+
+// Dish photos from Pexels via /api/photo. Fetched once per meal for the day
+// being viewed, then saved inside the plan so they never load twice.
+const photoBusy = new Set();
+async function loadDayPhotos(di){
+  if (S.photosOff || !S.plan?.days?.[di]) return;
+  S.plan.photos = S.plan.photos || {};
+  const todo = S.plan.days[di].meals.map((m, j) => [di + '-' + j, m]).filter(([k]) => !(k in S.plan.photos) && !photoBusy.has(k));
+  if (!todo.length) return;
+  const token = await Auth.token(); if (!token) return;
+  todo.forEach(([k]) => photoBusy.add(k));
+  let changed = false;
+  await Promise.all(todo.map(async ([k, m]) => {
+    try {
+      const res = await fetch('/api/photo?q=' + encodeURIComponent(m.photo || m.name), { headers:{ Authorization:'Bearer ' + token } });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.src) { S.plan.photos[k] = body; changed = true; }
+      else if (body.code === 'not_found') { S.plan.photos[k] = null; changed = true; }
+      else if (body.code === 'not_configured') S.photosOff = true;
+    } catch {}
+    photoBusy.delete(k);
+  }));
+  if (changed) { save.plan(); if (S.view === 'plan') render(); }
+}

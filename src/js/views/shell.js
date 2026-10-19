@@ -14,6 +14,7 @@ function render(){
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
   document.body.classList.toggle('on-coach', S.view === 'coach');
+  if (S.view === 'plan' && S.plan?.days) loadDayPhotos(Math.min(S.planDay, S.plan.days.length - 1));
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
 

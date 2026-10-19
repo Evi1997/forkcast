@@ -202,7 +202,7 @@ input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var
 .day-btn:hover{transform:translateY(-1px)}
 .day-btn b{display:block;font-size:1.05rem;font-weight:800}
 .day-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.meal{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+.meal{display:grid;grid-template-columns:132px minmax(0,1fr) auto;gap:18px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
 .meal:last-of-type{border-bottom:0}
 .meal .when{display:flex;flex-direction:column;gap:6px}
 .meal .title{font-weight:800;font-size:1.04rem;letter-spacing:-.01em}
@@ -396,6 +396,24 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
   body.kb-open .rail{display:none}
   body.kb-open.on-coach .chat{height:calc(100dvh - 10px - env(safe-area-inset-top,0px))}
 }
+
+/* Dish photos in the week plan */
+.dish{margin:0;position:relative;width:100%;aspect-ratio:4/3;border-radius:18px;overflow:hidden;background:var(--surface-2)}
+.dish img{width:100%;height:100%;object-fit:cover;display:block}
+.dish figcaption{position:absolute;right:6px;bottom:6px;max-width:calc(100% - 12px)}
+.dish figcaption a{display:block;font-size:.62rem;font-weight:600;color:#fff;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:6px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dish.ph{display:grid;place-items:center}
+.dish.ph .meal-ic{width:48px;height:48px;background:transparent}
+.dish.loading{background:linear-gradient(100deg,var(--surface-2) 40%,var(--surface) 50%,var(--surface-2) 60%) 0 0/250% 100%;animation:shimmer 1.2s linear infinite}
+@keyframes shimmer{to{background-position:-150% 0}}
+.meal-body{min-width:0}
+.meal-tags{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.photo-credit{font-size:.75rem;color:var(--muted);margin-top:10px}
+.photo-credit a{color:inherit}
+@media (max-width:820px){
+  .meal{grid-template-columns:minmax(0,1fr);gap:12px}
+  .dish{aspect-ratio:16/9}
+}
 </style>
 </head>
 <body>
@@ -505,7 +523,7 @@ LATEST CHECK-IN: ${JSON.stringify(checkin || 'none')}`;
 ${PROMPTS.planContext(ctx)}
 
 Reply with only JSON:
-{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu"}]}],
+{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","photo":"2-4 word English search term for a photo of the finished dish, e.g. yogurt bowl berries"}]}],
  "notes":"2-3 sentences: the idea behind this week and how prep works"}
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
@@ -928,6 +946,30 @@ async function loadRecipe(key, meal){
   S.busy.recipe = null; render();
 }
 
+// Dish photos from Pexels via /api/photo. Fetched once per meal for the day
+// being viewed, then saved inside the plan so they never load twice.
+const photoBusy = new Set();
+async function loadDayPhotos(di){
+  if (S.photosOff || !S.plan?.days?.[di]) return;
+  S.plan.photos = S.plan.photos || {};
+  const todo = S.plan.days[di].meals.map((m, j) => [di + '-' + j, m]).filter(([k]) => !(k in S.plan.photos) && !photoBusy.has(k));
+  if (!todo.length) return;
+  const token = await Auth.token(); if (!token) return;
+  todo.forEach(([k]) => photoBusy.add(k));
+  let changed = false;
+  await Promise.all(todo.map(async ([k, m]) => {
+    try {
+      const res = await fetch('/api/photo?q=' + encodeURIComponent(m.photo || m.name), { headers:{ Authorization:'Bearer ' + token } });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok && body.src) { S.plan.photos[k] = body; changed = true; }
+      else if (body.code === 'not_found') { S.plan.photos[k] = null; changed = true; }
+      else if (body.code === 'not_configured') S.photosOff = true;
+    } catch {}
+    photoBusy.delete(k);
+  }));
+  if (changed) { save.plan(); if (S.view === 'plan') render(); }
+}
+
 // === views/shell.js ===
 // Top-level render: sign-in gate, nav tabs, current view, shared banners
 function render(){
@@ -945,6 +987,7 @@ function render(){
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
   document.body.classList.toggle('on-coach', S.view === 'coach');
+  if (S.view === 'plan' && S.plan?.days) loadDayPhotos(Math.min(S.planDay, S.plan.days.length - 1));
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
 
@@ -1169,13 +1212,24 @@ function vPlan(){
   <section class="card">
     ${day.meals.map((m, j) => { const key = di + '-' + j, rec = S.plan.recipes?.[key], open = S.openRecipe === key; return `
       <div class="meal">
-        <div class="when"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
-        <div><div class="title">${esc(m.name)}</div><div class="portion">${esc(m.portion)}</div><div style="margin-top:6px"><span class="num" style="font-size:.85rem">${r0(m.kcal)} kcal</span> &nbsp;${pfc(m)}</div>${m.swap ? `<div class="swap">Swap: ${esc(m.swap)}</div>` : ''}</div>
+        ${dishPhoto(key, m)}
+        <div class="meal-body">
+          <div class="meal-tags"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
+          <div class="title">${esc(m.name)}</div><div class="portion">${esc(m.portion)}</div><div style="margin-top:6px"><span class="num" style="font-size:.85rem">${r0(m.kcal)} kcal</span> &nbsp;${pfc(m)}</div>${m.swap ? `<div class="swap">Swap: ${esc(m.swap)}</div>` : ''}
+        </div>
         <div class="acts"><button class="btn small" data-act="recipe" data-k="${key}" data-i="${di}" data-j="${j}">${S.busy.recipe === key ? '<span class="spinner"></span>' : open ? 'Hide recipe' : 'Recipe'}</button><button class="btn small" data-act="logmeal" data-i="${di}" data-j="${j}">I ate this</button></div>
         ${open && rec ? `<div class="recipe"><div><div class="label">Ingredients · ${esc(rec.serves || '')}</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><div class="label">Method · ${esc(rec.time || '')}</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted" style="font-size:.88rem;margin-top:8px">${esc(rec.storage)}</p>` : ''}</div></div>` : ''}
       </div>`; }).join('')}
     <div class="totals"><span><span class="label">Day total</span> <span class="num">${tot.kcal} kcal</span></span><span class="num" style="color:var(--pink)">P ${tot.p} g</span><span class="num" style="color:var(--amber)">C ${tot.c} g</span><span class="num" style="color:var(--blue)">F ${tot.f} g</span>${t ? `<span class="muted" style="font-size:.85rem">Target ${t.kcal} kcal · ${t.protein} g protein</span>` : ''}</div>
+    ${Object.values(S.plan.photos || {}).some(Boolean) ? `<p class="photo-credit">Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>. They show a similar dish, not your exact recipe.</p>` : ''}
   </section>`;
+}
+
+function dishPhoto(key, m){
+  const p = S.plan.photos?.[key];
+  const slotIcon = typeof mealIcon === 'function' && MEAL_ICON[m.slot] ? mealIcon(m.slot) : '';
+  if (!p) return `<div class="dish ph ${key in (S.plan.photos || {}) || S.photosOff ? '' : 'loading'}" aria-hidden="true">${slotIcon}</div>`;
+  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)} · Pexels</a></figcaption></figure>`;
 }
 
 // === views/shop.js ===

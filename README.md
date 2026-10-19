@@ -28,6 +28,7 @@ Forkcast is a web app you install on your phone's home screen. Everything runs o
 | Website, link and server function | [Netlify](https://netlify.com) (Free) | Free |
 | Sign-in and database | [Supabase](https://supabase.com) (Free) | Free |
 | AI dietitian | [Google Gemini API](https://aistudio.google.com) (free tier) | Free, with daily limits |
+| Dish photos | [Pexels API](https://www.pexels.com/api/) | Free (200 searches/hour) |
 
 The browser never sees the Gemini key: the app calls `/api/ai`, a small Netlify Edge Function that checks you're signed in and then asks Gemini.
 
@@ -45,7 +46,7 @@ The browser never sees the Gemini key: the app calls `/api/ai`, a small Netlify 
 
 **3. Netlify (your link)**
 1. Sign up at [netlify.com](https://app.netlify.com/signup) with GitHub, then **Add new site → Import an existing project → GitHub** and pick **forkcast**.
-2. Leave the build settings empty (`netlify.toml` handles them). Under **Environment variables**, add `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+2. Leave the build settings empty (`netlify.toml` handles them). Under **Environment variables**, add `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `PEXELS_API_KEY` for dish photos (free key at [pexels.com/api](https://www.pexels.com/api/)).
 3. Click **Deploy**. Your link looks like `forkcast.netlify.app` (rename it under **Site configuration → Change site name**).
 4. Back in Supabase, open **Authentication → URL Configuration** and set **Site URL** to your Netlify link, so confirmation emails open the app.
 
@@ -66,6 +67,7 @@ Then open http://localhost:3000. For the AI to work locally, create a `.env.loca
 
 ```
 netlify/edge-functions/ai.js   server function: checks sign-in, calls Gemini
+netlify/edge-functions/photo.js finds a dish photo on Pexels
 api/ai.py                Python twin of it, for running locally
 src/
   index.template.html    page shell: head, install tags, nav

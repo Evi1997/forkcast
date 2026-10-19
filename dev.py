@@ -22,6 +22,7 @@ if env.exists():
 
 sys.path.insert(0, str(ROOT / "api"))
 from ai import handler as AiHandler  # noqa: E402
+from photo import handler as PhotoHandler  # noqa: E402
 
 
 class Dev(SimpleHTTPRequestHandler):
@@ -33,7 +34,13 @@ class Dev(SimpleHTTPRequestHandler):
             return AiHandler.do_POST(self)
         self.send_error(404)
 
-    _send = AiHandler._send
+    def do_GET(self):
+        if self.path.startswith("/api/photo"):
+            return PhotoHandler.do_GET(self)
+        return super().do_GET()
+
+    def _send(self, status, obj, cache="no-store"):
+        return PhotoHandler._send(self, status, obj, cache)
 
 
 if __name__ == "__main__":

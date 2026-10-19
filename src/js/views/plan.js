@@ -12,11 +12,22 @@ function vPlan(){
   <section class="card">
     ${day.meals.map((m, j) => { const key = di + '-' + j, rec = S.plan.recipes?.[key], open = S.openRecipe === key; return `
       <div class="meal">
-        <div class="when"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
-        <div><div class="title">${esc(m.name)}</div><div class="portion">${esc(m.portion)}</div><div style="margin-top:6px"><span class="num" style="font-size:.85rem">${r0(m.kcal)} kcal</span> &nbsp;${pfc(m)}</div>${m.swap ? `<div class="swap">Swap: ${esc(m.swap)}</div>` : ''}</div>
+        ${dishPhoto(key, m)}
+        <div class="meal-body">
+          <div class="meal-tags"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
+          <div class="title">${esc(m.name)}</div><div class="portion">${esc(m.portion)}</div><div style="margin-top:6px"><span class="num" style="font-size:.85rem">${r0(m.kcal)} kcal</span> &nbsp;${pfc(m)}</div>${m.swap ? `<div class="swap">Swap: ${esc(m.swap)}</div>` : ''}
+        </div>
         <div class="acts"><button class="btn small" data-act="recipe" data-k="${key}" data-i="${di}" data-j="${j}">${S.busy.recipe === key ? '<span class="spinner"></span>' : open ? 'Hide recipe' : 'Recipe'}</button><button class="btn small" data-act="logmeal" data-i="${di}" data-j="${j}">I ate this</button></div>
         ${open && rec ? `<div class="recipe"><div><div class="label">Ingredients · ${esc(rec.serves || '')}</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><div class="label">Method · ${esc(rec.time || '')}</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted" style="font-size:.88rem;margin-top:8px">${esc(rec.storage)}</p>` : ''}</div></div>` : ''}
       </div>`; }).join('')}
     <div class="totals"><span><span class="label">Day total</span> <span class="num">${tot.kcal} kcal</span></span><span class="num" style="color:var(--pink)">P ${tot.p} g</span><span class="num" style="color:var(--amber)">C ${tot.c} g</span><span class="num" style="color:var(--blue)">F ${tot.f} g</span>${t ? `<span class="muted" style="font-size:.85rem">Target ${t.kcal} kcal · ${t.protein} g protein</span>` : ''}</div>
+    ${Object.values(S.plan.photos || {}).some(Boolean) ? `<p class="photo-credit">Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>. They show a similar dish, not your exact recipe.</p>` : ''}
   </section>`;
+}
+
+function dishPhoto(key, m){
+  const p = S.plan.photos?.[key];
+  const slotIcon = typeof mealIcon === 'function' && MEAL_ICON[m.slot] ? mealIcon(m.slot) : '';
+  if (!p) return `<div class="dish ph ${key in (S.plan.photos || {}) || S.photosOff ? '' : 'loading'}" aria-hidden="true">${slotIcon}</div>`;
+  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)} · Pexels</a></figcaption></figure>`;
 }
