@@ -49,13 +49,16 @@ function mealsSection(t){
     <div class="row" style="justify-content:space-between"><h2>Meals</h2><span class="muted" style="font-size:.85rem">Tap + to add food</span></div>
     ${SLOTS.map(s => {
       const its = items.filter(i => i.slot === s), k = sumItems(its).kcal, open = S.openMeal === s;
-      const sub = its.length ? `${k} kcal · ${its.map(i => esc(i.name)).join(', ')}` : t ? `Suggested ~${Math.round(t.kcal * MEAL_SHARE[s] / 10) * 10} kcal` : 'Nothing yet';
+      const sub = its.length ? `${k} kcal · ${its.length} item${its.length > 1 ? 's' : ''}` : t ? `Suggested ~${Math.round(t.kcal * MEAL_SHARE[s] / 10) * 10} kcal` : 'Nothing yet';
       return `<div class="meal-row ${its.length ? 'has' : ''}">
         <button class="meal-main" data-act="togglemeal" data-s="${s}" ${its.length ? `aria-expanded="${open}"` : 'disabled'}>
-          ${mealIcon(s)}<span class="meal-txt"><b>${s}</b><span>${sub}</span></span>
+          ${mealIcon(s)}<span class="meal-txt"><b>${s}${its.length ? `<svg class="chev ${open ? 'up' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>` : ''}</b><span>${sub}</span></span>
         </button>
         <button class="addbtn" data-act="openlog" data-s="${s}" aria-label="Add food to ${s}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
-        ${open && its.length ? `<div class="meal-items">${its.map(i => `<div class="mi"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.amount)}${i.amount ? ' · ' : ''}${pfc(i)}</div></div><span class="num">${r0(i.kcal)}</span><button class="x" data-act="del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}</div>` : ''}
+        ${open && its.length ? `<div class="meal-list">
+          <div class="meal-macros">${pfc(sumItems(its))}<span class="muted">Tap × to remove</span></div>
+          ${its.map(i => `<div class="mrow"><span class="mname">${esc(i.name)}${i.amount ? ` <span class="muted">· ${esc(i.amount)}</span>` : ''}</span><span class="num">${r0(i.kcal)}</span><button class="x small-x" data-act="del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}
+        </div>` : ''}
       </div>`;
     }).join('')}
   </section>`;
