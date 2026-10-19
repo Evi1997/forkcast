@@ -4,6 +4,12 @@
   publish = "."
   command = ""
 
+# The Supabase URL and publishable key are public by design (they ship to the
+# browser in config.js; row-level security protects the data). Skip only these
+# two in Netlify's secret scan; GEMINI_API_KEY is still checked.
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY"
+
 [[headers]]
   for = "/sw.js"
   [headers.values]
