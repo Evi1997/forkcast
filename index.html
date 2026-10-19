@@ -1,5 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Forkcast</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Your AI dietitian and meal-prep planner.">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Forkcast">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
@@ -89,6 +103,24 @@ main{padding-block:36px 56px;padding-left:max(16px,env(safe-area-inset-left,0px)
 input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;width:100%;min-width:0;font-weight:500}
 textarea{resize:vertical;min-height:54px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+
+/* Page reset (standalone app) */
+body{margin:0;padding-top:env(safe-area-inset-top,0px)}
+img{max-width:100%}
+[hidden]{display:none!important}
+.rail-foot{display:flex;flex-direction:column;align-items:flex-start;gap:4px;word-break:break-all}
+
+/* Sign-in */
+.signed-out .app{grid-template-columns:minmax(0,1fr)}
+.signed-out .rail{display:none}
+.auth{max-width:440px;margin:6vh auto 0;width:100%;gap:18px;align-items:stretch}
+section.auth:not(.card){display:flex;flex-direction:column;align-items:center;gap:20px}
+.auth-brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.5rem;letter-spacing:-.04em}
+.auth-brand i{width:34px;height:34px;border-radius:11px;background:var(--accent);box-shadow:inset 0 -4px 0 var(--accent-deep);position:relative}
+.auth-brand i::after{content:"";position:absolute;inset:10px;border-radius:50%;background:var(--accent-ink);opacity:.9}
+input[type=email],input[type=password]{background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;width:100%;min-width:0;font-weight:500}
+input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+@media (pointer:coarse){input[type=email],input[type=password]{font-size:16px}}
 
 /* === views.css === */
 /* Per-view styles and responsive rules */
@@ -252,16 +284,18 @@ th{font-size:.75rem;color:var(--muted);font-weight:700}
 @media (pointer:coarse){.chip{padding:9px 15px}.btn{min-height:44px}.x{padding:10px 12px}input[type=text],input[type=number],input[type=date],select,textarea{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
-
+</head>
+<body>
 <div class="app">
   <nav class="rail" aria-label="Sections">
     <div class="brand"><i></i>forkcast</div>
     <div class="tabs" id="tabs"></div>
-    <div class="rail-foot" id="railFoot">Nutrition guidance, not medical care.</div>
+    <div class="rail-foot" id="railFoot"></div>
   </nav>
   <main><div class="view" id="view"></div></main>
 </div>
-
+<script src="/config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -281,7 +315,7 @@ const SECTIONS = [
 ];
 
 // === core/prompts.js ===
-// Everything Forkcast says to Claude lives here: the dietitian rules and the
+// Everything Forkcast says to the AI lives here: the dietitian rules and the
 // prompts for food logging, week plans, shopping lists and recipes.
 const COACH_RULES = `You are the dietitian inside "Forkcast", a meal-prep and nutrition app. Act as an experienced, evidence-based dietitian and nutrition coach with 10-15+ years of practice: clinical nutrition, Mediterranean-style principles, sports nutrition, weight-management science, behavioural habit change and meal-prep practicality. Never claim to be or imitate any real person.
 
@@ -319,7 +353,7 @@ Let's start simple: **how old are you, and what's your height and current weight
 const PLAN_RULES = `You are an experienced evidence-based dietitian writing a realistic 7-day meal-prep plan.
 Rules: build around foods the person enjoys and already eats; never include their dislikes or allergens; respect their dietary pattern, cooking time, prep style and budget; use ingredients sold in their country's normal supermarkets; overlap ingredients across days (batch-cooked proteins, grains, roasted veg, one or two sauces) to limit waste; leftovers and repeats only if they accept them; include 80/20 flexibility (a dessert, a pizza or restaurant night can fit). Keep each day within ~5% of the kcal target and hit protein. Never call foods good/bad/clean/cheat.`;
 
-// Prompt builders. Each takes plain data and returns the input sent to Claude,
+// Prompt builders. Each takes plain data and returns the input sent to the AI,
 // so changing what the AI does never means touching the UI code.
 const PROMPTS = {
   // Dietitian chat: standing instructions + app snapshot, then the conversation.
@@ -415,25 +449,22 @@ const pfc = i => `<span class="pfc"><span class="p">P ${r0(i.protein ?? i.p)}</s
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 // === core/storage.js ===
-// Storage: private per-person Claude db, with a browser copy as fallback
-const LS = 'mise:v1:';
+// Storage: one row per document in Supabase (table user_docs), plus a
+// per-account browser copy so the app opens instantly and works offline.
+const LS = 'forkcast:v1:';
 const Store = {
-  db: null, uid: null, pending: {}, writing: {},
-  local(k){ try { return JSON.parse(localStorage.getItem(LS + k)); } catch { return null; } },
-  async init(){
-    if (!window.claude?.use) return false;
-    try {
-      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-      const id = user ? await user.id() : null;
-      if (db && id) { this.db = db; this.uid = id; return true; }
-    } catch {}
-    return false;
+  sb: null, uid: null, pending: {}, writing: {},
+  key(k){ return LS + (this.uid || 'anon') + ':' + k; },
+  local(k){ try { return JSON.parse(localStorage.getItem(this.key(k))); } catch { return null; } },
+  async remote(k){
+    if (!this.sb || !this.uid) return null;
+    const { data, error } = await this.sb.from('user_docs').select('data').eq('key', k).maybeSingle();
+    if (error) { console.warn('load failed', k, error.message); return null; }
+    return data ? data.data : null;
   },
-  ref(k){ return this.db.collection('data/users/' + this.uid).doc(k); },
-  async remote(k){ if (!this.db) return null; try { const s = await this.ref(k).get(); return s.exists ? structuredClone(s.data()) : null; } catch { return null; } },
   save(k, v){
-    try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch {}
-    if (!this.db) return;
+    try { localStorage.setItem(this.key(k), JSON.stringify(v)); } catch {}
+    if (!this.sb || !this.uid) return;
     this.pending[k] = v; this.flush(k);
   },
   async flush(k){
@@ -441,17 +472,23 @@ const Store = {
     this.writing[k] = true;
     while (this.pending[k]) {
       const v = this.pending[k]; this.pending[k] = null;
-      try { await this.ref(k).set(JSON.parse(JSON.stringify(v))); } catch (e) { console.warn('save failed', k, e?.code); }
+      const { error } = await this.sb.from('user_docs').upsert({ user_id:this.uid, key:k, data:JSON.parse(JSON.stringify(v)), updated_at:new Date().toISOString() });
+      if (error) { console.warn('save failed', k, error.message); S.saveError = true; render(); }
+      else if (S.saveError) { S.saveError = false; render(); }
     }
     this.writing[k] = false;
   },
-  async remove(k){ try { localStorage.removeItem(LS + k); } catch {} if (this.db) { try { await this.ref(k).delete(); } catch {} } }
+  async remove(k){
+    try { localStorage.removeItem(this.key(k)); } catch {}
+    if (this.sb && this.uid) await this.sb.from('user_docs').delete().eq('key', k);
+  }
 };
 
 // === core/state.js ===
-// App state, local load, save helpers and sync with the Claude db
+// App state, local load, save helpers and sync with Supabase
 const S = {
   view: 'today',
+  auth: { status:'loading' },
   profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
   chat: { turns:[] },
   plan: null,
@@ -465,8 +502,16 @@ const S = {
   planDay: (new Date().getDay() + 6) % 7,
   openRecipe: null,
   err: {},
-  sample: null, sampleOK: null, canImages: false, synced: false
+  sample: null, sampleOK: true, canImages: true, synced: false
 };
+function resetState(){
+  Object.assign(S, {
+    profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
+    chat: { turns:[] }, plan: null, progress: { weighins:[], checkins:[] }, logs: {},
+    busy: { chat:false, log:false, plan:false, recipe:null }, draft: { chat:'', log:'', ask:'' },
+    logResult: null, logPhoto: null, openRecipe: null, err: {}, synced: false, confirmReset: false
+  });
+}
 function loadLocal(){
   S.profile = merge(S.profile, Store.local('profile') || {});
   S.chat = Store.local('chat') || S.chat;
@@ -482,10 +527,10 @@ const save = {
   log(k = dkey()){ Store.save('log-' + k, S.logs[k]); }
 };
 async function syncRemote(){
-  const ok = await Store.init();
-  if (!ok) { render(); return; }
+  const uid = Store.uid;
   const keys = ['profile','chat','plan','progress','log-' + dkey()];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
+  if (uid !== Store.uid) return; // signed out meanwhile
   vals.forEach((v, i) => {
     const k = keys[i];
     if (v) {
@@ -540,29 +585,55 @@ function streak(){
   return n;
 }
 
-// === services/claude.js ===
-// Claude connection, error copy and the app state snapshot sent to the dietitian
+// === services/ai.js ===
+// AI: calls our /api/ai server function, which checks sign-in and asks Gemini.
+// S.sample.json(input, {modelTier, images}) keeps the same shape the rest of the app uses.
 const ERR = {
-  not_granted:'Claude access was declined for this page, so the dietitian is off for now. Reload the page to allow it.',
-  sampling_disabled:'Claude isn\'t available on this account.',
-  rate_limited:'Too many requests in a row. Give it a minute, then try again.',
-  session_expired:'Your session expired. Sign in again, then retry.',
-  refused:'Claude couldn\'t answer that one. Try rephrasing.',
+  rate_limited:'The free AI limit is used up for now. Try again in a minute, or tomorrow if it\'s the daily limit.',
+  unauthorized:'Your session expired. Sign in again, then retry.',
+  refused:'The AI couldn\'t answer that one. Try rephrasing.',
   invalid_json:'The answer came back garbled. Try again.',
-  image_rejected:'That photo couldn\'t be read. Try a JPEG or PNG under 20 MB.',
-  prompt_too_large:'That was too much at once. Try a shorter message.'
+  empty_completion:'The AI returned nothing. Try again.',
+  prompt_too_large:'That was too much at once. Try a shorter message or a smaller photo.',
+  not_configured:'The AI isn\'t set up on the server yet (missing keys in Vercel).',
+  offline:'You\'re offline. Connect to the internet and try again.'
 };
-const errText = e => ERR[e?.code] || 'Something went wrong reaching Claude. Try again.';
-async function initSample(){
-  if (!window.claude?.use) { S.sampleOK = false; render(); return; }
-  try {
-    S.sample = await claude.use('sample');
-    S.sampleOK = !!S.sample;
-    if (S.sample) { const lim = await S.sample.limits().catch(() => null); S.canImages = !!lim?.images; }
-  } catch { S.sampleOK = false; }
-  render();
+const errText = e => ERR[e?.code] || e?.message || 'Something went wrong reaching the AI. Try again.';
+function hardFail(e){ if (e?.code === 'unauthorized') Auth.signOut(); }
+
+// Shrink a photo to ~1024 px JPEG so uploads stay small and fast.
+function photoToBase64(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => {
+      const scale = Math.min(1, 1024 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      resolve({ mime:'image/jpeg', data:c.toDataURL('image/jpeg', 0.85).split(',')[1] });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject({ code:'image_rejected', message:'That photo couldn\'t be read. Try a JPEG or PNG.' }); };
+    img.src = url;
+  });
 }
-function hardFail(e){ if (['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e?.code)) { S.sampleOK = false; } }
+
+const AI = {
+  async json(input, opts = {}){
+    if (!navigator.onLine) throw { code:'offline' };
+    const token = await Auth.token();
+    if (!token) throw { code:'unauthorized' };
+    const images = opts.images ? await Promise.all([...opts.images].map(photoToBase64)) : [];
+    let res;
+    try {
+      res = await fetch('/api/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+        body: JSON.stringify({ input, images, tier: opts.modelTier === 'quick' ? 'quick' : 'default', json:true }) });
+    } catch { throw { code:'offline' }; }
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) throw { code: body.code || 'upstream_error', message: body.message };
+    return body.json;
+  }
+};
 
 function appState(){
   const t = targets(), today = sumItems(S.logs[dkey()]?.items || []);
@@ -580,12 +651,59 @@ function appState(){
   };
 }
 
+// === services/auth.js ===
+// Sign-in with Supabase (email + password). Keeps the session on the device,
+// so you stay signed in until you sign out.
+const Auth = {
+  sb: null,
+  init(){
+    const c = window.FORKCAST_CONFIG || {};
+    if (!window.supabase || !c.supabaseUrl || !c.supabaseAnonKey) { S.auth = { status:'unconfigured' }; return false; }
+    this.sb = supabase.createClient(c.supabaseUrl, c.supabaseAnonKey, { auth:{ persistSession:true, autoRefreshToken:true } });
+    Store.sb = this.sb;
+    this.sb.auth.onAuthStateChange((event, session) => {
+      if (session?.user && Store.uid !== session.user.id) setTimeout(() => this.enter(session.user), 0);
+      if (event === 'SIGNED_OUT') this.leave();
+    });
+    return true;
+  },
+  async start(){
+    const { data } = await this.sb.auth.getSession();
+    if (data.session?.user) this.enter(data.session.user);
+    else { S.auth = { status:'signed-out', mode:'signin' }; render(); }
+  },
+  async token(){ const { data } = await this.sb.auth.getSession(); return data.session?.access_token || null; },
+  enter(user){
+    Store.uid = user.id;
+    S.auth = { status:'signed-in', email:user.email };
+    resetState(); loadLocal(); render(); syncRemote();
+  },
+  leave(){ Store.uid = null; resetState(); S.auth = { status:'signed-out', mode:'signin' }; render(); },
+  async submit(mode, email, password){
+    S.auth.busy = true; S.auth.error = null; S.auth.info = null; render();
+    const redirect = location.origin + location.pathname;
+    const { data, error } = mode === 'signup'
+      ? await this.sb.auth.signUp({ email, password, options:{ emailRedirectTo:redirect } })
+      : await this.sb.auth.signInWithPassword({ email, password });
+    S.auth.busy = false;
+    if (error) S.auth.error = error.message;
+    else if (mode === 'signup' && !data.session) { S.auth.info = 'Check your email and tap the confirmation link, then sign in here.'; S.auth.mode = 'signin'; }
+    render();
+  },
+  async reset(email){
+    if (!email) { S.auth.error = 'Type your email first, then tap “Forgot password”.'; render(); return; }
+    const { error } = await this.sb.auth.resetPasswordForEmail(email, { redirectTo:location.origin + location.pathname });
+    S.auth.error = error ? error.message : null; S.auth.info = error ? null : 'We sent you an email with a link to set a new password.'; render();
+  },
+  async signOut(){ await this.sb.auth.signOut(); }
+};
+
 // === services/coach.js ===
 // Dietitian chat: sends the conversation, applies profile, targets, focus and log updates
 async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
-  if (!S.sampleOK) { S.err.chat = 'The dietitian needs Claude. Open this page on claude.ai, signed in, and allow Claude when asked.'; render(); return; }
+  if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
   if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING });
   S.chat.turns.push({ role:'user', content:text });
   S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
@@ -625,7 +743,7 @@ function addItems(items, k = dkey()){
 
 async function analyseFood(text, clarification){
   if (S.busy.log) return;
-  if (!S.sampleOK) { S.err.log = 'Automatic counting needs Claude. Use “Add manually” below in the meantime.'; render(); return; }
+  if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically. Use “Add manually” below in the meantime.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
   const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
@@ -657,7 +775,7 @@ function planContext(){
 }
 async function generatePlan(){
   if (S.busy.plan) return;
-  if (!S.sampleOK) { S.err.plan = 'Planning needs Claude. Open this page on claude.ai and allow Claude when asked.'; render(); return; }
+  if (!S.sampleOK) { S.err.plan = 'Sign in to plan your week.'; render(); return; }
   S.busy.plan = 'Writing your 7 days…'; S.err.plan = null; render();
   try {
     const plan = await S.sample.json(PROMPTS.plan(planContext()), { modelTier:'default', cache:false });
@@ -674,7 +792,7 @@ async function generatePlan(){
 }
 async function loadRecipe(key, meal){
   if (S.plan.recipes?.[key]) { S.openRecipe = S.openRecipe === key ? null : key; render(); return; }
-  if (!S.sampleOK) { S.err.plan = 'Recipes need Claude.'; render(); return; }
+  if (!S.sampleOK) { S.err.plan = 'Sign in to see recipes.'; render(); return; }
   S.busy.recipe = key; S.openRecipe = key; render();
   try {
     const r = await S.sample.json(PROMPTS.recipe(meal, { prefs:S.profile.data.preferences, cooking:S.profile.data.cooking, country:S.profile.data.shopping?.country }), { modelTier:'quick', cache:{gcTime:864e5} });
@@ -684,10 +802,13 @@ async function loadRecipe(key, meal){
 }
 
 // === views/shell.js ===
-// Top-level render: nav tabs, current view, shared banners
+// Top-level render: sign-in gate, nav tabs, current view, shared banners
 function render(){
+  const authed = S.auth.status === 'signed-in';
+  document.body.classList.toggle('signed-out', !authed);
+  if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
-  $('#railFoot').textContent = Store.db ? 'Saved privately to your Claude account.' : 'Saved in this browser only.';
+  $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
   const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
   $('#view').innerHTML = v;
   if (S.view === 'coach') scrollChat();
@@ -696,9 +817,10 @@ function render(){
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
 
-function claudeBanner(){
-  if (S.sampleOK !== false) return '';
-  return `<div class="notice warn">Your dietitian runs on Claude. Open this page on claude.ai while signed in and allow Claude when it asks. Manual logging, plans you already have and progress tracking keep working without it.</div>`;
+function statusBanner(){
+  if (!navigator.onLine) return `<div class="notice warn">You're offline. Everything you log is kept on this phone and syncs when you're back online. The dietitian needs a connection.</div>`;
+  if (S.saveError) return `<div class="notice warn">Couldn't save to your account just now. Your changes are kept on this device; they sync on the next save.</div>`;
+  return '';
 }
 
 // === views/today.js ===
@@ -713,7 +835,7 @@ function vToday(){
   return `
   <div class="head"><div><div class="label">${now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?'}</h1></div>
   ${streakPill()}</div>
-  ${claudeBanner()}
+  ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="nav" data-v="progress">Check in</button></div>` : ''}
     <section class="card hero fuel" aria-label="Calories and macros">
@@ -779,7 +901,7 @@ function vCoach(){
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
   return `
   <div class="head"><div><div class="label">${S.profile.onboarded ? 'Follow-up appointment' : `First consultation · ${done} of ${SECTIONS.length} covered`}</div><h1>Your dietitian</h1></div></div>
-  ${claudeBanner()}
+  ${statusBanner()}
   <div class="coach">
     <section class="card chat" aria-label="Conversation">
       <div class="msgs" aria-live="polite">
@@ -805,6 +927,7 @@ function vCoach(){
       </section>
       ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
       <section class="stack" style="padding:0 4px">
+        <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, diary and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
       </section>
     </aside>
@@ -816,7 +939,7 @@ function vCoach(){
 function vPlan(){
   const head = `<div class="head"><div><div class="label">${S.plan ? `Week of ${fromKey(S.plan.weekOf).toLocaleDateString(undefined,{day:'numeric',month:'long'})}` : 'Seven days, prepped ahead'}</div><h1>Week plan</h1></div>
     <button class="btn ${S.plan ? '' : 'primary'}" data-act="genplan" ${S.busy.plan ? 'disabled' : ''}>${S.busy.plan ? `<span class="spinner"></span> ${esc(S.busy.plan)}` : S.plan ? 'Plan a new week' : 'Plan my week'}</button></div>`;
-  const notes = `${claudeBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}${!S.profile.onboarded && !S.plan ? `<div class="notice accent">Your plan is built from your consultation. Finish it first for a plan that fits your tastes, schedule and supermarket. You can still plan now with what's known.</div>` : ''}`;
+  const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}${!S.profile.onboarded && !S.plan ? `<div class="notice accent">Your plan is built from your consultation. Finish it first for a plan that fits your tastes, schedule and supermarket. You can still plan now with what's known.</div>` : ''}`;
   if (!S.plan?.days) return head + notes + `<section class="card empty"><div class="blob" aria-hidden="true">🥗</div><h2>No plan yet</h2><p>Forkcast writes seven days of meals around the food you like, your targets and how often you want to cook, then turns them into one shopping list and a prep schedule.</p></section>`;
   const di = Math.min(S.planDay, S.plan.days.length - 1), day = S.plan.days[di], t = targets();
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
@@ -913,6 +1036,35 @@ function vProgress(){
   </section>`;
 }
 
+// === views/auth.js ===
+// Sign-in / create-account screen
+function vAuth(){
+  const a = S.auth;
+  if (a.status === 'loading') return `<section class="auth"><div class="auth-brand"><i></i>forkcast</div><span class="spinner" aria-label="Loading"></span></section>`;
+  if (a.status === 'unconfigured') return `<section class="auth card stack"><div class="auth-brand"><i></i>forkcast</div><h2>Almost there</h2><p class="muted">This copy of Forkcast isn't connected to its database yet. Add your Supabase URL and anon key to <b>config.js</b>, then reload. The setup guide in the README walks you through it.</p></section>`;
+  const signup = a.mode === 'signup';
+  return `<section class="auth card stack">
+    <div class="auth-brand"><i></i>forkcast</div>
+    <div><h1>${signup ? 'Create your account' : 'Welcome back'}</h1><p class="muted" style="margin-top:6px">${signup ? 'Your dietitian, food diary and meal plans, saved to your account.' : 'Sign in to pick up where you left off.'}</p></div>
+    <form id="authForm" class="stack" novalidate>
+      <div class="field"><label for="authEmail">Email</label><input type="email" id="authEmail" autocomplete="email" inputmode="email" required></div>
+      <div class="field"><label for="authPass">Password</label><input type="password" id="authPass" autocomplete="${signup ? 'new-password' : 'current-password'}" minlength="6" required>${signup ? '<span class="muted" style="font-size:.8rem">At least 6 characters.</span>' : ''}</div>
+      ${a.error ? `<div class="notice warn">${esc(a.error)}</div>` : ''}
+      ${a.info ? `<div class="notice accent">${esc(a.info)}</div>` : ''}
+      <button class="btn primary" type="submit" ${a.busy ? 'disabled' : ''}>${a.busy ? '<span class="spinner"></span>' : signup ? 'Create account' : 'Sign in'}</button>
+    </form>
+    <div class="row" style="justify-content:space-between">
+      <button class="btn ghost small" data-act="authmode">${signup ? 'I already have an account' : 'New here? Create an account'}</button>
+      ${signup ? '' : '<button class="btn ghost small" data-act="forgot">Forgot password</button>'}
+    </div>
+  </section>`;
+}
+function restoreAuthDraft(){
+  const d = S.authDraft || {}, e = $('#authEmail'), p = $('#authPass');
+  if (e && d.email) e.value = d.email;
+  if (p && d.pass) p.value = d.pass;
+}
+
 // === events.js ===
 // All user interactions, wired by data-act attributes
 document.addEventListener('input', e => {
@@ -925,6 +1077,14 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
   if (e.target.dataset.act === 'check') { S.plan.checked = S.plan.checked || {}; S.plan.checked[e.target.dataset.k] = e.target.checked; save.plan(); render(); }
+});
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'authForm') return;
+  e.preventDefault();
+  const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
+  S.authDraft = { email, pass };
+  if (!email || pass.length < 6) { S.auth.error = 'Enter your email and a password of at least 6 characters.'; render(); return; }
+  Auth.submit(S.auth.mode, email, pass);
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
@@ -981,6 +1141,9 @@ document.addEventListener('click', e => {
     S.ck = null; go('coach'); sendChat(msg);
   }
   else if (a === 'askweak') { go('coach'); sendChat(S.profile.focus ? `Let's talk about my weak point (${S.profile.focus.weak_point}). What else could help?` : 'I want to talk about what I think holds me back.'); }
+  else if (a === 'authmode') { S.authDraft = { email: $('#authEmail')?.value || '' }; S.auth = { status:'signed-out', mode: S.auth.mode === 'signup' ? 'signin' : 'signup' }; render(); }
+  else if (a === 'forgot') { const em = $('#authEmail')?.value.trim(); S.authDraft = { email: em }; Auth.reset(em); }
+  else if (a === 'signout') { S.authDraft = { email: S.auth.email }; Auth.signOut(); }
   else if (a === 'reset') { S.confirmReset = true; render(); }
   else if (a === 'reset-no') { S.confirmReset = false; render(); }
   else if (a === 'reset-yes') {
@@ -991,10 +1154,12 @@ document.addEventListener('click', e => {
 });
 
 // === main.js ===
-// Boot
-loadLocal();
+// Boot: connect sign-in, restore the last tab, register the offline worker
+S.sample = AI;
 try { const v = localStorage.getItem(LS + 'view'); if (v && TABS.some(t => t[0] === v)) S.view = v; } catch {}
-render();
-syncRemote();
-initSample();
+if (Auth.init()) Auth.start(); else render();
+addEventListener('online', render); addEventListener('offline', render);
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
+</body>
+</html>

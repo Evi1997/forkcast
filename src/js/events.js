@@ -10,6 +10,14 @@ document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
   if (e.target.dataset.act === 'check') { S.plan.checked = S.plan.checked || {}; S.plan.checked[e.target.dataset.k] = e.target.checked; save.plan(); render(); }
 });
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'authForm') return;
+  e.preventDefault();
+  const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
+  S.authDraft = { email, pass };
+  if (!email || pass.length < 6) { S.auth.error = 'Enter your email and a password of at least 6 characters.'; render(); return; }
+  Auth.submit(S.auth.mode, email, pass);
+});
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
@@ -65,6 +73,9 @@ document.addEventListener('click', e => {
     S.ck = null; go('coach'); sendChat(msg);
   }
   else if (a === 'askweak') { go('coach'); sendChat(S.profile.focus ? `Let's talk about my weak point (${S.profile.focus.weak_point}). What else could help?` : 'I want to talk about what I think holds me back.'); }
+  else if (a === 'authmode') { S.authDraft = { email: $('#authEmail')?.value || '' }; S.auth = { status:'signed-out', mode: S.auth.mode === 'signup' ? 'signin' : 'signup' }; render(); }
+  else if (a === 'forgot') { const em = $('#authEmail')?.value.trim(); S.authDraft = { email: em }; Auth.reset(em); }
+  else if (a === 'signout') { S.authDraft = { email: S.auth.email }; Auth.signOut(); }
   else if (a === 'reset') { S.confirmReset = true; render(); }
   else if (a === 'reset-no') { S.confirmReset = false; render(); }
   else if (a === 'reset-yes') {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Forkcast: join src/ into one index.html that runs as a Claude artifact.
+"""Build Forkcast: join src/ into one index.html, served by Vercel.
 
 Usage:  python3 build.py
 No dependencies. Edit files in src/, never index.html directly.
@@ -20,7 +20,8 @@ SCRIPTS = [
     "core/storage.js",
     "core/state.js",
     "core/nutrition.js",
-    "services/claude.js",
+    "services/ai.js",
+    "services/auth.js",
     "services/coach.js",
     "services/food.js",
     "services/planner.js",
@@ -30,6 +31,7 @@ SCRIPTS = [
     "views/plan.js",
     "views/shop.js",
     "views/progress.js",
+    "views/auth.js",
     "events.js",
     "main.js",
 ]

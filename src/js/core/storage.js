@@ -1,22 +1,19 @@
-// Storage: private per-person Claude db, with a browser copy as fallback
-const LS = 'mise:v1:';
+// Storage: one row per document in Supabase (table user_docs), plus a
+// per-account browser copy so the app opens instantly and works offline.
+const LS = 'forkcast:v1:';
 const Store = {
-  db: null, uid: null, pending: {}, writing: {},
-  local(k){ try { return JSON.parse(localStorage.getItem(LS + k)); } catch { return null; } },
-  async init(){
-    if (!window.claude?.use) return false;
-    try {
-      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
-      const id = user ? await user.id() : null;
-      if (db && id) { this.db = db; this.uid = id; return true; }
-    } catch {}
-    return false;
+  sb: null, uid: null, pending: {}, writing: {},
+  key(k){ return LS + (this.uid || 'anon') + ':' + k; },
+  local(k){ try { return JSON.parse(localStorage.getItem(this.key(k))); } catch { return null; } },
+  async remote(k){
+    if (!this.sb || !this.uid) return null;
+    const { data, error } = await this.sb.from('user_docs').select('data').eq('key', k).maybeSingle();
+    if (error) { console.warn('load failed', k, error.message); return null; }
+    return data ? data.data : null;
   },
-  ref(k){ return this.db.collection('data/users/' + this.uid).doc(k); },
-  async remote(k){ if (!this.db) return null; try { const s = await this.ref(k).get(); return s.exists ? structuredClone(s.data()) : null; } catch { return null; } },
   save(k, v){
-    try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch {}
-    if (!this.db) return;
+    try { localStorage.setItem(this.key(k), JSON.stringify(v)); } catch {}
+    if (!this.sb || !this.uid) return;
     this.pending[k] = v; this.flush(k);
   },
   async flush(k){
@@ -24,9 +21,14 @@ const Store = {
     this.writing[k] = true;
     while (this.pending[k]) {
       const v = this.pending[k]; this.pending[k] = null;
-      try { await this.ref(k).set(JSON.parse(JSON.stringify(v))); } catch (e) { console.warn('save failed', k, e?.code); }
+      const { error } = await this.sb.from('user_docs').upsert({ user_id:this.uid, key:k, data:JSON.parse(JSON.stringify(v)), updated_at:new Date().toISOString() });
+      if (error) { console.warn('save failed', k, error.message); S.saveError = true; render(); }
+      else if (S.saveError) { S.saveError = false; render(); }
     }
     this.writing[k] = false;
   },
-  async remove(k){ try { localStorage.removeItem(LS + k); } catch {} if (this.db) { try { await this.ref(k).delete(); } catch {} } }
+  async remove(k){
+    try { localStorage.removeItem(this.key(k)); } catch {}
+    if (this.sb && this.uid) await this.sb.from('user_docs').delete().eq('key', k);
+  }
 };

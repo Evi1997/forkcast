@@ -2,7 +2,7 @@
 async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
-  if (!S.sampleOK) { S.err.chat = 'The dietitian needs Claude. Open this page on claude.ai, signed in, and allow Claude when asked.'; render(); return; }
+  if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
   if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING });
   S.chat.turns.push({ role:'user', content:text });
   S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;

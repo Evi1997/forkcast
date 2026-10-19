@@ -1,6 +1,7 @@
-// App state, local load, save helpers and sync with the Claude db
+// App state, local load, save helpers and sync with Supabase
 const S = {
   view: 'today',
+  auth: { status:'loading' },
   profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
   chat: { turns:[] },
   plan: null,
@@ -14,8 +15,16 @@ const S = {
   planDay: (new Date().getDay() + 6) % 7,
   openRecipe: null,
   err: {},
-  sample: null, sampleOK: null, canImages: false, synced: false
+  sample: null, sampleOK: true, canImages: true, synced: false
 };
+function resetState(){
+  Object.assign(S, {
+    profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
+    chat: { turns:[] }, plan: null, progress: { weighins:[], checkins:[] }, logs: {},
+    busy: { chat:false, log:false, plan:false, recipe:null }, draft: { chat:'', log:'', ask:'' },
+    logResult: null, logPhoto: null, openRecipe: null, err: {}, synced: false, confirmReset: false
+  });
+}
 function loadLocal(){
   S.profile = merge(S.profile, Store.local('profile') || {});
   S.chat = Store.local('chat') || S.chat;
@@ -31,10 +40,10 @@ const save = {
   log(k = dkey()){ Store.save('log-' + k, S.logs[k]); }
 };
 async function syncRemote(){
-  const ok = await Store.init();
-  if (!ok) { render(); return; }
+  const uid = Store.uid;
   const keys = ['profile','chat','plan','progress','log-' + dkey()];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
+  if (uid !== Store.uid) return; // signed out meanwhile
   vals.forEach((v, i) => {
     const k = keys[i];
     if (v) {

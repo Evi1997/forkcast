@@ -6,7 +6,7 @@ function vCoach(){
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
   return `
   <div class="head"><div><div class="label">${S.profile.onboarded ? 'Follow-up appointment' : `First consultation · ${done} of ${SECTIONS.length} covered`}</div><h1>Your dietitian</h1></div></div>
-  ${claudeBanner()}
+  ${statusBanner()}
   <div class="coach">
     <section class="card chat" aria-label="Conversation">
       <div class="msgs" aria-live="polite">
@@ -32,6 +32,7 @@ function vCoach(){
       </section>
       ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
       <section class="stack" style="padding:0 4px">
+        <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, diary and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
       </section>
     </aside>

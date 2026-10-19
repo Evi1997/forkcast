@@ -9,7 +9,7 @@ function vToday(){
   return `
   <div class="head"><div><div class="label">${now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?'}</h1></div>
   ${streakPill()}</div>
-  ${claudeBanner()}
+  ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="nav" data-v="progress">Check in</button></div>` : ''}
     <section class="card hero fuel" aria-label="Calories and macros">

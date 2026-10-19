@@ -21,38 +21,71 @@ Clean, white, fintech-style layout inspired by Revolut, with Duolingo-style tact
 
 ## How it runs
 
-Forkcast runs as a [Claude](https://claude.ai) artifact, so it costs nothing to run: the AI uses your own Claude account and there is no server to pay for. On claude.ai it uses:
+Forkcast is a web app you install on your phone's home screen. Everything runs on free tiers:
 
-| Capability | Used for |
-| --- | --- |
-| `sample` | The AI dietitian: chat, food estimates, photo logging, plans, recipes |
-| `db` + `user` | Saving your profile, diary, plan and progress privately to your Claude account |
+| Piece | Service | Cost |
+| --- | --- | --- |
+| Website, link and server function | [Vercel](https://vercel.com) (Hobby) | Free |
+| Sign-in and database | [Supabase](https://supabase.com) (Free) | Free |
+| AI dietitian | [Google Gemini API](https://aistudio.google.com) (free tier) | Free, with daily limits |
 
-Opened outside Claude (for example straight from GitHub Pages), the page still loads, but the AI features are off and data is saved only in that browser.
+The browser never sees the Gemini key: the app calls `/api/ai`, a small Python function that checks you're signed in and then asks Gemini.
+
+## Setup (about 15 minutes, once)
+
+**1. Supabase (sign-in + database)**
+1. Create a free project at [supabase.com](https://supabase.com) (sign in with GitHub).
+2. Open **SQL Editor → New query**, paste [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
+3. Open **Project Settings → API** and copy the **Project URL** and the **anon public** key.
+4. Put both into [`config.js`](config.js) and push. (They're safe to publish: row-level security means each account only sees its own data.)
+
+**2. Gemini key**
+1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and click **Create API key**.
+2. Keep it secret. It only goes into Vercel, never into the code.
+
+**3. Vercel (your link)**
+1. Sign in at [vercel.com](https://vercel.com) with GitHub, click **Add New → Project** and import **forkcast**.
+2. Before deploying, add **Environment Variables**: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+3. Click **Deploy**. Your link looks like `forkcast.vercel.app`.
+4. Back in Supabase, open **Authentication → URL Configuration** and set **Site URL** to your Vercel link, so confirmation emails open the app.
+
+**4. On your phone**
+Open your link, sign up, then **Share → Add to Home Screen** (iPhone, Safari) or **⋮ → Install app** (Android, Chrome).
+
+## Run it on your Mac
+
+```bash
+python3 dev.py
+```
+
+Then open http://localhost:3000. For the AI to work locally, create a `.env.local` file (never committed) with the same three variables as in Vercel.
 
 ## Project structure
 
-The code lives in `src/`. `build.py` joins it into the single `index.html` that Claude runs.
+`build.py` joins `src/` into the `index.html` that Vercel serves.
 
 ```
+api/ai.py                Python server function: checks sign-in, calls Gemini
 src/
-  index.template.html    page shell: title, fonts, nav, main area
+  index.template.html    page shell: head, install tags, nav
   styles/                tokens.css (colours, fonts) · base.css · views.css
   js/
     core/
       prompts.js         ← everything sent to the AI: dietitian rules and all prompts
       nutrition.js       Mifflin-St Jeor targets, consultation progress, streaks
-      storage.js         private Claude db with a browser fallback
+      storage.js         Supabase documents with an on-device copy
       state.js           app state, loading and saving
       constants.js · helpers.js
-    services/            coach chat · food logging · week plan, shopping and recipes
-    views/               one file per screen: today, coach, plan, shop, progress
-    events.js            clicks, typing and forms
-    main.js              start-up
-build.py                 python3 build.py → index.html
+    services/            ai · auth (sign-in) · coach chat · food logging · planner
+    views/               auth, today, coach, plan, shop, progress
+    events.js · main.js
+supabase/schema.sql      database table and security rules
+config.js                public Supabase URL and anon key
+manifest.webmanifest · sw.js · icons/   home-screen install and offline support
+build.py · dev.py        build the page · run locally
 ```
 
-**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild:
+**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild and push; Vercel redeploys automatically:
 
 ```bash
 python3 build.py

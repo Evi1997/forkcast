@@ -8,7 +8,7 @@ function addItems(items, k = dkey()){
 
 async function analyseFood(text, clarification){
   if (S.busy.log) return;
-  if (!S.sampleOK) { S.err.log = 'Automatic counting needs Claude. Use “Add manually” below in the meantime.'; render(); return; }
+  if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically. Use “Add manually” below in the meantime.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
   const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
