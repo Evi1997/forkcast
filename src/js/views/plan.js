@@ -7,6 +7,7 @@ function vPlan(){
   const di = Math.min(S.planDay, S.plan.days.length - 1), day = S.plan.days[di], t = targets();
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
   return head + notes + `
+  ${S.plan.grocery?.length ? '' : askForList()}
   ${S.plan.notes ? `<p class="muted" style="max-width:70ch">${esc(S.plan.notes)}</p>` : ''}
   <div class="days" role="group" aria-label="Day">${S.plan.days.map((d, i) => { const k = d.meals.reduce((a, m) => a + r0(m.kcal), 0); return `<button class="day-btn" data-act="day" data-i="${i}" aria-pressed="${i === di}"><b>${esc(d.day)}</b><span class="num" style="font-size:.74rem;opacity:.75">${k} kcal</span></button>`; }).join('')}</div>
   <section class="card">

@@ -8,9 +8,27 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
-  if (e.target.dataset.act === 'check') { S.plan.checked = S.plan.checked || {}; S.plan.checked[e.target.dataset.k] = e.target.checked; save.plan(); render(); }
+  if (e.target.dataset.act === 'check') {
+    const k = e.target.dataset.k;
+    if (k.startsWith('x-')) { const x = (S.plan.extra || []).find(x => 'x-' + x.id === k); if (x) x.done = e.target.checked; }
+    else { S.plan.checked = S.plan.checked || {}; S.plan.checked[k] = e.target.checked; }
+    save.plan(); render();
+  }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'addItemForm') {
+    e.preventDefault();
+    const name = $('#extraName').value.trim(); if (!name) return;
+    S.plan.extra = [...(S.plan.extra || []), { id:uid(), name, done:false }]; save.plan(); render(); $('#extraName')?.focus(); return;
+  }
+  if (e.target.id === 'storeForm') {
+    e.preventDefault();
+    const name = $('#storeName').value.trim(); if (!name) return;
+    S.shopStore = name; S.storeOther = false;
+    const sh = S.profile.data.shopping || {};
+    if (!String(sh.supermarkets || '').toLowerCase().includes(name.toLowerCase())) { S.profile.data = merge(S.profile.data, { shopping:{ supermarkets: [sh.supermarkets, name].filter(Boolean).join(', ') } }); save.profile(); }
+    render(); return;
+  }
   if (e.target.id !== 'authForm') return;
   e.preventDefault();
   const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
@@ -69,7 +87,11 @@ document.addEventListener('click', e => {
     addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot:SLOTS.includes(m.slot) ? m.slot : slotNow() }]);
     el.textContent = '✓ Logged'; el.disabled = true;
   }
-  else if (a === 'clearchecks') { S.plan.checked = {}; save.plan(); render(); }
+  else if (a === 'clearchecks') { S.plan.checked = {}; (S.plan.extra || []).forEach(x => x.done = false); save.plan(); render(); }
+  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
+  else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
+  else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
+  else if (a === 'delextra') { S.plan.extra = (S.plan.extra || []).filter(x => 'x-' + x.id !== el.dataset.k); save.plan(); render(); }
   else if (a === 'weigh') {
     const kg = parseFloat($('#wKg').value), date = $('#wDate').value || dkey(), waist = parseFloat($('#wWaist').value);
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }

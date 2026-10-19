@@ -80,7 +80,7 @@ Reply with only JSON:
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
-  shopping(ctx, days){
+  shopping(ctx, days, store){
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
@@ -88,11 +88,12 @@ ${PROMPTS.planContext(ctx)}
 THE WEEK'S PLAN:
 ${days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
 
-Write ONE consolidated grocery list for this week with approximate quantities to buy (local package sizes where sensible, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
+SUPERMARKET: ${store || 'their usual supermarket'}. Use product names, own brands and package sizes typical of this supermarket where you know them, and estimate prices in local currency (never claim they are verified).
+Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
 Reply with only JSON:
-{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg","note":"optional short note"}]}],
+{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","note":"optional short note, e.g. own-brand product name"}]}],
  "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Roast 1 kg chicken thighs","Cook 400 g dry rice"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day"}],
- "budget_note":"one sentence: rough cost estimate in local currency, clearly marked as an estimate (prices not verified)"}
+ "budget_note":"one sentence: rough total cost at this supermarket in local currency, clearly an estimate (prices not verified)"}
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
   },
 

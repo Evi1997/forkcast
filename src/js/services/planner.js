@@ -12,14 +12,44 @@ async function generatePlan(){
     const plan = await S.sample.json(PROMPTS.plan(planContext()), { modelTier:'default', cache:false });
     if (!Array.isArray(plan?.days) || !plan.days.length) throw { code:'invalid_json' };
     S.plan = { weekOf: mondayOf(), created: Date.now(), days: plan.days.slice(0,7), notes: plan.notes || '', recipes:{}, checked:{} };
-    save.plan(); S.busy.plan = 'Building your shopping list and prep schedule…'; render();
-    const shop = await S.sample.json(PROMPTS.shopping(planContext(), S.plan.days), { modelTier:'default', cache:false });
-    S.plan.grocery = Array.isArray(shop?.grocery) ? shop.grocery : [];
-    S.plan.prep = Array.isArray(shop?.prep) ? shop.prep : [];
-    S.plan.budget_note = shop?.budget_note || '';
     save.plan();
   } catch (e) { hardFail(e); S.err.plan = errText(e); }
   S.busy.plan = false; render();
+}
+
+// Supermarkets to choose from: the person's own first, then common ones for their country.
+const STORES_BY_COUNTRY = {
+  spain:['Mercadona','Lidl','Carrefour','Aldi','Dia','Alcampo','Eroski'],
+  greece:['Sklavenitis','AB Vassilopoulos','Lidl','My Market','Masoutis'],
+  'united kingdom':['Tesco','Sainsbury\'s','Aldi','Lidl','Asda','Waitrose'],
+  uk:['Tesco','Sainsbury\'s','Aldi','Lidl','Asda','Waitrose'],
+  'united states':['Walmart','Trader Joe\'s','Whole Foods','Costco','Kroger','Aldi'],
+  usa:['Walmart','Trader Joe\'s','Whole Foods','Costco','Kroger','Aldi'],
+  france:['Carrefour','Leclerc','Lidl','Auchan','Intermarché'],
+  germany:['Rewe','Edeka','Lidl','Aldi','Kaufland'],
+  italy:['Esselunga','Coop','Conad','Lidl','Carrefour']
+};
+function storeOptions(){
+  const own = String(S.profile.data.shopping?.supermarkets || '').split(/,|\/| and /).map(s => s.trim()).filter(Boolean);
+  const country = String(S.profile.data.shopping?.country || '').toLowerCase().trim();
+  const local = STORES_BY_COUNTRY[country] || ['Lidl','Aldi','Carrefour'];
+  const list = [...own, ...local, ...(S.plan?.store ? [S.plan.store] : [])];
+  return [...new Map(list.map(s => [s.toLowerCase(), s])).values()].slice(0, 8);
+}
+
+// Build the shopping list and prep schedule from the current week plan, for one supermarket.
+async function generateShopping(store){
+  if (!S.plan?.days || S.busy.shop) return;
+  if (!S.sampleOK) { S.err.shop = 'Sign in to create your shopping list.'; render(); return; }
+  store = store || S.plan.store || storeOptions()[0] || '';
+  S.busy.shop = true; S.err.shop = null; render();
+  try {
+    const shop = await S.sample.json(PROMPTS.shopping(planContext(), S.plan.days, store), { modelTier:'default', cache:false });
+    if (!Array.isArray(shop?.grocery) || !shop.grocery.length) throw { code:'invalid_json' };
+    Object.assign(S.plan, { store, grocery: shop.grocery, prep: Array.isArray(shop?.prep) ? shop.prep : [], budget_note: shop?.budget_note || '', checked:{} });
+    save.plan();
+  } catch (e) { hardFail(e); S.err.shop = errText(e); }
+  S.busy.shop = false; render();
 }
 async function loadRecipe(key, meal){
   if (S.plan.recipes?.[key]) { S.openRecipe = S.openRecipe === key ? null : key; render(); return; }

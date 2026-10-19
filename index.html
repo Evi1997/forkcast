@@ -414,6 +414,19 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
   .meal{grid-template-columns:minmax(0,1fr);gap:12px}
   .dish{aspect-ratio:16/9}
 }
+
+/* Shopping list: ask card, supermarket chips, add-your-own, basket progress */
+.asker{display:flex;gap:12px;align-items:flex-start}
+.ask-list .bubble{flex:1}
+.stores{display:flex;flex-wrap:wrap;gap:8px}
+.additem{display:flex;gap:8px;align-items:center}
+.additem input{border-radius:22px;min-height:46px;padding:11px 16px}
+.basket-bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.basket-bar span{display:block;height:100%;background:var(--accent);border-radius:99px;box-shadow:inset 0 -3px 0 var(--accent-deep);transition:width .4s}
+.gi{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);cursor:default}
+.gi label{display:flex;gap:12px;align-items:center;flex:1;min-width:0;cursor:pointer;padding:3px 0}
+.gi .gq{margin-left:auto}
+.pulse-blob{animation:breathe 1.2s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -528,7 +541,7 @@ Reply with only JSON:
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
-  shopping(ctx, days){
+  shopping(ctx, days, store){
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
@@ -536,11 +549,12 @@ ${PROMPTS.planContext(ctx)}
 THE WEEK'S PLAN:
 ${days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
 
-Write ONE consolidated grocery list for this week with approximate quantities to buy (local package sizes where sensible, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
+SUPERMARKET: ${store || 'their usual supermarket'}. Use product names, own brands and package sizes typical of this supermarket where you know them, and estimate prices in local currency (never claim they are verified).
+Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
 Reply with only JSON:
-{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg","note":"optional short note"}]}],
+{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","note":"optional short note, e.g. own-brand product name"}]}],
  "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Roast 1 kg chicken thighs","Cook 400 g dry rice"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day"}],
- "budget_note":"one sentence: rough cost estimate in local currency, clearly marked as an estimate (prices not verified)"}
+ "budget_note":"one sentence: rough total cost at this supermarket in local currency, clearly an estimate (prices not verified)"}
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
   },
 
@@ -659,7 +673,8 @@ const save = {
 };
 async function syncRemote(){
   const uid = Store.uid;
-  const keys = ['profile','chat','plan','progress','log-' + dkey()];
+  const today = dkey(); S.logs[today] = S.logs[today] || Store.local('log-' + today) || { items:[] };
+  const keys = ['profile','chat','plan','progress','log-' + today];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
   if (uid !== Store.uid) return; // signed out meanwhile
   vals.forEach((v, i) => {
@@ -926,14 +941,44 @@ async function generatePlan(){
     const plan = await S.sample.json(PROMPTS.plan(planContext()), { modelTier:'default', cache:false });
     if (!Array.isArray(plan?.days) || !plan.days.length) throw { code:'invalid_json' };
     S.plan = { weekOf: mondayOf(), created: Date.now(), days: plan.days.slice(0,7), notes: plan.notes || '', recipes:{}, checked:{} };
-    save.plan(); S.busy.plan = 'Building your shopping list and prep schedule…'; render();
-    const shop = await S.sample.json(PROMPTS.shopping(planContext(), S.plan.days), { modelTier:'default', cache:false });
-    S.plan.grocery = Array.isArray(shop?.grocery) ? shop.grocery : [];
-    S.plan.prep = Array.isArray(shop?.prep) ? shop.prep : [];
-    S.plan.budget_note = shop?.budget_note || '';
     save.plan();
   } catch (e) { hardFail(e); S.err.plan = errText(e); }
   S.busy.plan = false; render();
+}
+
+// Supermarkets to choose from: the person's own first, then common ones for their country.
+const STORES_BY_COUNTRY = {
+  spain:['Mercadona','Lidl','Carrefour','Aldi','Dia','Alcampo','Eroski'],
+  greece:['Sklavenitis','AB Vassilopoulos','Lidl','My Market','Masoutis'],
+  'united kingdom':['Tesco','Sainsbury\'s','Aldi','Lidl','Asda','Waitrose'],
+  uk:['Tesco','Sainsbury\'s','Aldi','Lidl','Asda','Waitrose'],
+  'united states':['Walmart','Trader Joe\'s','Whole Foods','Costco','Kroger','Aldi'],
+  usa:['Walmart','Trader Joe\'s','Whole Foods','Costco','Kroger','Aldi'],
+  france:['Carrefour','Leclerc','Lidl','Auchan','Intermarché'],
+  germany:['Rewe','Edeka','Lidl','Aldi','Kaufland'],
+  italy:['Esselunga','Coop','Conad','Lidl','Carrefour']
+};
+function storeOptions(){
+  const own = String(S.profile.data.shopping?.supermarkets || '').split(/,|\/| and /).map(s => s.trim()).filter(Boolean);
+  const country = String(S.profile.data.shopping?.country || '').toLowerCase().trim();
+  const local = STORES_BY_COUNTRY[country] || ['Lidl','Aldi','Carrefour'];
+  const list = [...own, ...local, ...(S.plan?.store ? [S.plan.store] : [])];
+  return [...new Map(list.map(s => [s.toLowerCase(), s])).values()].slice(0, 8);
+}
+
+// Build the shopping list and prep schedule from the current week plan, for one supermarket.
+async function generateShopping(store){
+  if (!S.plan?.days || S.busy.shop) return;
+  if (!S.sampleOK) { S.err.shop = 'Sign in to create your shopping list.'; render(); return; }
+  store = store || S.plan.store || storeOptions()[0] || '';
+  S.busy.shop = true; S.err.shop = null; render();
+  try {
+    const shop = await S.sample.json(PROMPTS.shopping(planContext(), S.plan.days, store), { modelTier:'default', cache:false });
+    if (!Array.isArray(shop?.grocery) || !shop.grocery.length) throw { code:'invalid_json' };
+    Object.assign(S.plan, { store, grocery: shop.grocery, prep: Array.isArray(shop?.prep) ? shop.prep : [], budget_note: shop?.budget_note || '', checked:{} });
+    save.plan();
+  } catch (e) { hardFail(e); S.err.shop = errText(e); }
+  S.busy.shop = false; render();
 }
 async function loadRecipe(key, meal){
   if (S.plan.recipes?.[key]) { S.openRecipe = S.openRecipe === key ? null : key; render(); return; }
@@ -1207,6 +1252,7 @@ function vPlan(){
   const di = Math.min(S.planDay, S.plan.days.length - 1), day = S.plan.days[di], t = targets();
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
   return head + notes + `
+  ${S.plan.grocery?.length ? '' : askForList()}
   ${S.plan.notes ? `<p class="muted" style="max-width:70ch">${esc(S.plan.notes)}</p>` : ''}
   <div class="days" role="group" aria-label="Day">${S.plan.days.map((d, i) => { const k = d.meals.reduce((a, m) => a + r0(m.kcal), 0); return `<button class="day-btn" data-act="day" data-i="${i}" aria-pressed="${i === di}"><b>${esc(d.day)}</b><span class="num" style="font-size:.74rem;opacity:.75">${k} kcal</span></button>`; }).join('')}</div>
   <section class="card">
@@ -1233,21 +1279,59 @@ function dishPhoto(key, m){
 }
 
 // === views/shop.js ===
-// Grocery list and prep schedule view
+// Shopping list (built from the week plan on request), your own extra items,
+// supermarket picker, and the prep schedule.
 function vShop(){
-  const head = `<div class="head"><div><div class="label">${S.profile.data.shopping?.supermarkets ? esc(S.profile.data.shopping.supermarkets) : 'One trip, one prep session'}</div><h1>Shop & prep</h1></div>${S.plan?.grocery ? `<button class="btn" data-act="clearchecks">Untick all</button>` : ''}</div>`;
-  if (!S.plan?.grocery?.length) return head + `<section class="card empty"><div class="blob" aria-hidden="true">🛒</div><h2>No list yet</h2><p>Your shopping list and prep schedule come with your week plan, consolidated so you buy only what the week needs.</p><button class="btn primary" data-act="nav" data-v="plan">Go to week plan</button></section>`;
-  const ch = S.plan.checked || {};
-  const total = S.plan.grocery.reduce((a, g) => a + (g.items || []).length, 0), got = Object.values(ch).filter(Boolean).length;
-  return head + `
+  const store = S.plan?.store;
+  const head = `<div class="head"><div><div class="label">${store ? esc(store) : 'One trip, one prep session'}</div><h1>Shop & prep</h1></div>${S.plan?.grocery?.length ? `<button class="btn small" data-act="clearchecks">Untick all</button>` : ''}</div>`;
+  const err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
+  if (!S.plan?.days) return head + `<section class="card empty"><div class="blob" aria-hidden="true">🛒</div><h2>No list yet</h2><p>Plan your week first. Then Forkcast turns it into one shopping list for your supermarket, so you buy only what the week needs.</p><button class="btn primary" data-act="nav" data-v="plan">Plan my week</button></section>`;
+  if (S.busy.shop) return head + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true">🛒</div><h2>Writing your list…</h2><p>Adding up every ingredient in your week${S.shopStore ? ` for ${esc(S.shopStore)}` : ''}. This takes a few seconds.</p></section>`;
+  if (!S.plan.grocery?.length) return head + err + askForList();
+
+  const ch = S.plan.checked || {}, extra = S.plan.extra || [];
+  const total = S.plan.grocery.reduce((a, g) => a + (g.items || []).length, 0) + extra.length;
+  const got = Object.values(ch).filter(Boolean).length + extra.filter(x => x.done).length;
+  const item = (k, name, qty, note, done, mine) => `<div class="gi ${done ? 'done' : ''}">
+      <label><input type="checkbox" data-act="check" data-k="${k}" ${done ? 'checked' : ''}><span><span class="gname">${esc(name)}</span>${note ? `<br><span class="muted" style="font-size:.8rem">${esc(note)}</span>` : ''}</span></label>
+      <span class="gq">${esc(qty || '')}</span>${mine ? `<button class="x" data-act="delextra" data-k="${k}" aria-label="Remove ${esc(name)}">×</button>` : ''}</div>`;
+  return head + err + `
   <section class="card stack">
-    <div class="row" style="justify-content:space-between"><h2>Grocery list</h2><span class="num muted" style="font-size:.85rem">${got} / ${total} in the basket</span></div>
-    ${S.plan.budget_note ? `<p class="muted" style="font-size:.88rem"><span class="tag est">Estimated</span> ${esc(S.plan.budget_note)}</p>` : ''}
-    <div class="groc">${S.plan.grocery.map((g, gi) => `<div class="grp"><h3>${esc(g.group)}</h3>${(g.items || []).map((it, ii) => { const k = gi + '-' + ii; return `<label class="gi ${ch[k] ? 'done' : ''}"><input type="checkbox" data-act="check" data-k="${k}" ${ch[k] ? 'checked' : ''}><span><span class="gname">${esc(it.name)}</span>${it.note ? `<br><span class="muted" style="font-size:.8rem">${esc(it.note)}</span>` : ''}</span><span class="gq">${esc(it.qty)}</span></label>`; }).join('')}</div>`).join('')}</div>
-    <p class="muted" style="font-size:.8rem">Availability and prices are estimated for your country, not checked live against your supermarket.</p>
+    <div class="row" style="justify-content:space-between"><h2>Shopping list</h2><span class="num muted" style="font-size:.85rem">${got} / ${total} in the basket</span></div>
+    <div class="basket-bar"><span style="width:${total ? got / total * 100 : 0}%"></span></div>
+    ${storePicker(store, true)}
+    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add something else, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
+    ${S.plan.budget_note ? `<p class="muted" style="font-size:.85rem"><span class="tag est">Estimated</span> ${esc(S.plan.budget_note)}</p>` : ''}
+    <div class="groc">
+      ${extra.length ? `<div class="grp"><h3>My items</h3>${extra.map(x => item('x-' + x.id, x.name, '', '', x.done, true)).join('')}</div>` : ''}
+      ${S.plan.grocery.map((g, gi) => `<div class="grp"><h3>${esc(g.group)}</h3>${(g.items || []).map((it, ii) => item(gi + '-' + ii, it.name, it.qty, it.note, ch[gi + '-' + ii], false)).join('')}</div>`).join('')}
+    </div>
+    <p class="muted" style="font-size:.8rem">Products and prices are estimated for ${store ? esc(store) : 'your supermarket'}, not checked live.</p>
   </section>
   ${S.plan.prep?.length ? `<section class="card"><h2>Prep schedule</h2><div class="timeline">${S.plan.prep.map(p => `<div class="tl"><div><h3>${esc(p.when)}</h3><span class="num muted" style="font-size:.8rem">${esc(p.minutes || '')}</span></div><div><ul>${(p.tasks || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
     <dl class="kv" style="grid-template-columns:auto 1fr;margin-top:8px">${p.fridge ? `<dt>Fridge</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fridge)}</dd>` : ''}${p.freeze ? `<dt>Freeze</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.freeze)}</dd>` : ''}${p.fresh ? `<dt>Fresh</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fresh)}</dd>` : ''}</dl></div></div>`).join('')}</div></section>` : ''}`;
+}
+
+// "Shall I create your shopping list?" card, used here and under the week plan.
+function askForList(){
+  return `<section class="card stack ask-list">
+    <div class="asker"><span class="ai-avatar" aria-hidden="true">${STAR}</span><div class="bubble">Your week is planned. Shall I create your shopping list?</div></div>
+    <div><div class="label" style="margin-bottom:8px">Where are you shopping?</div>${storePicker(S.shopStore || S.plan?.store || storeOptions()[0], false)}</div>
+    <button class="btn primary big-btn" data-act="genshop">Create my shopping list</button>
+  </section>`;
+}
+
+// Supermarket chips plus "Other". With rebuild, picking a different one offers to redo the list.
+function storePicker(current, rebuild){
+  const opts = storeOptions();
+  const pick = S.shopStore || current;
+  const changed = rebuild && S.shopStore && S.shopStore !== current;
+  return `<div class="stores" role="group" aria-label="Supermarket">
+      ${opts.map(s => `<button class="chip" data-act="store" data-s="${esc(s)}" aria-pressed="${s === pick}">${esc(s)}</button>`).join('')}
+      <button class="chip" data-act="storeother" aria-pressed="${!!S.storeOther}">Other…</button>
+    </div>
+    ${S.storeOther ? `<form class="additem" id="storeForm" style="margin-top:8px"><input type="text" id="storeName" placeholder="Supermarket name" aria-label="Supermarket name" autocomplete="off"><button class="btn small" type="submit">Use</button></form>` : ''}
+    ${changed ? `<div class="notice accent row" style="justify-content:space-between;margin-top:8px"><span>Rebuild the list for <b>${esc(S.shopStore)}</b>? Your ticks are cleared; your own items stay.</span><button class="btn primary small" data-act="genshop">Rebuild list</button></div>` : ''}`;
 }
 
 // === views/progress.js ===
@@ -1350,9 +1434,27 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
-  if (e.target.dataset.act === 'check') { S.plan.checked = S.plan.checked || {}; S.plan.checked[e.target.dataset.k] = e.target.checked; save.plan(); render(); }
+  if (e.target.dataset.act === 'check') {
+    const k = e.target.dataset.k;
+    if (k.startsWith('x-')) { const x = (S.plan.extra || []).find(x => 'x-' + x.id === k); if (x) x.done = e.target.checked; }
+    else { S.plan.checked = S.plan.checked || {}; S.plan.checked[k] = e.target.checked; }
+    save.plan(); render();
+  }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'addItemForm') {
+    e.preventDefault();
+    const name = $('#extraName').value.trim(); if (!name) return;
+    S.plan.extra = [...(S.plan.extra || []), { id:uid(), name, done:false }]; save.plan(); render(); $('#extraName')?.focus(); return;
+  }
+  if (e.target.id === 'storeForm') {
+    e.preventDefault();
+    const name = $('#storeName').value.trim(); if (!name) return;
+    S.shopStore = name; S.storeOther = false;
+    const sh = S.profile.data.shopping || {};
+    if (!String(sh.supermarkets || '').toLowerCase().includes(name.toLowerCase())) { S.profile.data = merge(S.profile.data, { shopping:{ supermarkets: [sh.supermarkets, name].filter(Boolean).join(', ') } }); save.profile(); }
+    render(); return;
+  }
   if (e.target.id !== 'authForm') return;
   e.preventDefault();
   const email = $('#authEmail').value.trim(), pass = $('#authPass').value;
@@ -1411,7 +1513,11 @@ document.addEventListener('click', e => {
     addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot:SLOTS.includes(m.slot) ? m.slot : slotNow() }]);
     el.textContent = '✓ Logged'; el.disabled = true;
   }
-  else if (a === 'clearchecks') { S.plan.checked = {}; save.plan(); render(); }
+  else if (a === 'clearchecks') { S.plan.checked = {}; (S.plan.extra || []).forEach(x => x.done = false); save.plan(); render(); }
+  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
+  else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
+  else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
+  else if (a === 'delextra') { S.plan.extra = (S.plan.extra || []).filter(x => 'x-' + x.id !== el.dataset.k); save.plan(); render(); }
   else if (a === 'weigh') {
     const kg = parseFloat($('#wKg').value), date = $('#wDate').value || dkey(), waist = parseFloat($('#wWaist').value);
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
@@ -1454,6 +1560,15 @@ S.sample = AI;
 try { const v = localStorage.getItem(LS + 'view'); if (v && TABS.some(t => t[0] === v)) S.view = v; } catch {}
 if (Auth.init()) Auth.start(); else render();
 addEventListener('online', render); addEventListener('offline', render);
+// Phones keep the app alive in the background, so pull the latest data from
+// your account whenever the app comes back to the front (e.g. after using the laptop).
+let lastSync = Date.now();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible' || S.auth.status !== 'signed-in' || Date.now() - lastSync < 15000) return;
+  lastSync = Date.now();
+  syncRemote();
+  navigator.serviceWorker?.getRegistration().then(r => r?.update()).catch(() => {});
+});
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
 </script>
 </body>

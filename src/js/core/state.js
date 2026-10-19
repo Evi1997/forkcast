@@ -41,7 +41,8 @@ const save = {
 };
 async function syncRemote(){
   const uid = Store.uid;
-  const keys = ['profile','chat','plan','progress','log-' + dkey()];
+  const today = dkey(); S.logs[today] = S.logs[today] || Store.local('log-' + today) || { items:[] };
+  const keys = ['profile','chat','plan','progress','log-' + today];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
   if (uid !== Store.uid) return; // signed out meanwhile
   vals.forEach((v, i) => {
