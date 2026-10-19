@@ -303,3 +303,14 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .gi label{display:flex;gap:12px;align-items:center;flex:1;min-width:0;cursor:pointer;padding:3px 0}
 .gi .gq{margin-left:auto}
 .pulse-blob{animation:breathe 1.2s ease-in-out infinite}
+
+/* Week plan: compact */
+.plan-notes{background:var(--surface);border-radius:18px;box-shadow:var(--shadow);padding:12px 16px}
+.plan-notes summary{cursor:pointer;font-weight:700;font-size:.92rem;list-style:none;display:flex;justify-content:space-between;align-items:center}
+.plan-notes summary::-webkit-details-marker{display:none}
+.plan-notes summary::after{content:"+";font-size:1.2rem;color:var(--muted)}
+.plan-notes[open] summary::after{content:"–"}
+.plan-notes p{margin-top:8px;color:var(--muted);font-size:.92rem}
+.recipe{grid-template-columns:minmax(0,1fr)!important;gap:14px}
+.recipe-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;font-size:.92rem}
+@media (min-width:821px){.recipe > div:nth-child(2),.recipe > div:nth-child(3){min-width:0}}

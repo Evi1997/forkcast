@@ -52,7 +52,8 @@ async function generateShopping(store){
   S.busy.shop = false; render();
 }
 async function loadRecipe(key, meal){
-  if (S.plan.recipes?.[key]) { S.openRecipe = S.openRecipe === key ? null : key; render(); return; }
+  if (S.openRecipe === key) { S.openRecipe = null; render(); return; }
+  if (S.plan.recipes?.[key]) { S.openRecipe = key; render(); return; }
   if (!S.sampleOK) { S.err.plan = 'Sign in to see recipes.'; render(); return; }
   S.busy.recipe = key; S.openRecipe = key; render();
   try {
