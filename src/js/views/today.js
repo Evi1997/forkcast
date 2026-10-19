@@ -26,32 +26,92 @@ function vToday(){
         <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
       </div>
     </section>
+  ${mealsSection(t)}
   ${focusCard()}
-  <section class="card stack" aria-label="Log food">
-    <h2>Log what you ate</h2>
-    <div class="segmented" role="group" aria-label="Meal">${SLOTS.map(s => `<button data-act="slot" data-s="${s}" aria-pressed="${S.logSlot === s}">${s}</button>`).join('')}</div>
-    <div class="logbox">
-      <textarea id="logText" rows="3" placeholder="What did you have? e.g. 2 eggs, avocado toast and a cappuccino" aria-label="What you ate"></textarea>
-      ${S.logPhoto ? `<div class="logphoto"><img class="thumb" alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span>Photo added</span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button></div>` : ''}
-      <div class="logbar">
-        ${S.canImages ? `<label class="iconbtn" for="photo" title="Add a photo" aria-label="Add a photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></label><input class="hidden-file" type="file" id="photo" accept="image/*">` : ''}
-        <button class="btn primary logsend" data-act="log" ${S.busy.log ? 'disabled' : ''}>${S.busy.log ? '<span class="spinner"></span> Counting…' : 'Count it'}</button>
-      </div>
-    </div>
-    ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
-    ${S.logResult?.clarify ? `<div class="notice accent stack"><b>${esc(S.logResult.clarify)}</b><div class="row">${S.logResult.options.map(o => `<button class="chip" data-act="clarify" data-o="${esc(o)}">${esc(o)}</button>`).join('')}${S.logResult.items.length ? `<button class="btn ghost small" data-act="bestguess">Log the best guess</button>` : ''}</div></div>` : ''}
-    ${S.logResult?.feedback ? `<div class="notice">${S.logResult.added ? `<b>Logged ${S.logResult.added} item${S.logResult.added > 1 ? 's' : ''}.</b> ` : ''}${esc(S.logResult.feedback)}</div>` : ''}
-    <details><summary class="muted" style="cursor:pointer;font-size:.9rem">Add manually</summary>
-      <div class="fields" style="margin-top:10px">
-        <div class="field" style="grid-column:span 2"><label for="mName">Food</label><input type="text" id="mName" placeholder="Protein bar"></div>
-        <div class="field"><label for="mK">kcal</label><input type="number" id="mK" inputmode="numeric"></div>
-        <div class="field"><label for="mP">Protein g</label><input type="number" id="mP" inputmode="numeric"></div>
-        <div class="field"><label for="mC">Carbs g</label><input type="number" id="mC" inputmode="numeric"></div>
-        <div class="field"><label for="mF">Fat g</label><input type="number" id="mF" inputmode="numeric"></div>
-      </div>
-      <div class="row" style="margin-top:10px"><button class="btn" data-act="manual">Add to ${S.logSlot}</button></div>
-    </details>
+  ${S.sheet ? logSheet() : ''}
+  ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+}
+
+// Meal icons: sunrise, sun, apple, moon
+const MEAL_ICON = {
+  Breakfast:'<path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 6v3M5.6 10.6l1.6 1.6M18.4 10.6l-1.6 1.6"/>',
+  Lunch:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+  Snack:'<path d="M12 7c-1.5-2-5-2.2-6.2.6C4.6 10.4 6.3 18 9.5 18c1 0 1.6-.6 2.5-.6s1.5.6 2.5.6c3.2 0 4.9-7.6 3.7-10.4C17 4.8 13.5 5 12 7z"/><path d="M12 7c0-1.5.6-3 2-4"/>',
+  Dinner:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>'
+};
+const MEAL_SHARE = { Breakfast:.25, Lunch:.35, Snack:.10, Dinner:.30 };
+const MEAL_COLOR = { Breakfast:'var(--amber)', Lunch:'var(--accent)', Snack:'var(--pink)', Dinner:'var(--violet)' };
+const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MEAL_ICON[s]}</svg></span>`;
+
+function mealsSection(t){
+  const items = S.logs[dkey()]?.items || [];
+  return `<section class="card meals" aria-label="Meals">
+    <div class="row" style="justify-content:space-between"><h2>Meals</h2><span class="muted" style="font-size:.85rem">Tap + to add food</span></div>
+    ${SLOTS.map(s => {
+      const its = items.filter(i => i.slot === s), k = sumItems(its).kcal, open = S.openMeal === s;
+      const sub = its.length ? `${k} kcal · ${its.map(i => esc(i.name)).join(', ')}` : t ? `Suggested ~${Math.round(t.kcal * MEAL_SHARE[s] / 10) * 10} kcal` : 'Nothing yet';
+      return `<div class="meal-row ${its.length ? 'has' : ''}">
+        <button class="meal-main" data-act="togglemeal" data-s="${s}" ${its.length ? `aria-expanded="${open}"` : 'disabled'}>
+          ${mealIcon(s)}<span class="meal-txt"><b>${s}</b><span>${sub}</span></span>
+        </button>
+        <button class="addbtn" data-act="openlog" data-s="${s}" aria-label="Add food to ${s}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        ${open && its.length ? `<div class="meal-items">${its.map(i => `<div class="mi"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.amount)}${i.amount ? ' · ' : ''}${pfc(i)}</div></div><span class="num">${r0(i.kcal)}</span><button class="x" data-act="del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('')}
   </section>`;
+}
+
+const EXAMPLES = {
+  Breakfast:['2 eggs and toast','Greek yogurt with fruit','Cappuccino'],
+  Lunch:['Chicken salad','Pasta with tomato sauce','Sandwich and an apple'],
+  Snack:['A banana','Handful of almonds','Protein bar'],
+  Dinner:['Salmon, rice and veggies','2 slices of pizza','Lentil soup']
+};
+
+function logSheet(){
+  const slot = S.sheet.slot, r = S.logResult, busy = S.busy.log;
+  let body;
+  if (busy) {
+    body = `<div class="sheet-wait"><div class="pulse">${mealIcon(slot)}</div><b>Counting your ${slot.toLowerCase()}…</b><span class="muted">This takes a few seconds.</span></div>`;
+  } else if (r?.review) {
+    const tot = sumItems(r.review);
+    body = `<div class="review">
+      <div class="review-total"><span class="label">Total</span><span class="big num">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(tot)}</span></div>
+      ${r.review.map((i, n) => `<div class="mi"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</div></div><span class="num">${r0(i.kcal)}</span><button class="x" data-act="dropitem" data-n="${n}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}
+      ${r.feedback ? `<div class="notice">${esc(r.feedback)}</div>` : ''}
+      <p class="muted" style="font-size:.8rem"><span class="tag est">Estimated</span> Numbers are close estimates, not exact.</p>
+    </div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>Add to ${slot}</button><button class="btn ghost" data-act="editlog">Change description</button></div>`;
+  } else if (r?.clarify) {
+    body = `<div class="stack"><div class="bubble">${esc(r.clarify)}</div>
+      <div class="opts">${r.options.map(o => `<button class="opt" data-act="clarify" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>
+      ${r.items.length ? `<button class="btn ghost" data-act="bestguess">Skip, use a typical portion</button>` : ''}</div>`;
+  } else if (S.sheet.manual) {
+    body = `<div class="stack">
+      <div class="field"><label for="mName">Food</label><input type="text" id="mName" placeholder="e.g. Protein bar"></div>
+      <div class="fields"><div class="field"><label for="mK">Calories (kcal)</label><input type="number" id="mK" inputmode="numeric"></div>
+      <div class="field"><label for="mP">Protein (g)</label><input type="number" id="mP" inputmode="numeric"></div>
+      <div class="field"><label for="mC">Carbs (g)</label><input type="number" id="mC" inputmode="numeric"></div>
+      <div class="field"><label for="mF">Fat (g)</label><input type="number" id="mF" inputmode="numeric"></div></div>
+    </div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="manual">Add to ${slot}</button><button class="btn ghost" data-act="manualmode">Back to describing</button></div>`;
+  } else {
+    body = `<div class="stack">
+      ${S.canImages ? `<label class="snap" for="photo">${S.logPhoto ? `<img alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span><b>Photo added</b><span class="muted">Add a few words below if you like</span></span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Take a photo</b><span class="muted">We'll recognise the food for you</span></span>`}</label><input class="hidden-file" type="file" id="photo" accept="image/*">
+      <div class="or"><span>or describe it</span></div>` : ''}
+      <textarea id="logText" class="describe" rows="3" placeholder="Type what you ate, in your own words" aria-label="What you ate"></textarea>
+      <div class="examples">${EXAMPLES[slot].map(e => `<button class="chip" data-act="example" data-t="${esc(e)}">${esc(e)}</button>`).join('')}</div>
+    </div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="log">Count calories</button><button class="btn ghost" data-act="manualmode">I know the calories</button></div>`;
+  }
+  const enter = S.sheet.enter ? ' enter' : '';
+  return `<div class="scrim${enter}" data-act="closesheet"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Add food to ${slot}">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head">${mealIcon(slot)}<h2>Add to ${slot}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>
+    ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
+    ${body}
+  </div>`;
 }
 
 function focusCard(){

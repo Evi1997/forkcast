@@ -19,6 +19,7 @@ document.addEventListener('submit', e => {
   Auth.submit(S.auth.mode, email, pass);
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
     if (e.target.id === 'chatText') sendChat(S.draft.chat);
@@ -35,15 +36,25 @@ document.addEventListener('click', e => {
   else if (a === 'quick') sendChat(el.dataset.q);
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
-  else if (a === 'nophoto') { S.logPhoto = null; render(); }
+  else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; render(); }
+  else if (a === 'openlog') openSheet(el.dataset.s);
+  else if (a === 'closesheet') closeSheet();
+  else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
+  else if (a === 'example') { S.draft.log = S.draft.log.trim() ? S.draft.log.trim() + ', ' + el.dataset.t.toLowerCase() : el.dataset.t; render(); $('#logText')?.focus(); }
+  else if (a === 'manualmode') { S.sheet.manual = !S.sheet.manual; render(); }
+  else if (a === 'confirmlog') confirmLog();
+  else if (a === 'editlog') { S.logResult = null; render(); }
+  else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); render(); }
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
-  else if (a === 'bestguess') { addItems(S.logResult.items.map(i => ({...i, slot:S.logSlot}))); S.logResult = { added:S.logResult.items.length, feedback:'Logged with typical portions. You can remove or adjust items below.' }; S.draft.log = ''; render(); }
+  else if (a === 'bestguess') { S.logResult = { review:S.logResult.items, feedback:null }; render(); }
   else if (a === 'del') { const L = S.logs[dkey()]; L.items = L.items.filter(i => i.id !== el.dataset.id); save.log(); render(); }
   else if (a === 'manual') {
     const n = $('#mName').value.trim(); if (!n) { $('#mName').focus(); return; }
-    addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot:S.logSlot, amount:'manual entry' }]); render();
+    const slot = S.sheet?.slot || S.logSlot;
+    addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot, amount:'manual entry' }]);
+    showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
   else if (a === 'genplan') generatePlan();
   else if (a === 'day') { S.planDay = +el.dataset.i; S.openRecipe = null; render(); }

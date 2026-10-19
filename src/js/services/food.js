@@ -8,7 +8,7 @@ function addItems(items, k = dkey()){
 
 async function analyseFood(text, clarification){
   if (S.busy.log) return;
-  if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically. Use “Add manually” below in the meantime.'; render(); return; }
+  if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically, or tap “I know the calories”.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
   const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
@@ -23,10 +23,22 @@ async function analyseFood(text, clarification){
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      addItems(items.map(i => ({...i, slot:S.logSlot})));
-      S.logResult = { feedback: r?.feedback ? String(r.feedback) : null, added: items.length };
-      S.draft.log = ''; S.logPhoto = null;
+      S.logResult = { review: items, feedback: r?.feedback ? String(r.feedback) : null };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
 }
+
+// Save the reviewed items to the open meal and close the sheet.
+function confirmLog(){
+  const items = S.logResult?.review || [];
+  if (!items.length) return;
+  const slot = S.sheet.slot;
+  addItems(items.map(i => ({...i, slot})));
+  showToast(`Added to ${slot} · ${sumItems(items).kcal} kcal`);
+  closeSheet();
+}
+function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
+function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
+let toastTimer;
+function showToast(text){ S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; render(); }, 2600); }

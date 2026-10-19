@@ -6,7 +6,9 @@ function render(){
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
   const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
-  $('#view').innerHTML = v;
+  const view = $('#view');
+  if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
+  view.innerHTML = v;
   if (S.view === 'coach') scrollChat();
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) ct.value = S.draft.chat;

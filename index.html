@@ -256,7 +256,7 @@ th{font-size:.75rem;color:var(--muted);font-weight:700}
 .hidden-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
 .thumb{width:44px;height:44px;border-radius:10px;object-fit:cover}
 @keyframes pop{0%{transform:scale(.96);opacity:.6}100%{transform:none;opacity:1}}
-.view > *{animation:pop .25s ease-out both}
+.view.entering > *:not(.sheet):not(.scrim):not(.toast){animation:pop .25s ease-out both}
 
 @media (max-width:900px){
   .coach{grid-template-columns:minmax(0,1fr)}
@@ -284,23 +284,71 @@ th{font-size:.75rem;color:var(--muted);font-weight:700}
 @media (pointer:coarse){.chip{padding:9px 15px}.btn{min-height:44px}.x{padding:10px 12px}input[type=text],input[type=number],input[type=date],select,textarea{font-size:16px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
-/* Food logging: segmented meal picker + one input box with its actions inside */
-.segmented{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border-radius:16px;background:var(--surface-2)}
-.segmented button{border:0;background:none;padding:9px 4px;border-radius:12px;font-weight:700;font-size:.88rem;color:var(--muted);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
-.segmented button:hover{color:var(--ink)}
-.segmented button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(11,11,18,.08),0 2px 8px rgba(11,11,18,.06)}
-.logbox{display:flex;flex-direction:column;border-radius:20px;background:var(--surface-2);border:2px solid transparent;transition:border-color .15s,background .15s}
-.logbox:focus-within{border-color:var(--blue);background:var(--surface)}
-.logbox textarea{background:transparent;border:0;border-radius:20px 20px 0 0;padding:16px 16px 6px;min-height:88px;resize:none;line-height:1.45}
-.logbox textarea:focus{box-shadow:none;background:transparent}
-.logphoto{display:flex;align-items:center;gap:10px;padding:4px 16px;font-size:.88rem;font-weight:600;color:var(--muted)}
-.logphoto .x{margin-left:auto}
-.logbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 8px 8px 10px}
-.iconbtn{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
-.iconbtn:hover{background:var(--surface);color:var(--ink)}
-.iconbtn svg{width:24px;height:24px}
-.logsend{margin-left:auto;min-width:132px}
-@media (max-width:420px){.segmented button{font-size:.8rem}}
+/* Meals list (Today) */
+.meals{display:flex;flex-direction:column;gap:6px}
+.meals h2{margin-bottom:6px}
+.meal-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.meal-row:first-of-type{border-top:0}
+.meal-main{display:flex;align-items:center;gap:14px;border:0;background:none;padding:6px 0;text-align:left;min-width:0;cursor:pointer}
+.meal-main:disabled{cursor:default}
+.meal-ic{width:46px;height:46px;border-radius:15px;display:grid;place-items:center;flex:none;color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.meal-ic svg{width:24px;height:24px}
+.meal-txt{display:flex;flex-direction:column;min-width:0}
+.meal-txt b{font-size:1.02rem}
+.meal-txt span{font-size:.86rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meal-row.has .meal-txt span{color:var(--ink)}
+.addbtn{width:44px;height:44px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:inset 0 -3px 0 var(--accent-deep);transition:transform .08s}
+.addbtn:active{transform:translateY(2px);box-shadow:none}
+.addbtn svg{width:20px;height:20px}
+.meal-items{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;padding:2px 0 6px 60px}
+.mi{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.mi .name{font-weight:700}
+.mi .meta{font-size:.8rem;color:var(--muted)}
+
+/* Add-food sheet: bottom sheet on phones, centred dialog on desktop */
+body.sheet-open{overflow:hidden}
+.scrim{position:fixed;inset:0;background:rgba(11,11,18,.45);z-index:40}
+.scrim.enter{animation:fade .2s ease-out both}
+.sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(560px,100%);max-height:92vh;overflow-y:auto;z-index:41;background:var(--surface);border-radius:28px 28px 0 0;padding:10px max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:16px;box-shadow:0 -10px 40px rgba(11,11,18,.18)}
+.sheet.enter{animation:up .28s cubic-bezier(.2,.8,.2,1) both}
+@media (min-width:821px){.sheet{bottom:auto;top:50%;transform:translate(-50%,-50%);border-radius:28px;padding:20px 24px 24px}.sheet.enter{animation:pop .2s ease-out both}.grip{display:none}}
+@keyframes up{from{transform:translate(-50%,100%)}to{transform:translate(-50%,0)}}
+@keyframes fade{from{opacity:0}}
+.grip{width:40px;height:5px;border-radius:99px;background:var(--line);margin:0 auto}
+.sheet-head{display:flex;align-items:center;gap:12px}
+.sheet-head .meal-ic{width:40px;height:40px;border-radius:13px}
+.sheet-head .close{margin-left:auto;font-size:1.6rem}
+.snap{display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;border:2px dashed var(--line);cursor:pointer;transition:border-color .15s,background .15s}
+.snap:hover{border-color:var(--accent);background:var(--accent-soft)}
+.snap > span:not(.snap-ic){display:flex;flex-direction:column;font-size:.9rem;min-width:0}
+.snap b{font-size:1rem}
+.snap img{width:56px;height:56px;border-radius:14px;object-fit:cover}
+.snap .x{margin-left:auto}
+.snap-ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);box-shadow:inset 0 -4px 0 var(--accent-deep);flex:none}
+.snap-ic svg{width:26px;height:26px}
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size:1rem;line-height:1.45;resize:none}
+.examples{display:flex;flex-wrap:wrap;gap:8px}
+.examples .chip{font-weight:600;font-size:.85rem}
+.sheet-actions{display:flex;flex-direction:column;gap:6px}
+.big-btn{width:100%;padding:16px;font-size:1rem;border-radius:16px}
+.sheet-wait{display:flex;flex-direction:column;align-items:center;gap:8px;padding:36px 0;text-align:center}
+.pulse .meal-ic{width:64px;height:64px;border-radius:20px;animation:breathe 1.2s ease-in-out infinite}
+.pulse .meal-ic svg{width:32px;height:32px}
+@keyframes breathe{50%{transform:scale(1.08)}}
+.review{display:flex;flex-direction:column;gap:8px}
+.review-total{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;padding:4px 2px 8px}
+.review-total .big{font-size:2.4rem;font-weight:800;letter-spacing:-.04em}
+.bubble{background:var(--surface-2);padding:14px 16px;border-radius:4px 18px 18px 18px;font-weight:700;font-size:1.05rem}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.opt{border:2px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 10px;font-weight:800;cursor:pointer;box-shadow:inset 0 -3px 0 var(--line)}
+.opt:hover{border-color:var(--accent)}
+.opt:active{transform:translateY(2px);box-shadow:none}
+
+/* Toast */
+.toast{position:fixed;left:0;right:0;margin:0 auto;width:max-content;max-width:calc(100% - 32px);bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:14px;font-weight:700;font-size:.92rem;box-shadow:0 8px 24px rgba(11,11,18,.25);animation:pop .2s ease-out both;white-space:nowrap}
+@media (min-width:821px){.toast{bottom:32px}}
 </style>
 </head>
 <body>
@@ -762,7 +810,7 @@ function addItems(items, k = dkey()){
 
 async function analyseFood(text, clarification){
   if (S.busy.log) return;
-  if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically. Use “Add manually” below in the meantime.'; render(); return; }
+  if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically, or tap “I know the calories”.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
   const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
@@ -777,13 +825,25 @@ async function analyseFood(text, clarification){
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      addItems(items.map(i => ({...i, slot:S.logSlot})));
-      S.logResult = { feedback: r?.feedback ? String(r.feedback) : null, added: items.length };
-      S.draft.log = ''; S.logPhoto = null;
+      S.logResult = { review: items, feedback: r?.feedback ? String(r.feedback) : null };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
 }
+
+// Save the reviewed items to the open meal and close the sheet.
+function confirmLog(){
+  const items = S.logResult?.review || [];
+  if (!items.length) return;
+  const slot = S.sheet.slot;
+  addItems(items.map(i => ({...i, slot})));
+  showToast(`Added to ${slot} · ${sumItems(items).kcal} kcal`);
+  closeSheet();
+}
+function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
+function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
+let toastTimer;
+function showToast(text){ S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; render(); }, 2600); }
 
 // === services/planner.js ===
 // Week plan, shopping list, prep schedule and recipes
@@ -829,7 +889,9 @@ function render(){
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
   const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
-  $('#view').innerHTML = v;
+  const view = $('#view');
+  if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
+  view.innerHTML = v;
   if (S.view === 'coach') scrollChat();
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) ct.value = S.draft.chat;
@@ -871,32 +933,92 @@ function vToday(){
         <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
       </div>
     </section>
+  ${mealsSection(t)}
   ${focusCard()}
-  <section class="card stack" aria-label="Log food">
-    <h2>Log what you ate</h2>
-    <div class="segmented" role="group" aria-label="Meal">${SLOTS.map(s => `<button data-act="slot" data-s="${s}" aria-pressed="${S.logSlot === s}">${s}</button>`).join('')}</div>
-    <div class="logbox">
-      <textarea id="logText" rows="3" placeholder="What did you have? e.g. 2 eggs, avocado toast and a cappuccino" aria-label="What you ate"></textarea>
-      ${S.logPhoto ? `<div class="logphoto"><img class="thumb" alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span>Photo added</span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button></div>` : ''}
-      <div class="logbar">
-        ${S.canImages ? `<label class="iconbtn" for="photo" title="Add a photo" aria-label="Add a photo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></label><input class="hidden-file" type="file" id="photo" accept="image/*">` : ''}
-        <button class="btn primary logsend" data-act="log" ${S.busy.log ? 'disabled' : ''}>${S.busy.log ? '<span class="spinner"></span> Counting…' : 'Count it'}</button>
-      </div>
-    </div>
-    ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
-    ${S.logResult?.clarify ? `<div class="notice accent stack"><b>${esc(S.logResult.clarify)}</b><div class="row">${S.logResult.options.map(o => `<button class="chip" data-act="clarify" data-o="${esc(o)}">${esc(o)}</button>`).join('')}${S.logResult.items.length ? `<button class="btn ghost small" data-act="bestguess">Log the best guess</button>` : ''}</div></div>` : ''}
-    ${S.logResult?.feedback ? `<div class="notice">${S.logResult.added ? `<b>Logged ${S.logResult.added} item${S.logResult.added > 1 ? 's' : ''}.</b> ` : ''}${esc(S.logResult.feedback)}</div>` : ''}
-    <details><summary class="muted" style="cursor:pointer;font-size:.9rem">Add manually</summary>
-      <div class="fields" style="margin-top:10px">
-        <div class="field" style="grid-column:span 2"><label for="mName">Food</label><input type="text" id="mName" placeholder="Protein bar"></div>
-        <div class="field"><label for="mK">kcal</label><input type="number" id="mK" inputmode="numeric"></div>
-        <div class="field"><label for="mP">Protein g</label><input type="number" id="mP" inputmode="numeric"></div>
-        <div class="field"><label for="mC">Carbs g</label><input type="number" id="mC" inputmode="numeric"></div>
-        <div class="field"><label for="mF">Fat g</label><input type="number" id="mF" inputmode="numeric"></div>
-      </div>
-      <div class="row" style="margin-top:10px"><button class="btn" data-act="manual">Add to ${S.logSlot}</button></div>
-    </details>
+  ${S.sheet ? logSheet() : ''}
+  ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+}
+
+// Meal icons: sunrise, sun, apple, moon
+const MEAL_ICON = {
+  Breakfast:'<path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 6v3M5.6 10.6l1.6 1.6M18.4 10.6l-1.6 1.6"/>',
+  Lunch:'<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>',
+  Snack:'<path d="M12 7c-1.5-2-5-2.2-6.2.6C4.6 10.4 6.3 18 9.5 18c1 0 1.6-.6 2.5-.6s1.5.6 2.5.6c3.2 0 4.9-7.6 3.7-10.4C17 4.8 13.5 5 12 7z"/><path d="M12 7c0-1.5.6-3 2-4"/>',
+  Dinner:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>'
+};
+const MEAL_SHARE = { Breakfast:.25, Lunch:.35, Snack:.10, Dinner:.30 };
+const MEAL_COLOR = { Breakfast:'var(--amber)', Lunch:'var(--accent)', Snack:'var(--pink)', Dinner:'var(--violet)' };
+const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MEAL_ICON[s]}</svg></span>`;
+
+function mealsSection(t){
+  const items = S.logs[dkey()]?.items || [];
+  return `<section class="card meals" aria-label="Meals">
+    <div class="row" style="justify-content:space-between"><h2>Meals</h2><span class="muted" style="font-size:.85rem">Tap + to add food</span></div>
+    ${SLOTS.map(s => {
+      const its = items.filter(i => i.slot === s), k = sumItems(its).kcal, open = S.openMeal === s;
+      const sub = its.length ? `${k} kcal · ${its.map(i => esc(i.name)).join(', ')}` : t ? `Suggested ~${Math.round(t.kcal * MEAL_SHARE[s] / 10) * 10} kcal` : 'Nothing yet';
+      return `<div class="meal-row ${its.length ? 'has' : ''}">
+        <button class="meal-main" data-act="togglemeal" data-s="${s}" ${its.length ? `aria-expanded="${open}"` : 'disabled'}>
+          ${mealIcon(s)}<span class="meal-txt"><b>${s}</b><span>${sub}</span></span>
+        </button>
+        <button class="addbtn" data-act="openlog" data-s="${s}" aria-label="Add food to ${s}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+        ${open && its.length ? `<div class="meal-items">${its.map(i => `<div class="mi"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.amount)}${i.amount ? ' · ' : ''}${pfc(i)}</div></div><span class="num">${r0(i.kcal)}</span><button class="x" data-act="del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}</div>` : ''}
+      </div>`;
+    }).join('')}
   </section>`;
+}
+
+const EXAMPLES = {
+  Breakfast:['2 eggs and toast','Greek yogurt with fruit','Cappuccino'],
+  Lunch:['Chicken salad','Pasta with tomato sauce','Sandwich and an apple'],
+  Snack:['A banana','Handful of almonds','Protein bar'],
+  Dinner:['Salmon, rice and veggies','2 slices of pizza','Lentil soup']
+};
+
+function logSheet(){
+  const slot = S.sheet.slot, r = S.logResult, busy = S.busy.log;
+  let body;
+  if (busy) {
+    body = `<div class="sheet-wait"><div class="pulse">${mealIcon(slot)}</div><b>Counting your ${slot.toLowerCase()}…</b><span class="muted">This takes a few seconds.</span></div>`;
+  } else if (r?.review) {
+    const tot = sumItems(r.review);
+    body = `<div class="review">
+      <div class="review-total"><span class="label">Total</span><span class="big num">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(tot)}</span></div>
+      ${r.review.map((i, n) => `<div class="mi"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</div></div><span class="num">${r0(i.kcal)}</span><button class="x" data-act="dropitem" data-n="${n}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}
+      ${r.feedback ? `<div class="notice">${esc(r.feedback)}</div>` : ''}
+      <p class="muted" style="font-size:.8rem"><span class="tag est">Estimated</span> Numbers are close estimates, not exact.</p>
+    </div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>Add to ${slot}</button><button class="btn ghost" data-act="editlog">Change description</button></div>`;
+  } else if (r?.clarify) {
+    body = `<div class="stack"><div class="bubble">${esc(r.clarify)}</div>
+      <div class="opts">${r.options.map(o => `<button class="opt" data-act="clarify" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>
+      ${r.items.length ? `<button class="btn ghost" data-act="bestguess">Skip, use a typical portion</button>` : ''}</div>`;
+  } else if (S.sheet.manual) {
+    body = `<div class="stack">
+      <div class="field"><label for="mName">Food</label><input type="text" id="mName" placeholder="e.g. Protein bar"></div>
+      <div class="fields"><div class="field"><label for="mK">Calories (kcal)</label><input type="number" id="mK" inputmode="numeric"></div>
+      <div class="field"><label for="mP">Protein (g)</label><input type="number" id="mP" inputmode="numeric"></div>
+      <div class="field"><label for="mC">Carbs (g)</label><input type="number" id="mC" inputmode="numeric"></div>
+      <div class="field"><label for="mF">Fat (g)</label><input type="number" id="mF" inputmode="numeric"></div></div>
+    </div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="manual">Add to ${slot}</button><button class="btn ghost" data-act="manualmode">Back to describing</button></div>`;
+  } else {
+    body = `<div class="stack">
+      ${S.canImages ? `<label class="snap" for="photo">${S.logPhoto ? `<img alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span><b>Photo added</b><span class="muted">Add a few words below if you like</span></span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Take a photo</b><span class="muted">We'll recognise the food for you</span></span>`}</label><input class="hidden-file" type="file" id="photo" accept="image/*">
+      <div class="or"><span>or describe it</span></div>` : ''}
+      <textarea id="logText" class="describe" rows="3" placeholder="Type what you ate, in your own words" aria-label="What you ate"></textarea>
+      <div class="examples">${EXAMPLES[slot].map(e => `<button class="chip" data-act="example" data-t="${esc(e)}">${esc(e)}</button>`).join('')}</div>
+    </div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="log">Count calories</button><button class="btn ghost" data-act="manualmode">I know the calories</button></div>`;
+  }
+  const enter = S.sheet.enter ? ' enter' : '';
+  return `<div class="scrim${enter}" data-act="closesheet"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Add food to ${slot}">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head">${mealIcon(slot)}<h2>Add to ${slot}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>
+    ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
+    ${body}
+  </div>`;
 }
 
 function focusCard(){
@@ -1108,6 +1230,7 @@ document.addEventListener('submit', e => {
   Auth.submit(S.auth.mode, email, pass);
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
     if (e.target.id === 'chatText') sendChat(S.draft.chat);
@@ -1124,15 +1247,25 @@ document.addEventListener('click', e => {
   else if (a === 'quick') sendChat(el.dataset.q);
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
-  else if (a === 'nophoto') { S.logPhoto = null; render(); }
+  else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; render(); }
+  else if (a === 'openlog') openSheet(el.dataset.s);
+  else if (a === 'closesheet') closeSheet();
+  else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
+  else if (a === 'example') { S.draft.log = S.draft.log.trim() ? S.draft.log.trim() + ', ' + el.dataset.t.toLowerCase() : el.dataset.t; render(); $('#logText')?.focus(); }
+  else if (a === 'manualmode') { S.sheet.manual = !S.sheet.manual; render(); }
+  else if (a === 'confirmlog') confirmLog();
+  else if (a === 'editlog') { S.logResult = null; render(); }
+  else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); render(); }
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
-  else if (a === 'bestguess') { addItems(S.logResult.items.map(i => ({...i, slot:S.logSlot}))); S.logResult = { added:S.logResult.items.length, feedback:'Logged with typical portions. You can remove or adjust items below.' }; S.draft.log = ''; render(); }
+  else if (a === 'bestguess') { S.logResult = { review:S.logResult.items, feedback:null }; render(); }
   else if (a === 'del') { const L = S.logs[dkey()]; L.items = L.items.filter(i => i.id !== el.dataset.id); save.log(); render(); }
   else if (a === 'manual') {
     const n = $('#mName').value.trim(); if (!n) { $('#mName').focus(); return; }
-    addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot:S.logSlot, amount:'manual entry' }]); render();
+    const slot = S.sheet?.slot || S.logSlot;
+    addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot, amount:'manual entry' }]);
+    showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
   else if (a === 'genplan') generatePlan();
   else if (a === 'day') { S.planDay = +el.dataset.i; S.openRecipe = null; render(); }
