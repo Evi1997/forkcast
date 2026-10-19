@@ -1,0 +1,931 @@
+<title>Forkcast</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: fintech-clean shell — white canvas, floating cards, one bold hero per view; chunky tactile buttons for the game-like moments */
+:root{
+  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F3F5FA; --ink:#0B0B12; --muted:#6B7080; --line:#ECEEF3;
+  --accent:#58CC02; --accent-deep:#46A302; --accent-ink:#FFFFFF; --accent-soft:#EAF8DD;
+  --pink:#FF4B8B; --amber:#FFAA00; --blue:#1CB0F6; --violet:#7C5CFF;
+  --herb:var(--blue); --saffron:var(--amber); --sky:var(--accent);
+  --warn:#B86E00; --warn-soft:#FFF4DB;
+  --hero:#0B0B12; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.12);
+  --shadow:0 1px 2px rgba(11,11,18,.04), 0 10px 30px rgba(11,11,18,.06);
+  --display:"Plus Jakarta Sans", "Avenir Next", system-ui, sans-serif;
+  --body:"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"Plus Jakarta Sans", system-ui, sans-serif;
+  --r:24px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#000000; --surface:#121217; --surface-2:#1C1C24; --ink:#F5F6FA; --muted:#8D92A3; --line:#23232D;
+  --accent:#6BDB12; --accent-deep:#4E9F0C; --accent-ink:#071300; --accent-soft:#16260A;
+  --pink:#FF6B9F; --amber:#FFBA2E; --blue:#3DBDF8; --violet:#9B82FF;
+  --warn:#FFC25C; --warn-soft:#2A1F08;
+  --hero:#16161E; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
+  --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#000000; --surface:#121217; --surface-2:#1C1C24; --ink:#F5F6FA; --muted:#8D92A3; --line:#23232D;
+  --accent:#6BDB12; --accent-deep:#4E9F0C; --accent-ink:#071300; --accent-soft:#16260A;
+  --pink:#FF6B9F; --amber:#FFBA2E; --blue:#3DBDF8; --violet:#9B82FF;
+  --warn:#FFC25C; --warn-soft:#2A1F08;
+  --hero:#16161E; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
+  --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.025em}
+h1{font-size:clamp(1.9rem,4.4vw,2.6rem);font-weight:800;line-height:1.05}
+h2{font-size:1.2rem;font-weight:800}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-.02em}
+.label{font-size:.78rem;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+
+.app{display:grid;grid-template-columns:244px minmax(0,1fr);min-height:100%}
+.rail{position:sticky;top:0;height:100vh;padding:28px 16px;display:flex;flex-direction:column;gap:30px;background:var(--bg)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.5rem;letter-spacing:-.04em;padding-left:10px}
+.brand i{width:30px;height:30px;border-radius:10px;background:var(--accent);display:inline-block;box-shadow:inset 0 -4px 0 var(--accent-deep);position:relative}
+.brand i::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--accent-ink);opacity:.9}
+.tabs{display:flex;flex-direction:column;gap:4px}
+.tab{display:flex;align-items:center;gap:12px;border:0;background:none;padding:12px 14px;border-radius:16px;cursor:pointer;font-weight:700;color:var(--muted);text-align:left;transition:background .15s,color .15s}
+.tab svg{width:22px;height:22px;flex:none}
+.tab:hover{background:var(--surface-2);color:var(--ink)}
+.tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent-deep)}
+:root[data-theme="dark"] .tab[aria-current="page"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tab[aria-current="page"]{color:var(--accent)}}
+.rail-foot{margin-top:auto;font-size:.78rem;color:var(--muted);padding-left:10px}
+
+main{padding-block:36px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.view{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+
+.card{background:var(--surface);border-radius:var(--r);padding:22px;min-width:0;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* tactile buttons */
+.btn{border:0;background:var(--surface-2);padding:11px 18px;border-radius:14px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;box-shadow:inset 0 -3px 0 rgba(11,11,18,.08);transition:transform .08s,filter .15s}
+.btn:hover{filter:brightness(.97)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:inset 0 -4px 0 var(--accent-deep);text-transform:uppercase;letter-spacing:.04em;font-size:.88rem}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ink{background:var(--ink);color:var(--bg);box-shadow:none}
+.btn.small{padding:8px 13px;font-size:.84rem;border-radius:12px}
+.btn.ghost{background:none;box-shadow:none;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.chip{border:2px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:999px;cursor:pointer;font-size:.88rem;font-weight:700;transition:border-color .15s,color .15s}
+.chip:hover{border-color:var(--accent);color:var(--accent-deep)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;width:100%;min-width:0;font-weight:500}
+textarea{resize:vertical;min-height:54px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);background:var(--surface)}
+
+/* Today hero */
+.hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden;box-shadow:none}
+.hero::before{content:"";position:absolute;width:340px;height:340px;right:-120px;top:-140px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 55%,transparent),transparent 65%);opacity:.55;pointer-events:none}
+.hero::after{content:"";position:absolute;width:300px;height:300px;left:-140px;bottom:-170px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--pink) 50%,transparent),transparent 65%);opacity:.45;pointer-events:none}
+.hero > *{position:relative;z-index:1}
+.hero .label,.hero .muted{color:rgba(255,255,255,.62)}
+.hero .bar{background:var(--hero-track)}
+.fuel{display:grid;grid-template-columns:auto minmax(0,1fr);gap:28px;align-items:center}
+.ring{position:relative;width:184px;height:184px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring .big{font-size:2.5rem;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums}
+.macros{display:flex;flex-direction:column;gap:14px}
+.macro .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:.9rem}
+.macro .top b{font-weight:700}
+.bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:6px}
+.bar span{display:block;height:100%;border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+.streak{display:flex;align-items:center;gap:14px;background:var(--surface);border-radius:20px;padding:12px 16px;box-shadow:var(--shadow)}
+.streak .flame{font-size:1.6rem;line-height:1}
+.streak .n{font-size:1.4rem;font-weight:800;color:var(--amber);font-variant-numeric:tabular-nums;line-height:1}
+.week-dots{display:flex;gap:6px}
+.week-dots span{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:.68rem;font-weight:800;background:var(--surface-2);color:var(--muted)}
+.week-dots span.on{background:var(--amber);color:#fff}
+.week-dots span.today{outline:2px solid var(--amber);outline-offset:2px}
+
+/* dietitian bubble */
+.avatar{width:44px;height:44px;border-radius:14px;background:var(--accent);flex:none}
+.composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+.composer .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.notice{border-radius:18px;padding:14px 16px;background:var(--surface-2);font-size:.92rem}
+.notice.warn{background:var(--warn-soft);color:var(--ink)}
+.notice.accent{background:var(--accent-soft)}
+.slot{display:flex;flex-direction:column}
+.slot-head{display:flex;justify-content:space-between;align-items:baseline;padding:16px 0 4px}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:12px 14px;margin-top:6px;border-radius:16px;background:var(--surface-2)}
+.item .name{font-weight:700}
+.item .meta{font-size:.82rem;color:var(--muted)}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;padding:4px 8px;border-radius:8px;font-size:1.2rem;line-height:1}
+.x:hover{color:var(--pink)}
+.pfc{font-size:.76rem;color:var(--muted);white-space:nowrap;font-weight:700;font-variant-numeric:tabular-nums}
+.pfc .p{color:var(--pink)} .pfc .c{color:var(--amber)} .pfc .f{color:var(--blue)}
+
+/* Coach */
+.coach{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.chat{display:flex;flex-direction:column;height:min(74vh,780px);padding:0;overflow:hidden}
+.msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:82%;padding:13px 16px;border-radius:20px;line-height:1.55}
+.msg.ai{background:var(--surface-2);border-top-left-radius:6px;align-self:flex-start}
+.msg.me{background:var(--blue);color:#fff;border-top-right-radius:6px;align-self:flex-end;white-space:pre-wrap;font-weight:500}
+.msg ul{margin:6px 0;padding-left:18px}
+.msg .flag{margin-top:8px;font-size:.85rem;padding:10px 12px;border-radius:12px;background:var(--warn-soft);color:var(--ink)}
+.msg .logged{margin-top:8px;font-size:.82rem;color:var(--accent-deep);font-weight:800}
+.typing{display:inline-flex;gap:4px;padding:4px 0}
+.typing span{width:8px;height:8px;border-radius:50%;background:var(--muted);animation:b 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.25;transform:none}30%{opacity:1;transform:translateY(-3px)}}
+.quick{display:flex;flex-wrap:wrap;gap:8px;padding:0 22px 12px}
+.chat .composer{border-top:1px solid var(--line);padding:14px 16px}
+.sections{display:flex;flex-direction:column;gap:2px}
+.sec{display:flex;align-items:center;gap:12px;padding:7px 0;font-size:.92rem;font-weight:600}
+.progressbar{height:12px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.progressbar span{display:block;height:100%;background:var(--accent);border-radius:99px;box-shadow:inset 0 -3px 0 var(--accent-deep);transition:width .6s}
+.dot{width:22px;height:22px;border-radius:50%;background:var(--surface-2);flex:none;display:grid;place-items:center}
+.dot.on{background:var(--accent)}
+.dot.on::after{content:"";width:6px;height:10px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:.9rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:.68rem;letter-spacing:.04em;text-transform:uppercase;font-weight:800;padding:3px 8px;border-radius:7px;background:var(--surface-2);color:var(--muted)}
+.tag.est{background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
+.hero .tag.est{background:rgba(255,255,255,.12);color:#fff}
+.tag.med{background:var(--warn-soft);color:var(--warn)}
+
+/* Plan */
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.day-btn{flex:1 0 88px;border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:12px 14px;cursor:pointer;text-align:left;transition:transform .1s}
+.day-btn:hover{transform:translateY(-1px)}
+.day-btn b{display:block;font-size:1.05rem;font-weight:800}
+.day-btn[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.meal{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:16px;padding:18px 0;border-bottom:1px solid var(--line);align-items:start}
+.meal:last-of-type{border-bottom:0}
+.meal .when{display:flex;flex-direction:column;gap:6px}
+.meal .title{font-weight:800;font-size:1.04rem;letter-spacing:-.01em}
+.meal .portion{color:var(--muted);font-size:.9rem;margin-top:2px}
+.meal .swap{font-size:.85rem;margin-top:8px;color:var(--muted);background:var(--surface-2);padding:8px 12px;border-radius:12px}
+.meal .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.prep-pill{align-self:flex-start;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:3px 8px;border-radius:7px;background:color-mix(in srgb,var(--blue) 14%,transparent);color:var(--blue)}
+.prep-pill.fresh{background:color-mix(in srgb,var(--amber) 18%,transparent);color:var(--warn)}
+.recipe{grid-column:1/-1;background:var(--surface-2);border-radius:18px;padding:18px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.4fr);gap:18px}
+.recipe ul,.recipe ol{margin:6px 0 0;padding-left:18px}
+.recipe li{margin-bottom:4px}
+.totals{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:16px 18px;margin-top:8px;border-radius:18px;background:var(--surface-2)}
+
+/* Shop */
+.groc{columns:2 280px;column-gap:28px}
+.grp{break-inside:avoid;margin-bottom:22px}
+.grp h3{margin-bottom:6px}
+.gi{display:flex;gap:12px;align-items:center;padding:9px 0;cursor:pointer;border-bottom:1px solid var(--line)}
+.gi input{appearance:none;-webkit-appearance:none;width:24px;height:24px;border-radius:8px;border:2px solid var(--line);flex:none;margin:0;display:grid;place-items:center;cursor:pointer;transition:background .15s}
+.gi input:checked{background:var(--accent);border-color:var(--accent)}
+.gi input:checked::after{content:"";width:6px;height:11px;border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.gi.done .gname{text-decoration:line-through;color:var(--muted)}
+.gi .gq{margin-left:auto;font-size:.82rem;font-weight:700;color:var(--muted);white-space:nowrap;padding-left:8px}
+.timeline{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.tl{display:grid;grid-template-columns:130px minmax(0,1fr);gap:18px;padding:18px;border-radius:18px;background:var(--surface-2)}
+.tl ul{margin:6px 0;padding-left:18px}
+
+/* Progress */
+.chart{width:100%;height:auto;display:block}
+.sliders{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.sl label{display:flex;justify-content:space-between;gap:8px;font-size:.9rem;font-weight:700}
+.sl input{width:100%;accent-color:var(--accent);height:28px}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:6px;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:10px 6px;border-bottom:1px solid var(--line)}
+th{font-size:.75rem;color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto}
+
+/* focus tips */
+.focus{background:linear-gradient(135deg,color-mix(in srgb,var(--violet) 12%,var(--surface)),var(--surface) 60%)}
+.tips{margin:0;padding-left:0;list-style:none;counter-reset:t;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+.tips li{counter-increment:t;background:var(--surface);border-radius:16px;padding:14px 14px 14px 50px;position:relative;font-size:.93rem;box-shadow:var(--shadow)}
+.tips li::before{content:counter(t);position:absolute;left:14px;top:12px;width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:var(--violet);color:#fff;font-weight:800;font-size:.8rem}
+
+.empty{text-align:center;padding:44px 20px;display:flex;flex-direction:column;align-items:center;gap:12px}
+.empty p{max-width:46ch;color:var(--muted)}
+.empty .blob{width:72px;height:72px;border-radius:24px;background:var(--accent-soft);display:grid;place-items:center;font-size:2rem}
+.spinner{width:16px;height:16px;border:2.5px solid currentColor;border-right-color:transparent;border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.thumb{width:44px;height:44px;border-radius:10px;object-fit:cover}
+@keyframes pop{0%{transform:scale(.96);opacity:.6}100%{transform:none;opacity:1}}
+.view > *{animation:pop .25s ease-out both}
+
+@media (max-width:900px){
+  .coach{grid-template-columns:minmax(0,1fr)}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .rail{position:fixed;inset:auto 0 0 0;height:auto;z-index:20;flex-direction:row;padding:8px max(8px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);border-top:1px solid var(--line)}
+  .brand,.rail-foot{display:none}
+  .tabs{flex-direction:row;width:100%;justify-content:space-around}
+  .tab{flex-direction:column;gap:3px;font-size:.68rem;padding:6px 8px;border-radius:12px}
+  .tab[aria-current="page"]{background:none}
+  main{padding-block:20px 120px}
+  .card{padding:18px;border-radius:22px}
+  .fuel{grid-template-columns:minmax(0,1fr);justify-items:center}
+  .fuel .macros{width:100%}
+  .meal{grid-template-columns:minmax(0,1fr)}
+  .meal .acts{justify-content:flex-start}
+  .recipe{grid-template-columns:minmax(0,1fr)}
+  .tl{grid-template-columns:minmax(0,1fr);gap:6px}
+  .sliders{grid-template-columns:minmax(0,1fr)}
+  .chat{height:70vh}
+  .msg{max-width:90%}
+}
+@media (pointer:coarse){.chip{padding:9px 15px}.btn{min-height:44px}.x{padding:10px 12px}input[type=text],input[type=number],input[type=date],select,textarea{font-size:16px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app">
+  <nav class="rail" aria-label="Sections">
+    <div class="brand"><i></i>forkcast</div>
+    <div class="tabs" id="tabs"></div>
+    <div class="rail-foot" id="railFoot">Nutrition guidance, not medical care.</div>
+  </nav>
+  <main><div class="view" id="view"></div></main>
+</div>
+
+<script>
+/* ---------- constants ---------- */
+const ICONS = {
+  today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5"/><path d="M12 8v4l2.5 2"/></svg>',
+  coach:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2.5c.4 0 .7.3.8.7l.9 3.4a5 5 0 0 0 3.6 3.6l3.4.9a.8.8 0 0 1 0 1.6l-3.4.9a5 5 0 0 0-3.6 3.6l-.9 3.4a.8.8 0 0 1-1.6 0l-.9-3.4a5 5 0 0 0-3.6-3.6l-3.4-.9a.8.8 0 0 1 0-1.6l3.4-.9a5 5 0 0 0 3.6-3.6l.9-3.4c.1-.4.4-.7.8-.7z"/><path d="M18.5 1.5c.2 0 .4.1.4.3l.3 1.1c.2.6.6 1 1.2 1.2l1.1.3a.4.4 0 0 1 0 .8l-1.1.3c-.6.2-1 .6-1.2 1.2l-.3 1.1a.4.4 0 0 1-.8 0l-.3-1.1c-.2-.6-.6-1-1.2-1.2l-1.1-.3a.4.4 0 0 1 0-.8l1.1-.3c.6-.2 1-.6 1.2-1.2l.3-1.1c0-.2.2-.3.4-.3z" opacity=".55"/></svg>',
+  plan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  shop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
+  progress:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-7"/><path d="M15 7h4v4"/></svg>'
+};
+const TABS = [['today','Today'],['coach','Dietitian'],['plan','Week plan'],['shop','Shop & prep'],['progress','Progress']];
+const SLOTS = ['Breakfast','Lunch','Snack','Dinner'];
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const SECTIONS = [
+  ['basics','Body & goal'],['health','Health screening'],['lifestyle','Lifestyle'],
+  ['current_diet','Current eating'],['obstacles','Weak points'],['preferences','Food preferences'],['cooking','Cooking & prep'],['shopping','Shopping & budget']
+];
+
+const COACH_RULES = `You are the dietitian inside "Forkcast", a meal-prep and nutrition app. Act as an experienced, evidence-based dietitian and nutrition coach with 10-15+ years of practice: clinical nutrition, Mediterranean-style principles, sports nutrition, weight-management science, behavioural habit change and meal-prep practicality. Never claim to be or imitate any real person.
+
+HOW YOU WORK
+- Never give a generic diet before understanding the person. Run the first consultation conversationally, 1-3 questions per message, roughly in this order: basics (age, sex, height, weight, goal weight, main goal, daily activity) -> health screening (pregnancy/breastfeeding, diabetes, kidney, liver, heart, GI, thyroid, allergies, intolerances, medications affecting appetite/blood sugar/weight, eating-disorder history or concerns, recent unexplained weight loss) -> lifestyle (job, steps, training type/frequency, sleep, stress, schedule, meal times, travel) -> current eating (ask "What did a normal day of eating look like for you recently?", drinks, coffee, alcohol, takeout, weekends) -> weak points (ALWAYS ask what they see as their weak point or why they think they aren't losing weight / reaching their goal, e.g. weekends, evening snacking, eating out, stress, alcohol; then dig in: when it happens, triggers, what a typical occasion looks like) -> food preferences (ask SEPARATELY what they genuinely enjoy and what they never want; dietary pattern; cuisines) -> cooking & meal prep (skill, appliances, max weekday minutes, leftovers OK, repeats OK, people cooked for; offer A cook fresh / B prep twice a week / C prep once a week / D very low cooking) -> shopping (country, city, supermarket, weekly budget, priority: cheapest/convenience/organic/premium/balance).
+- WEAK POINT FOCUS: once you know the person's weak point, make it a focus area. Give 3-5 specific, practical tips and tricks for that exact situation (e.g. weekends: plan one meal out, prep a Sunday brunch, protein-forward weekend breakfasts, alcohol swaps) and return them in "focus". Weave it into advice, plans and check-ins; ask at each check-in how the weak point went and update the focus if a new one appears.
+- Don't re-ask what the profile already holds unless it may have changed. After onboarding, behave like a follow-up appointment.
+- ALWAYS end your reply with exactly one clear question that moves things forward.
+- When the basics are known, explain the estimated targets briefly: Mifflin-St Jeor BMR -> activity TDEE -> goal. Moderate deficit for fat loss (about 10-20%, max ~500 kcal), modest surplus (~200-300 kcal) for muscle gain, ~TDEE for maintenance. Protein from body weight, activity, age and goal (healthy adults ~1.2-2.2 g/kg). Fiber ~14 g per 1000 kcal. Call these estimates, not measurements.
+- Keep meals the person already eats where possible; small improvements beat overhauls. 80/20 flexibility: dessert, pizza, restaurants and social events can fit. Never call foods good, bad, clean or cheat. Never criticise what someone ate; give neutral, practical feedback (e.g. "you have ~450 kcal left, room for dinner and a small dessert").
+- SAFETY: never encourage starvation, purging, extreme fasting, crash diets, unsafe supplements or very-low-calorie diets. No calorie-deficit plan for anyone under 18 without professional supervision. For pregnancy, diabetes, kidney or liver disease, eating-disorder concerns, rapid unexplained weight change or similar: say you can help organise general nutrition but changes should be coordinated with their healthcare professional, and set medical_flag. No high-protein targets with kidney disease. When uncertain, label KNOWN / ESTIMATED / NEEDS MEDICAL REVIEW.
+- Weekly check-ins: look at trends (several weigh-ins), not single numbers. If adherence was low, improve the plan (swap disliked meals, more volume, easier meals, more protein) before cutting calories. Avoid frequent or aggressive calorie cuts.
+- If the person tells you what they ate, add it to log_items with honest estimates and update them on what's left today.
+- Tone: calm, warm, practical, precise, encouraging without being patronising. Short paragraphs, plain words. Reply in the language the person writes in.`;
+
+const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
+{"reply": string (max ~140 words; **bold** and "- " bullet lines allowed; must end with one question),
+ "quick_replies": array of up to 4 short tap-able answers to your question (strings, may be empty),
+ "profile_patch": object holding ONLY new or changed facts, using these sections and keys:
+   basics{age:number, sex:"female"|"male", height_cm:number, weight_kg:number, goal_weight_kg:number, waist_cm:number, goal:"fat loss"|"muscle gain"|"recomposition"|"maintenance"|"performance"|"healthier eating"|"digestive comfort"|"other", activity:"sedentary"|"light"|"moderate"|"very"|"extra"},
+   health{conditions, allergies, intolerances, medications, notes}, lifestyle{job, steps, training, sleep, stress, schedule, meal_times},
+   current_diet{typical_day, drinks, alcohol, takeout, weekends}, obstacles{weak_point, when, triggers}, preferences{likes, dislikes, pattern, cuisines},
+   cooking{level, appliances, max_weekday_minutes, leftovers_ok, repeats_ok, people, prep_style}, shopping{country, city, supermarkets, budget, priority}.
+   Use short strings or numbers. Write "none" when the person says there is nothing (e.g. no allergies). {} if nothing new.
+ "targets": null, or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} only when you deliberately set or adjust targets,
+ "log_items": [] or [{"name":s,"amount":s,"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n,"slot":"Breakfast"|"Lunch"|"Snack"|"Dinner"}],
+ "focus": null, or {"weak_point": short name e.g. "Weekends", "why": one sentence on what happens, "tips": 3-5 short concrete tips} whenever you identify or update their weak point,
+ "onboarding_complete": true once all eight consultation areas are covered, else false,
+ "medical_flag": null or a one-line note when something NEEDS MEDICAL REVIEW}`;
+
+const GREETING = `Hi, I'm your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
+
+Let's start simple: **how old are you, and what's your height and current weight?**`;
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const r0 = n => Math.round(Number(n) || 0);
+const dkey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fromKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date(y, m-1, d); };
+const daysBetween = (a, b) => Math.round((fromKey(b) - fromKey(a)) / 864e5);
+const mondayOf = (d = new Date()) => { const x = new Date(d); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return dkey(x); };
+const slotNow = () => { const h = new Date().getHours() + new Date().getMinutes()/60; return h < 10.5 ? 'Breakfast' : h < 15 ? 'Lunch' : h < 17.5 ? 'Snack' : 'Dinner'; };
+const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
+function merge(a, b){ const o = {...(a||{})}; for (const k in (b||{})) { const v = b[k]; if (v === null || v === undefined || v === '') continue; o[k] = isObj(v) && isObj(o[k]) ? merge(o[k], v) : v; } return o; }
+function md(s){
+  const lines = esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').split('\n');
+  let out = '', inList = false;
+  for (const l of lines) {
+    const m = l.match(/^\s*[-•]\s+(.*)/);
+    if (m) { if (!inList) { out += '<ul>'; inList = true; } out += `<li>${m[1]}</li>`; continue; }
+    if (inList) { out += '</ul>'; inList = false; }
+    out += l.trim() ? l + '<br>' : '<br>';
+  }
+  if (inList) out += '</ul>';
+  return out.replace(/(<br>)+$/,'').replace(/(<br>){3,}/g,'<br><br>');
+}
+const sumItems = items => items.reduce((t, i) => ({kcal:t.kcal+r0(i.kcal), protein:t.protein+r0(i.protein), carbs:t.carbs+r0(i.carbs), fat:t.fat+r0(i.fat), fiber:t.fiber+r0(i.fiber)}), {kcal:0,protein:0,carbs:0,fat:0,fiber:0});
+const pfc = i => `<span class="pfc"><span class="p">P ${r0(i.protein ?? i.p)}</span> · <span class="c">C ${r0(i.carbs ?? i.c)}</span> · <span class="f">F ${r0(i.fat ?? i.f)}</span></span>`;
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+/* ---------- storage: private per-person db, with browser copy as fallback ---------- */
+const LS = 'mise:v1:';
+const Store = {
+  db: null, uid: null, pending: {}, writing: {},
+  local(k){ try { return JSON.parse(localStorage.getItem(LS + k)); } catch { return null; } },
+  async init(){
+    if (!window.claude?.use) return false;
+    try {
+      const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+      const id = user ? await user.id() : null;
+      if (db && id) { this.db = db; this.uid = id; return true; }
+    } catch {}
+    return false;
+  },
+  ref(k){ return this.db.collection('data/users/' + this.uid).doc(k); },
+  async remote(k){ if (!this.db) return null; try { const s = await this.ref(k).get(); return s.exists ? structuredClone(s.data()) : null; } catch { return null; } },
+  save(k, v){
+    try { localStorage.setItem(LS + k, JSON.stringify(v)); } catch {}
+    if (!this.db) return;
+    this.pending[k] = v; this.flush(k);
+  },
+  async flush(k){
+    if (this.writing[k]) return;
+    this.writing[k] = true;
+    while (this.pending[k]) {
+      const v = this.pending[k]; this.pending[k] = null;
+      try { await this.ref(k).set(JSON.parse(JSON.stringify(v))); } catch (e) { console.warn('save failed', k, e?.code); }
+    }
+    this.writing[k] = false;
+  },
+  async remove(k){ try { localStorage.removeItem(LS + k); } catch {} if (this.db) { try { await this.ref(k).delete(); } catch {} } }
+};
+
+/* ---------- state ---------- */
+const S = {
+  view: 'today',
+  profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
+  chat: { turns:[] },
+  plan: null,
+  progress: { weighins:[], checkins:[] },
+  logs: {},
+  busy: { chat:false, log:false, plan:false, recipe:null },
+  draft: { chat:'', log:'', ask:'' },
+  logSlot: slotNow(),
+  logPhoto: null,
+  logResult: null,
+  planDay: (new Date().getDay() + 6) % 7,
+  openRecipe: null,
+  err: {},
+  sample: null, sampleOK: null, canImages: false, synced: false
+};
+function loadLocal(){
+  S.profile = merge(S.profile, Store.local('profile') || {});
+  S.chat = Store.local('chat') || S.chat;
+  S.plan = Store.local('plan');
+  S.progress = merge(S.progress, Store.local('progress') || {});
+  const t = dkey(); S.logs[t] = Store.local('log-' + t) || {items:[]};
+}
+const save = {
+  profile(){ Store.save('profile', S.profile); },
+  chat(){ S.chat.turns = S.chat.turns.slice(-60); Store.save('chat', S.chat); },
+  plan(){ Store.save('plan', S.plan); },
+  progress(){ Store.save('progress', S.progress); },
+  log(k = dkey()){ Store.save('log-' + k, S.logs[k]); }
+};
+async function syncRemote(){
+  const ok = await Store.init();
+  if (!ok) { render(); return; }
+  const keys = ['profile','chat','plan','progress','log-' + dkey()];
+  const vals = await Promise.all(keys.map(k => Store.remote(k)));
+  vals.forEach((v, i) => {
+    const k = keys[i];
+    if (v) {
+      if (k === 'profile') S.profile = merge(S.profile, v);
+      else if (k === 'chat') S.chat = v;
+      else if (k === 'plan') S.plan = v;
+      else if (k === 'progress') S.progress = merge({weighins:[],checkins:[]}, v);
+      else S.logs[dkey()] = v;
+    } else {
+      const local = Store.local(k);
+      if (local) Store.save(k, local);
+    }
+  });
+  S.synced = true;
+  render();
+}
+
+/* ---------- targets (Mifflin-St Jeor) ---------- */
+const ACT = { sedentary:1.2, light:1.375, moderate:1.55, very:1.725, extra:1.9 };
+function calcTargets(d){
+  const b = d.basics || {};
+  const age = +b.age, h = +b.height_cm, w = +b.weight_kg;
+  if (!age || !h || !w || !b.sex) return null;
+  const bmr = 10*w + 6.25*h - 5*age + (String(b.sex).startsWith('m') ? 5 : -161);
+  const tdee = bmr * (ACT[b.activity] || 1.375);
+  const goal = String(b.goal || 'maintenance');
+  let kcal = tdee;
+  if (goal.includes('loss') && age >= 18) kcal = Math.max(tdee - 500, tdee * 0.82, bmr);
+  else if (goal.includes('gain')) kcal = tdee + 250;
+  else if (goal.includes('recomp')) kcal = tdee - 200;
+  const kidney = /kidney|renal|ckd/i.test(JSON.stringify(d.health || {}));
+  const perKg = kidney ? 0.8 : goal.includes('loss') || goal.includes('gain') ? 1.8 : goal.includes('recomp') ? 2.0 : goal.includes('perform') ? 1.6 : 1.3;
+  const refW = b.goal_weight_kg && goal.includes('loss') && w/((h/100)**2) > 30 ? +b.goal_weight_kg : w;
+  kcal = Math.round(kcal / 10) * 10;
+  const protein = Math.round(perKg * refW);
+  const fat = Math.round(kcal * 0.3 / 9);
+  const carbs = Math.max(0, Math.round((kcal - protein*4 - fat*9) / 4));
+  return { kcal, protein, carbs, fat, fiber: Math.round(kcal/1000*14), bmr: Math.round(bmr), tdee: Math.round(tdee), kidney };
+}
+const targets = () => S.profile.targets || calcTargets(S.profile.data);
+function sectionDone(key){
+  const v = S.profile.data[key];
+  if (key === 'basics') return !!(v && v.age && v.height_cm && v.weight_kg && v.sex && v.goal);
+  return !!(v && Object.values(v).some(x => x !== '' && x != null));
+}
+
+/* ---------- Claude ---------- */
+const ERR = {
+  not_granted:'Claude access was declined for this page, so the dietitian is off for now. Reload the page to allow it.',
+  sampling_disabled:'Claude isn\'t available on this account.',
+  rate_limited:'Too many requests in a row. Give it a minute, then try again.',
+  session_expired:'Your session expired. Sign in again, then retry.',
+  refused:'Claude couldn\'t answer that one. Try rephrasing.',
+  invalid_json:'The answer came back garbled. Try again.',
+  image_rejected:'That photo couldn\'t be read. Try a JPEG or PNG under 20 MB.',
+  prompt_too_large:'That was too much at once. Try a shorter message.'
+};
+const errText = e => ERR[e?.code] || 'Something went wrong reaching Claude. Try again.';
+async function initSample(){
+  if (!window.claude?.use) { S.sampleOK = false; render(); return; }
+  try {
+    S.sample = await claude.use('sample');
+    S.sampleOK = !!S.sample;
+    if (S.sample) { const lim = await S.sample.limits().catch(() => null); S.canImages = !!lim?.images; }
+  } catch { S.sampleOK = false; }
+  render();
+}
+function hardFail(e){ if (['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e?.code)) { S.sampleOK = false; } }
+
+function appState(){
+  const t = targets(), today = sumItems(S.logs[dkey()]?.items || []);
+  return {
+    date: new Date().toDateString(),
+    profile: S.profile.data,
+    targets: t ? {kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber, source:S.profile.targets ? 'set by dietitian' : 'app Mifflin-St Jeor estimate'} : null,
+    consultation: Object.fromEntries(SECTIONS.map(([k]) => [k, sectionDone(k) ? 'covered' : 'not yet'])),
+    onboarding_complete: S.profile.onboarded,
+    eaten_today: { ...today, items: (S.logs[dkey()]?.items || []).map(i => `${i.slot}: ${i.name} (${r0(i.kcal)} kcal)`) },
+    recent_weighins: S.progress.weighins.slice(-8),
+    weak_point_focus: S.profile.focus || null,
+    last_checkins: S.progress.checkins.slice(-2),
+    current_plan: S.plan?.days ? S.plan.days.map(d => `${d.day}: ` + d.meals.map(m => m.name).join(' / ')).join('\n') : 'none yet'
+  };
+}
+
+async function sendChat(text){
+  text = text.trim();
+  if (!text || S.busy.chat) return;
+  if (!S.sampleOK) { S.err.chat = 'The dietitian needs Claude. Open this page on claude.ai, signed in, and allow Claude when asked.'; render(); return; }
+  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING });
+  S.chat.turns.push({ role:'user', content:text });
+  S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
+  save.chat(); render(); scrollChat();
+  const history = S.chat.turns.slice(-24).map(t => ({ role:t.role, content:t.content }));
+  const input = [{ role:'user', content: COACH_RULES + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(appState()) + '\n\nThe conversation follows.' }, ...history];
+  try {
+    const r = await S.sample.json(input, { cache:false });
+    const reply = String(r?.reply || '').trim() || 'Could you tell me a bit more?';
+    if (isObj(r.profile_patch)) S.profile.data = merge(S.profile.data, r.profile_patch);
+    if (isObj(r.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
+    if (r.onboarding_complete && !S.profile.onboarded) { S.profile.onboarded = true; S.profile.onboardedAt = dkey(); }
+    if (isObj(r.focus) && r.focus.weak_point) S.profile.focus = { weak_point:String(r.focus.weak_point), why:String(r.focus.why || ''), tips:(Array.isArray(r.focus.tips) ? r.focus.tips : []).slice(0,5).map(String), at:dkey() };
+    if (r.medical_flag) S.profile.flags = [...new Set([...(S.profile.flags || []), String(r.medical_flag)])].slice(-5);
+    const q = reply.split(/(?<=[.!?])\s+/).reverse().find(s => s.includes('?'));
+    S.profile.nextQuestion = q ? q.replace(/\*\*/g,'') : null;
+    S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
+    let logged = 0;
+    if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()}))); logged = r.log_items.length; }
+    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged });
+    save.profile(); save.chat();
+  } catch (e) {
+    hardFail(e); S.err.chat = errText(e);
+  }
+  S.busy.chat = false; render(); scrollChat();
+}
+function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
+
+/* ---------- food log ---------- */
+function addItems(items, k = dkey()){
+  S.logs[k] = S.logs[k] || {items:[]};
+  for (const i of items) S.logs[k].items.push({ id:uid(), slot:i.slot || S.logSlot, name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber), at:Date.now() });
+  save.log(k);
+  const days = new Set(S.profile.loggedDays || []); if (!days.has(k)) { days.add(k); S.profile.loggedDays = [...days].sort().slice(-90); save.profile(); }
+}
+function streak(){
+  const days = new Set(S.profile.loggedDays || []); let n = 0; const d = new Date();
+  if (!days.has(dkey(d))) d.setDate(d.getDate() - 1);
+  while (days.has(dkey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function streakPill(){
+  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf()), n = streak();
+  const dots = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d); return `<span class="${days.has(k) ? 'on' : ''} ${k === dkey() ? 'today' : ''}" title="${l}">${l[0]}</span>`; }).join('');
+  return `<div class="streak" aria-label="${n} day logging streak"><span class="flame" aria-hidden="true">🔥</span><div><div class="n">${n}</div><div class="label" style="font-size:.7rem">day streak</div></div><div class="week-dots">${dots}</div></div>`;
+}
+async function analyseFood(text, clarification){
+  if (S.busy.log) return;
+  if (!S.sampleOK) { S.err.log = 'Automatic counting needs Claude. Use “Add manually” below in the meantime.'; render(); return; }
+  if (!text.trim() && !S.logPhoto) return;
+  S.busy.log = true; S.err.log = null; render();
+  const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
+  const prompt = `You are an evidence-based dietitian estimating the nutrition of a meal someone logged in a food diary.
+Person's daily targets: ${t ? JSON.stringify({kcal:t.kcal,protein:t.protein,carbs:t.carbs,fat:t.fat,fiber:t.fiber}) : 'not set yet'}.
+Already eaten today before this meal: ${JSON.stringify(eaten)}.
+Meal slot: ${S.logSlot}. Country/region if known: ${S.profile.data.shopping?.country || 'unknown'}.
+What they wrote: """${text || '(no text — see photo)'}"""${S.logPhoto ? '\nA photo of the food is attached; use it to judge items and portions.' : ''}${clarification ? `\nTheir answer to your portion question: """${clarification}""". Do not ask another question.` : ''}
+
+Split it into separate foods with realistic portion estimates (use typical portions when unstated). Numbers are grams for macros.
+Ask a clarifying question ONLY if one portion is genuinely ambiguous and would change the total by more than ~150 kcal; otherwise clarify must be null.
+Reply with only JSON:
+{"items":[{"name":"Scrambled eggs","amount":"2 large","kcal":180,"protein":13,"carbs":2,"fat":13,"fiber":0}],
+ "clarify": null or "Approximately how much rice did you eat: 100 g, 200 g, or something else?",
+ "options": ["100 g","200 g","300 g"],
+ "feedback": "one neutral, practical sentence about the rest of today after this meal (e.g. protein or kcal remaining). Never moralise or label food good/bad."}`;
+  try {
+    const opts = { modelTier:'default' };
+    if (S.logPhoto && S.canImages) opts.images = [S.logPhoto];
+    const r = await S.sample.json(prompt, opts);
+    const items = Array.isArray(r?.items) ? r.items : [];
+    if (r?.clarify && !clarification) {
+      S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
+    } else {
+      addItems(items.map(i => ({...i, slot:S.logSlot})));
+      S.logResult = { feedback: r?.feedback ? String(r.feedback) : null, added: items.length };
+      S.draft.log = ''; S.logPhoto = null;
+    }
+  } catch (e) { hardFail(e); S.err.log = errText(e); }
+  S.busy.log = false; render();
+}
+
+/* ---------- plan, groceries, recipes ---------- */
+function planContext(){
+  const t = targets();
+  return `PERSON (from consultation): ${JSON.stringify(S.profile.data)}
+DAILY TARGETS (estimates): ${t ? JSON.stringify({kcal:t.kcal,protein:t.protein,carbs:t.carbs,fat:t.fat,fiber:t.fiber}) : 'unknown — aim for a balanced ~2000 kcal day'}
+WEAK POINT FOCUS (design the week to help with this): ${JSON.stringify(S.profile.focus || S.profile.data.obstacles || 'not known yet')}
+LATEST CHECK-IN: ${JSON.stringify(S.progress.checkins.slice(-1)[0] || 'none')}`;
+}
+async function generatePlan(){
+  if (S.busy.plan) return;
+  if (!S.sampleOK) { S.err.plan = 'Planning needs Claude. Open this page on claude.ai and allow Claude when asked.'; render(); return; }
+  S.busy.plan = 'Writing your 7 days…'; S.err.plan = null; render();
+  const rules = `You are an experienced evidence-based dietitian writing a realistic 7-day meal-prep plan.
+Rules: build around foods the person enjoys and already eats; never include their dislikes or allergens; respect their dietary pattern, cooking time, prep style and budget; use ingredients sold in their country's normal supermarkets; overlap ingredients across days (batch-cooked proteins, grains, roasted veg, one or two sauces) to limit waste; leftovers and repeats only if they accept them; include 80/20 flexibility (a dessert, a pizza or restaurant night can fit). Keep each day within ~5% of the kcal target and hit protein. Never call foods good/bad/clean/cheat.`;
+  try {
+    const plan = await S.sample.json(`${rules}
+
+${planContext()}
+
+Reply with only JSON:
+{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu"}]}],
+ "notes":"2-3 sentences: the idea behind this week and how prep works"}
+Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`, { modelTier:'default', cache:false });
+    if (!Array.isArray(plan?.days) || !plan.days.length) throw { code:'invalid_json' };
+    S.plan = { weekOf: mondayOf(), created: Date.now(), days: plan.days.slice(0,7), notes: plan.notes || '', recipes:{}, checked:{} };
+    save.plan(); S.busy.plan = 'Building your shopping list and prep schedule…'; render();
+    const shop = await S.sample.json(`${rules}
+
+${planContext()}
+
+THE WEEK'S PLAN:
+${S.plan.days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
+
+Write ONE consolidated grocery list for this week with approximate quantities to buy (local package sizes where sensible, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
+Reply with only JSON:
+{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg","note":"optional short note"}]}],
+ "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Roast 1 kg chicken thighs","Cook 400 g dry rice"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day"}],
+ "budget_note":"one sentence: rough cost estimate in local currency, clearly marked as an estimate (prices not verified)"}
+Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`, { modelTier:'default', cache:false });
+    S.plan.grocery = Array.isArray(shop?.grocery) ? shop.grocery : [];
+    S.plan.prep = Array.isArray(shop?.prep) ? shop.prep : [];
+    S.plan.budget_note = shop?.budget_note || '';
+    save.plan();
+  } catch (e) { hardFail(e); S.err.plan = errText(e); }
+  S.busy.plan = false; render();
+}
+async function loadRecipe(key, meal){
+  if (S.plan.recipes?.[key]) { S.openRecipe = S.openRecipe === key ? null : key; render(); return; }
+  if (!S.sampleOK) { S.err.plan = 'Recipes need Claude.'; render(); return; }
+  S.busy.recipe = key; S.openRecipe = key; render();
+  try {
+    const r = await S.sample.json(`You are a dietitian who cooks. Write a simple, tasty, meal-prep-friendly recipe for: "${meal.name}" (${meal.portion}), about ${meal.kcal} kcal and ${meal.p} g protein per serving.
+Person: ${JSON.stringify({prefs:S.profile.data.preferences, cooking:S.profile.data.cooking, country:S.profile.data.shopping?.country})}.
+Reply with only JSON: {"time":"25 min","serves":"1 (scale ×3 for prep)","ingredients":["…"],"steps":["…"],"storage":"fridge/freezer guidance in one sentence"}`, { modelTier:'quick', cache:{gcTime:864e5} });
+    S.plan.recipes = S.plan.recipes || {}; S.plan.recipes[key] = r; save.plan();
+  } catch (e) { hardFail(e); S.err.plan = errText(e); S.openRecipe = null; }
+  S.busy.recipe = null; render();
+}
+
+/* ---------- render ---------- */
+function render(){
+  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
+  $('#railFoot').textContent = Store.db ? 'Saved privately to your Claude account.' : 'Saved in this browser only.';
+  const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
+  $('#view').innerHTML = v;
+  if (S.view === 'coach') scrollChat();
+  const lt = $('#logText'); if (lt) lt.value = S.draft.log;
+  const ct = $('#chatText'); if (ct) ct.value = S.draft.chat;
+  const at = $('#askText'); if (at) at.value = S.draft.ask;
+}
+
+function claudeBanner(){
+  if (S.sampleOK !== false) return '';
+  return `<div class="notice warn">Your dietitian runs on Claude. Open this page on claude.ai while signed in and allow Claude when it asks. Manual logging, plans you already have and progress tracking keep working without it.</div>`;
+}
+
+function vToday(){
+  const t = targets(), log = S.logs[dkey()] || {items:[]}, eaten = sumItems(log.items);
+  const kcalT = t?.kcal || 0, left = kcalT - eaten.kcal, pct = kcalT ? Math.min(eaten.kcal / kcalT, 1) : 0;
+  const C = 2 * Math.PI * 78;
+  const now = new Date();
+  const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
+  const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
+  return `
+  <div class="head"><div><div class="label">${now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?'}</h1></div>
+  ${streakPill()}</div>
+  ${claudeBanner()}
+  ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
+  ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="nav" data-v="progress">Check in</button></div>` : ''}
+    <section class="card hero fuel" aria-label="Calories and macros">
+      <div class="ring">
+        <svg viewBox="0 0 176 176"><circle cx="88" cy="88" r="78" fill="none" stroke="var(--hero-track)" stroke-width="16"/>
+        <circle cx="88" cy="88" r="78" fill="none" stroke="${left < 0 ? 'var(--amber)' : 'var(--accent)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .6s ease"/></svg>
+        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? 'kcal left' : 'kcal over'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
+      </div>
+      <div class="macros">
+        ${bar('Protein', eaten.protein, t?.protein, 'var(--pink)')}
+        ${bar('Carbs', eaten.carbs, t?.carbs, 'var(--amber)')}
+        ${bar('Fat', eaten.fat, t?.fat, 'var(--blue)')}
+        ${bar('Fiber', eaten.fiber, t?.fiber, 'var(--accent)')}
+        <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
+      </div>
+    </section>
+  ${focusCard()}
+  <section class="card stack" aria-label="Log food">
+    <div class="row" style="justify-content:space-between"><h2>Log what you ate</h2><div class="row">${SLOTS.map(s => `<button class="chip" data-act="slot" data-s="${s}" aria-pressed="${S.logSlot === s}">${s}</button>`).join('')}</div></div>
+    <div class="composer">
+      <textarea id="logText" rows="2" placeholder="e.g. 2 eggs, avocado toast and a cappuccino"></textarea>
+      <div class="tools">
+        ${S.canImages ? `<label class="btn" for="photo" title="Add a photo">${S.logPhoto ? `<img class="thumb" alt="" src="${URL.createObjectURL(S.logPhoto)}" style="width:22px;height:22px">` : '📷'}<span>${S.logPhoto ? 'Photo added' : 'Photo'}</span></label><input class="hidden-file" type="file" id="photo" accept="image/*">` : ''}
+        <button class="btn primary" data-act="log" ${S.busy.log ? 'disabled' : ''}>${S.busy.log ? '<span class="spinner"></span> Counting…' : 'Count it'}</button>
+      </div>
+    </div>
+    ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
+    ${S.logResult?.clarify ? `<div class="notice accent stack"><b>${esc(S.logResult.clarify)}</b><div class="row">${S.logResult.options.map(o => `<button class="chip" data-act="clarify" data-o="${esc(o)}">${esc(o)}</button>`).join('')}${S.logResult.items.length ? `<button class="btn ghost small" data-act="bestguess">Log the best guess</button>` : ''}</div></div>` : ''}
+    ${S.logResult?.feedback ? `<div class="notice">${S.logResult.added ? `<b>Logged ${S.logResult.added} item${S.logResult.added > 1 ? 's' : ''}.</b> ` : ''}${esc(S.logResult.feedback)}</div>` : ''}
+    <details><summary class="muted" style="cursor:pointer;font-size:.9rem">Add manually</summary>
+      <div class="fields" style="margin-top:10px">
+        <div class="field" style="grid-column:span 2"><label for="mName">Food</label><input type="text" id="mName" placeholder="Protein bar"></div>
+        <div class="field"><label for="mK">kcal</label><input type="number" id="mK" inputmode="numeric"></div>
+        <div class="field"><label for="mP">Protein g</label><input type="number" id="mP" inputmode="numeric"></div>
+        <div class="field"><label for="mC">Carbs g</label><input type="number" id="mC" inputmode="numeric"></div>
+        <div class="field"><label for="mF">Fat g</label><input type="number" id="mF" inputmode="numeric"></div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="btn" data-act="manual">Add to ${S.logSlot}</button></div>
+    </details>
+  </section>`;
+}
+
+function focusCard(){
+  const f = S.profile.focus;
+  if (!f) return S.profile.data.basics?.age ? `<section class="card row" style="justify-content:space-between"><span><span class="label">Your focus</span><br><b>What do you think holds you back most?</b> <span class="muted">Weekends, evenings, eating out… naming it lets your dietitian plan around it.</span></span><button class="btn small" data-act="askweak">Tell my dietitian</button></section>` : '';
+  return `<section class="card stack focus" aria-label="Your focus"><div class="row" style="justify-content:space-between"><div><div class="label">Your focus this week</div><h2>${esc(f.weak_point)}</h2></div><button class="btn small" data-act="askweak">Talk it through</button></div>
+  ${f.why ? `<p class="muted">${esc(f.why)}</p>` : ''}
+  <ol class="tips">${f.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol></section>`;
+}
+
+function vCoach(){
+  const turns = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
+  const last = turns[turns.length - 1];
+  const t = targets(), d = S.profile.data, b = d.basics || {};
+  const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
+  return `
+  <div class="head"><div><div class="label">${S.profile.onboarded ? 'Follow-up appointment' : `First consultation · ${done} of ${SECTIONS.length} covered`}</div><h1>Your dietitian</h1></div></div>
+  ${claudeBanner()}
+  <div class="coach">
+    <section class="card chat" aria-label="Conversation">
+      <div class="msgs" aria-live="polite">
+        ${turns.map(m => m.role === 'user' ? `<div class="msg me">${esc(m.content)}</div>` :
+          `<div class="msg ai">${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's diary</div>` : ''}</div>`).join('')}
+        ${S.busy.chat ? `<div class="msg ai"><span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span></div>` : ''}
+      </div>
+      ${!S.busy.chat && last.role === 'assistant' && last.quick?.length ? `<div class="quick">${last.quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
+      ${S.err.chat ? `<div class="notice warn" style="margin:0 16px 10px">${esc(S.err.chat)}</div>` : ''}
+      <div class="composer"><textarea id="chatText" rows="2" placeholder="Type your answer, or tell me what you ate…" aria-label="Message your dietitian"></textarea><button class="btn primary" data-act="send" ${S.busy.chat ? 'disabled' : ''}>Send</button></div>
+    </section>
+    <aside class="stack">
+      <section class="card stack">
+        <div class="row" style="justify-content:space-between"><h3>What I know about you</h3><span class="num muted" style="font-size:.85rem">${done}/${SECTIONS.length}</span></div>
+        <div class="progressbar"><span style="width:${done / SECTIONS.length * 100}%"></span></div>
+        <div class="sections">${SECTIONS.map(([k, l]) => `<div class="sec"><span class="dot ${sectionDone(k) ? 'on' : ''}"></span>${l}</div>`).join('')}</div>
+      </section>
+      <section class="card stack">
+        <div class="row" style="justify-content:space-between"><h3>Daily targets</h3><span class="tag est">Estimated</span></div>
+        ${t ? `<dl class="kv"><dt>Energy</dt><dd>${t.kcal} kcal</dd><dt>Protein</dt><dd>${t.protein} g</dd><dt>Carbs</dt><dd>${t.carbs} g</dd><dt>Fat</dt><dd>${t.fat} g</dd><dt>Fiber</dt><dd>${t.fiber} g</dd>${t.tdee ? `<dt>BMR / TDEE</dt><dd>${t.bmr} / ${t.tdee}</dd>` : ''}</dl>
+        <p class="muted" style="font-size:.8rem">${S.profile.targets ? 'Set during your consultation.' : 'Mifflin-St Jeor, adjusted for activity and goal. Real needs vary; we refine from your weight trend.'}</p>` : `<p class="muted" style="font-size:.88rem">Appear once I know your age, sex, height, weight and goal.</p>`}
+        ${b.weight_kg ? `<dl class="kv"><dt>Weight</dt><dd>${esc(b.weight_kg)} kg</dd>${b.goal ? `<dt>Goal</dt><dd>${esc(b.goal)}</dd>` : ''}${d.shopping?.supermarkets ? `<dt>Shops at</dt><dd>${esc(d.shopping.supermarkets)}</dd>` : ''}</dl>` : ''}
+      </section>
+      ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
+      <section class="stack" style="padding:0 4px">
+        ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, diary and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
+      </section>
+    </aside>
+  </div>`;
+}
+
+function vPlan(){
+  const head = `<div class="head"><div><div class="label">${S.plan ? `Week of ${fromKey(S.plan.weekOf).toLocaleDateString(undefined,{day:'numeric',month:'long'})}` : 'Seven days, prepped ahead'}</div><h1>Week plan</h1></div>
+    <button class="btn ${S.plan ? '' : 'primary'}" data-act="genplan" ${S.busy.plan ? 'disabled' : ''}>${S.busy.plan ? `<span class="spinner"></span> ${esc(S.busy.plan)}` : S.plan ? 'Plan a new week' : 'Plan my week'}</button></div>`;
+  const notes = `${claudeBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}${!S.profile.onboarded && !S.plan ? `<div class="notice accent">Your plan is built from your consultation. Finish it first for a plan that fits your tastes, schedule and supermarket. You can still plan now with what's known.</div>` : ''}`;
+  if (!S.plan?.days) return head + notes + `<section class="card empty"><div class="blob" aria-hidden="true">🥗</div><h2>No plan yet</h2><p>Forkcast writes seven days of meals around the food you like, your targets and how often you want to cook, then turns them into one shopping list and a prep schedule.</p></section>`;
+  const di = Math.min(S.planDay, S.plan.days.length - 1), day = S.plan.days[di], t = targets();
+  const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
+  return head + notes + `
+  ${S.plan.notes ? `<p class="muted" style="max-width:70ch">${esc(S.plan.notes)}</p>` : ''}
+  <div class="days" role="group" aria-label="Day">${S.plan.days.map((d, i) => { const k = d.meals.reduce((a, m) => a + r0(m.kcal), 0); return `<button class="day-btn" data-act="day" data-i="${i}" aria-pressed="${i === di}"><b>${esc(d.day)}</b><span class="num" style="font-size:.74rem;opacity:.75">${k} kcal</span></button>`; }).join('')}</div>
+  <section class="card">
+    ${day.meals.map((m, j) => { const key = di + '-' + j, rec = S.plan.recipes?.[key], open = S.openRecipe === key; return `
+      <div class="meal">
+        <div class="when"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
+        <div><div class="title">${esc(m.name)}</div><div class="portion">${esc(m.portion)}</div><div style="margin-top:6px"><span class="num" style="font-size:.85rem">${r0(m.kcal)} kcal</span> &nbsp;${pfc(m)}</div>${m.swap ? `<div class="swap">Swap: ${esc(m.swap)}</div>` : ''}</div>
+        <div class="acts"><button class="btn small" data-act="recipe" data-k="${key}" data-i="${di}" data-j="${j}">${S.busy.recipe === key ? '<span class="spinner"></span>' : open ? 'Hide recipe' : 'Recipe'}</button><button class="btn small" data-act="logmeal" data-i="${di}" data-j="${j}">I ate this</button></div>
+        ${open && rec ? `<div class="recipe"><div><div class="label">Ingredients · ${esc(rec.serves || '')}</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><div class="label">Method · ${esc(rec.time || '')}</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted" style="font-size:.88rem;margin-top:8px">${esc(rec.storage)}</p>` : ''}</div></div>` : ''}
+      </div>`; }).join('')}
+    <div class="totals"><span><span class="label">Day total</span> <span class="num">${tot.kcal} kcal</span></span><span class="num" style="color:var(--pink)">P ${tot.p} g</span><span class="num" style="color:var(--amber)">C ${tot.c} g</span><span class="num" style="color:var(--blue)">F ${tot.f} g</span>${t ? `<span class="muted" style="font-size:.85rem">Target ${t.kcal} kcal · ${t.protein} g protein</span>` : ''}</div>
+  </section>`;
+}
+
+function vShop(){
+  const head = `<div class="head"><div><div class="label">${S.profile.data.shopping?.supermarkets ? esc(S.profile.data.shopping.supermarkets) : 'One trip, one prep session'}</div><h1>Shop & prep</h1></div>${S.plan?.grocery ? `<button class="btn" data-act="clearchecks">Untick all</button>` : ''}</div>`;
+  if (!S.plan?.grocery?.length) return head + `<section class="card empty"><div class="blob" aria-hidden="true">🛒</div><h2>No list yet</h2><p>Your shopping list and prep schedule come with your week plan, consolidated so you buy only what the week needs.</p><button class="btn primary" data-act="nav" data-v="plan">Go to week plan</button></section>`;
+  const ch = S.plan.checked || {};
+  const total = S.plan.grocery.reduce((a, g) => a + (g.items || []).length, 0), got = Object.values(ch).filter(Boolean).length;
+  return head + `
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between"><h2>Grocery list</h2><span class="num muted" style="font-size:.85rem">${got} / ${total} in the basket</span></div>
+    ${S.plan.budget_note ? `<p class="muted" style="font-size:.88rem"><span class="tag est">Estimated</span> ${esc(S.plan.budget_note)}</p>` : ''}
+    <div class="groc">${S.plan.grocery.map((g, gi) => `<div class="grp"><h3>${esc(g.group)}</h3>${(g.items || []).map((it, ii) => { const k = gi + '-' + ii; return `<label class="gi ${ch[k] ? 'done' : ''}"><input type="checkbox" data-act="check" data-k="${k}" ${ch[k] ? 'checked' : ''}><span><span class="gname">${esc(it.name)}</span>${it.note ? `<br><span class="muted" style="font-size:.8rem">${esc(it.note)}</span>` : ''}</span><span class="gq">${esc(it.qty)}</span></label>`; }).join('')}</div>`).join('')}</div>
+    <p class="muted" style="font-size:.8rem">Availability and prices are estimated for your country, not checked live against your supermarket.</p>
+  </section>
+  ${S.plan.prep?.length ? `<section class="card"><h2>Prep schedule</h2><div class="timeline">${S.plan.prep.map(p => `<div class="tl"><div><h3>${esc(p.when)}</h3><span class="num muted" style="font-size:.8rem">${esc(p.minutes || '')}</span></div><div><ul>${(p.tasks || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
+    <dl class="kv" style="grid-template-columns:auto 1fr;margin-top:8px">${p.fridge ? `<dt>Fridge</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fridge)}</dd>` : ''}${p.freeze ? `<dt>Freeze</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.freeze)}</dd>` : ''}${p.fresh ? `<dt>Fresh</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fresh)}</dd>` : ''}</dl></div></div>`).join('')}</div></section>` : ''}`;
+}
+
+function weightChart(){
+  const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
+  if (w.length < 2) return `<div class="empty" style="padding:24px"><p>${w.length ? 'One weigh-in so far. Add a few more and the trend line appears; one reading on its own says little.' : 'Add your first weigh-in. Weighing 2–3 times a week, same time of day, gives a trend worth reading.'}</p></div>`;
+  const W = 640, H = 220, L = 44, R = 14, T = 14, B = 30;
+  const t0 = fromKey(w[0].date).getTime(), t1 = Math.max(fromKey(w[w.length-1].date).getTime(), t0 + 864e5);
+  const vals = w.map(x => +x.weight); let lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = Math.max((hi - lo) * 0.15, 0.5); lo = Math.floor((lo - pad) * 2) / 2; hi = Math.ceil((hi + pad) * 2) / 2;
+  const X = d => L + (fromKey(d).getTime() - t0) / (t1 - t0) * (W - L - R);
+  const Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const avg = w.map(x => { const win = w.filter(y => daysBetween(y.date, x.date) >= 0 && daysBetween(y.date, x.date) < 7); return { date:x.date, v: win.reduce((a, y) => a + +y.weight, 0) / win.length }; });
+  const ticks = [lo, (lo + hi) / 2, hi];
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weight trend">
+    ${ticks.map(v => `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${v.toFixed(1)}</text>`).join('')}
+    <text x="${L}" y="${H-8}" font-size="11" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${fromKey(w[0].date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</text>
+    <text x="${W-R}" y="${H-8}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${fromKey(w[w.length-1].date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</text>
+    <path d="M${avg.map(a => `${X(a.date)},${Y(a.v)}`).join(' L')} L${X(avg[avg.length-1].date)},${H-B} L${X(avg[0].date)},${H-B}Z" fill="var(--accent)" opacity=".08"/>
+    <polyline points="${avg.map(a => `${X(a.date)},${Y(a.v)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
+    ${w.map(x => `<circle cx="${X(x.date)}" cy="${Y(+x.weight)}" r="3" fill="var(--muted)"/>`).join('')}
+    <circle cx="${X(avg[avg.length-1].date)}" cy="${Y(avg[avg.length-1].v)}" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+  </svg>
+  <div class="row muted" style="font-size:.8rem"><span style="display:inline-block;width:14px;height:3px;background:var(--accent)"></span>7-day average <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-left:10px"></span>single weigh-ins</div>`;
+}
+
+function vProgress(){
+  const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
+  const ck = S.ck || (S.ck = { adherence:7, hunger:5, energy:7 });
+  return `
+  <div class="head"><div><div class="label">Trends over single readings</div><h1>Progress</h1></div></div>
+  <div class="grid2">
+    <section class="card stack"><h2>Weight trend</h2>${weightChart()}</section>
+    <section class="card stack">
+      <h2>Add a weigh-in</h2>
+      <div class="fields">
+        <div class="field"><label for="wDate">Date</label><input type="date" id="wDate" value="${dkey()}"></div>
+        <div class="field"><label for="wKg">Weight (kg)</label><input type="number" id="wKg" step="0.1" inputmode="decimal" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"></div>
+        <div class="field"><label for="wWaist">Waist (cm, optional)</label><input type="number" id="wWaist" step="0.5" inputmode="decimal"></div>
+      </div>
+      <div class="row"><button class="btn ink" data-act="weigh">Save weigh-in</button></div>
+      ${w.length ? `<div class="tablewrap"><table><thead><tr><th>Date</th><th>Weight</th><th>Waist</th><th></th></tr></thead><tbody>${w.slice(-6).reverse().map(x => `<tr><td>${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</td><td class="num">${x.weight} kg</td><td class="num">${x.waist ? x.waist + ' cm' : '–'}</td><td style="text-align:right"><button class="x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in">×</button></td></tr>`).join('')}</tbody></table></div>` : ''}
+    </section>
+  </div>
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between"><h2>Weekly check-in</h2><span class="muted" style="font-size:.85rem">${S.progress.checkins.length ? 'Last: ' + fromKey(S.progress.checkins.slice(-1)[0].date).toLocaleDateString(undefined,{day:'numeric',month:'short'}) : 'Like a follow-up appointment'}</span></div>
+    <div class="sliders">${[['adherence','How closely did you follow the plan?'],['hunger','How hungry were you?'],['energy','How was your energy?']].map(([k, l]) => `<div class="sl"><label for="ck-${k}"><span>${l}</span><span class="num">${ck[k]}/10</span></label><input type="range" min="1" max="10" id="ck-${k}" data-ck="${k}" value="${ck[k]}"></div>`).join('')}</div>
+    <div class="fields">
+      <div class="field"><label for="ckSleep">Sleep</label><input type="text" id="ckSleep" placeholder="~7 h, waking at night"></div>
+      <div class="field"><label for="ckDig">Digestion</label><input type="text" id="ckDig" placeholder="Fine / bloated / …"></div>
+      <div class="field"><label for="ckTrain">Training</label><input type="text" id="ckTrain" placeholder="3 gym sessions, felt strong"></div>
+      <div class="field" style="grid-column:1/-1"><label for="ckWeak">How did your weak point go${S.profile.focus ? ` (${esc(S.profile.focus.weak_point)})` : ''}?</label><input type="text" id="ckWeak" placeholder="e.g. Saturday was fine, Sunday brunch got away from me"></div>
+      <div class="field"><label for="ckLoved">Meals you loved</label><input type="text" id="ckLoved"></div>
+      <div class="field"><label for="ckDisliked">Meals you disliked or are tired of</label><input type="text" id="ckDisliked"></div>
+      <div class="field"><label for="ckChange">Anything changed?</label><input type="text" id="ckChange" placeholder="Schedule, budget, supermarket…"></div>
+    </div>
+    <div class="field"><label for="ckNotes">Cravings, difficulties, social events</label><textarea id="ckNotes" rows="2"></textarea></div>
+    <div class="row"><button class="btn primary" data-act="checkin">Send check-in to my dietitian</button><span class="muted" style="font-size:.85rem">Your dietitian reviews the trend and adjusts the plan with you.</span></div>
+  </section>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('input', e => {
+  const id = e.target.id;
+  if (id === 'logText') S.draft.log = e.target.value;
+  if (id === 'chatText') S.draft.chat = e.target.value;
+  if (id === 'askText') S.draft.ask = e.target.value;
+  if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
+});
+document.addEventListener('change', e => {
+  if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
+  if (e.target.dataset.act === 'check') { S.plan.checked = S.plan.checked || {}; S.plan.checked[e.target.dataset.k] = e.target.checked; save.plan(); render(); }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
+    e.preventDefault();
+    if (e.target.id === 'chatText') sendChat(S.draft.chat);
+    if (e.target.id === 'askText') { S.view = 'coach'; sendChat(S.draft.ask); }
+    if (e.target.id === 'logText') { S.logResult = null; analyseFood(S.draft.log); }
+  }
+});
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]'); if (!el || el.dataset.act === 'check') return;
+  const a = el.dataset.act;
+  const go = v => { S.view = v; render(); window.scrollTo(0, 0); };
+  if (a === 'nav') { go(el.dataset.v); try { localStorage.setItem(LS + 'view', el.dataset.v); } catch {} }
+  else if (a === 'send') sendChat(S.draft.chat);
+  else if (a === 'quick') sendChat(el.dataset.q);
+  else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
+  else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
+  else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
+  else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
+  else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
+  else if (a === 'bestguess') { addItems(S.logResult.items.map(i => ({...i, slot:S.logSlot}))); S.logResult = { added:S.logResult.items.length, feedback:'Logged with typical portions. You can remove or adjust items below.' }; S.draft.log = ''; render(); }
+  else if (a === 'del') { const L = S.logs[dkey()]; L.items = L.items.filter(i => i.id !== el.dataset.id); save.log(); render(); }
+  else if (a === 'manual') {
+    const n = $('#mName').value.trim(); if (!n) { $('#mName').focus(); return; }
+    addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot:S.logSlot, amount:'manual entry' }]); render();
+  }
+  else if (a === 'genplan') generatePlan();
+  else if (a === 'day') { S.planDay = +el.dataset.i; S.openRecipe = null; render(); }
+  else if (a === 'recipe') loadRecipe(el.dataset.k, S.plan.days[+el.dataset.i].meals[+el.dataset.j]);
+  else if (a === 'logmeal') {
+    const m = S.plan.days[+el.dataset.i].meals[+el.dataset.j];
+    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot:SLOTS.includes(m.slot) ? m.slot : slotNow() }]);
+    el.textContent = '✓ Logged'; el.disabled = true;
+  }
+  else if (a === 'clearchecks') { S.plan.checked = {}; save.plan(); render(); }
+  else if (a === 'weigh') {
+    const kg = parseFloat($('#wKg').value), date = $('#wDate').value || dkey(), waist = parseFloat($('#wWaist').value);
+    if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
+    S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
+    if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }
+    save.progress(); render();
+  }
+  else if (a === 'delw') { S.progress.weighins = S.progress.weighins.filter(x => x.date !== el.dataset.d); save.progress(); render(); }
+  else if (a === 'checkin') {
+    const v = id => $('#' + id).value.trim();
+    const c = { date:dkey(), ...S.ck, sleep:v('ckSleep'), digestion:v('ckDig'), training:v('ckTrain'), loved:v('ckLoved'), disliked:v('ckDisliked'), changes:v('ckChange'), weak:v('ckWeak'), notes:v('ckNotes') };
+    S.progress.checkins = S.progress.checkins.concat([c]).slice(-52); save.progress();
+    const w = [...S.progress.weighins].slice(-6).map(x => `${x.date}: ${x.weight} kg${x.waist ? `, waist ${x.waist} cm` : ''}`).join('; ');
+    const msg = `Weekly check-in.\nAdherence ${c.adherence}/10 · hunger ${c.hunger}/10 · energy ${c.energy}/10` +
+      (c.sleep ? `\nSleep: ${c.sleep}` : '') + (c.digestion ? `\nDigestion: ${c.digestion}` : '') + (c.training ? `\nTraining: ${c.training}` : '') +
+      (c.weak ? `\nWeak point${S.profile.focus ? ' (' + S.profile.focus.weak_point + ')' : ''}: ${c.weak}` : '') + (c.loved ? `\nLoved: ${c.loved}` : '') + (c.disliked ? `\nDisliked / tired of: ${c.disliked}` : '') + (c.changes ? `\nChanges: ${c.changes}` : '') +
+      (c.notes ? `\nNotes: ${c.notes}` : '') + (w ? `\nRecent weigh-ins: ${w}` : '');
+    S.ck = null; go('coach'); sendChat(msg);
+  }
+  else if (a === 'askweak') { go('coach'); sendChat(S.profile.focus ? `Let's talk about my weak point (${S.profile.focus.weak_point}). What else could help?` : 'I want to talk about what I think holds me back.'); }
+  else if (a === 'reset') { S.confirmReset = true; render(); }
+  else if (a === 'reset-no') { S.confirmReset = false; render(); }
+  else if (a === 'reset-yes') {
+    ['profile','chat','plan','progress','log-' + dkey()].forEach(k => Store.remove(k));
+    S.profile = { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] };
+    S.chat = { turns:[] }; S.plan = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
+  }
+});
+
+/* ---------- boot ---------- */
+loadLocal();
+try { const v = localStorage.getItem(LS + 'view'); if (v && TABS.some(t => t[0] === v)) S.view = v; } catch {}
+render();
+syncRemote();
+initSample();
+</script>
