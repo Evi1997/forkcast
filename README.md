@@ -32,35 +32,6 @@ Forkcast is a web app you install on your phone's home screen. Everything runs o
 
 The browser never sees the Gemini key: the app calls `/api/ai`, a small Netlify Edge Function that checks you're signed in and then asks Gemini.
 
-## Setup (about 15 minutes, once)
-
-**1. Supabase (sign-in + database)**
-1. Create a free project at [supabase.com](https://supabase.com) (sign in with GitHub).
-2. Open **SQL Editor → New query**, paste [`supabase/schema.sql`](supabase/schema.sql) and click **Run**.
-3. Open **Project Settings → API** and copy the **Project URL** and the **anon public** key.
-4. Put both into [`config.js`](config.js) and push. (They're safe to publish: row-level security means each account only sees its own data.)
-
-**2. Gemini key**
-1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and click **Create API key**.
-2. Keep it secret. It only goes into Netlify, never into the code.
-
-**3. Netlify (your link)**
-1. Sign up at [netlify.com](https://app.netlify.com/signup) with GitHub, then **Add new site → Import an existing project → GitHub** and pick **forkcast**.
-2. Leave the build settings empty (`netlify.toml` handles them). Under **Environment variables**, add `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `PEXELS_API_KEY` for dish photos (free key at [pexels.com/api](https://www.pexels.com/api/)).
-3. Click **Deploy**. Your link looks like `forkcast.netlify.app` (rename it under **Site configuration → Change site name**).
-4. Back in Supabase, open **Authentication → URL Configuration** and set **Site URL** to your Netlify link, so confirmation emails open the app.
-
-**4. On your phone**
-Open your link, sign up, then **Share → Add to Home Screen** (iPhone, Safari) or **⋮ → Install app** (Android, Chrome).
-
-## Run it on your Mac
-
-```bash
-python3 dev.py
-```
-
-Then open http://localhost:3000. For the AI to work locally, create a `.env.local` file (never committed) with the same three variables as in Netlify. Locally the AI runs through `api/ai.py`, a Python twin of the Netlify function.
-
 ## Project structure
 
 `build.py` joins `src/` into the `index.html` that Netlify serves.
@@ -99,12 +70,6 @@ Never edit `index.html` by hand; it is overwritten on every build.
 ## The dietitian skill
 
 [`skill/ai-dietitian/SKILL.md`](skill/ai-dietitian/SKILL.md) is the full dietitian specification as a Claude skill: consultation flow, health screening, energy and macro calculation, meal planning, shopping lists, meal prep, daily tracking, weekly check-ins, the weak-point rule and safety principles.
-
-To use it in Claude Code, copy the folder into your personal skills:
-
-```bash
-cp -r skill/ai-dietitian ~/.claude/skills/
-```
 
 ## The design skill
 
