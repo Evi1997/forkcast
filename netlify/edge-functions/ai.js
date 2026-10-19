@@ -70,20 +70,30 @@ function parseJson(text) {
   return null;
 }
 
+// Gemini 3 models "think" before answering, which is slow. Food counting and
+// recipes need almost none; chat and plans get a little.
+const THINKING = { quick: "minimal", default: "low" };
+
 async function askGemini(contents, tier, wantJson) {
   const key = env("GEMINI_API_KEY");
   if (!key) throw new ApiError("not_configured", "Server is missing GEMINI_API_KEY.");
-  const body = { contents, generationConfig: { temperature: 0.7, ...(wantJson ? { responseMimeType: "application/json" } : {}) } };
+  const generationConfig = { temperature: 0.7, thinkingConfig: { thinkingLevel: THINKING[tier] || "low" }, ...(wantJson ? { responseMimeType: "application/json" } : {}) };
   let last = "";
   for (const model of modelsFor(tier)) {
-    let res;
+    let res, detail = "";
+    const call = (cfg) => fetch(GEMINI_URL(model), { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify({ contents, generationConfig: cfg }) });
     try {
-      res = await fetch(GEMINI_URL(model), { method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key }, body: JSON.stringify(body) });
+      res = await call(generationConfig);
+      if (res.status === 400) {
+        detail = (await res.text()).slice(0, 300);
+        // This model doesn't accept that thinking level: retry with its default.
+        if (/thinking/i.test(detail)) { const { thinkingConfig, ...rest } = generationConfig; res = await call(rest); detail = ""; }
+      }
     } catch (e) {
       throw new ApiError("upstream_error", "Couldn't reach Gemini: " + e.message);
     }
     if (!res.ok) {
-      const detail = (await res.text()).slice(0, 300);
+      detail = detail || (await res.text()).slice(0, 300);
       if (res.status === 429) throw new ApiError("rate_limited", "The free AI limit is used up for now. Try again in a minute, or tomorrow if it's the daily limit.");
       if ((res.status === 400 || res.status === 404) && /not found|not supported/i.test(detail)) { last = detail; continue; }
       throw new ApiError("upstream_error", `Gemini error ${res.status}: ${detail}`);
@@ -95,7 +105,7 @@ async function askGemini(contents, tier, wantJson) {
     }
     const text = (cand.content?.parts || []).filter((p) => !p.thought).map((p) => p.text || "").join("");
     if (!text.trim()) throw new ApiError("empty_completion", "The AI returned nothing. Try again.");
-    return text;
+    return { text, model };
   }
   throw new ApiError("upstream_error", "No Gemini model available: " + last);
 }
@@ -106,10 +116,12 @@ async function answer(request) {
   if (raw.length > 4 * 1024 * 1024) throw new ApiError("prompt_too_large", "That was too much at once (photo too big?).");
   const req = JSON.parse(raw || "{}");
   const wantJson = req.json !== false;
-  const text = await askGemini(toContents(req.input, req.images), req.tier, wantJson);
+  const started = Date.now();
+  const { text, model } = await askGemini(toContents(req.input, req.images), req.tier, wantJson);
   const parsed = wantJson ? parseJson(text) : null;
   if (wantJson && parsed === null) throw new ApiError("invalid_json", "The answer came back garbled. Try again.");
-  return { text, json: parsed };
+  // model and ms make slow answers easy to diagnose (visible in the browser's network tab).
+  return { text, json: parsed, model, ms: Date.now() - started };
 }
 
 export default async (request) => {

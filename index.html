@@ -698,6 +698,7 @@ const AI = {
     const body = await res.json().catch(() => ({}));
     // Errors may arrive with status 200, because the server starts streaming before Gemini answers.
     if (!res.ok || body.code) throw { code: body.code || 'upstream_error', message: body.message };
+    console.info(`AI answered with ${body.model} in ${body.ms} ms`);
     return body.json;
   }
 };
@@ -818,7 +819,7 @@ async function analyseFood(text, clarification){
     targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
     hasPhoto: !!S.logPhoto, clarification });
   try {
-    const opts = { modelTier:'default' };
+    const opts = { modelTier:'quick' }; // fast model, minimal thinking: a meal estimate doesn't need more
     if (S.logPhoto && S.canImages) opts.images = [S.logPhoto];
     const r = await S.sample.json(prompt, opts);
     const items = Array.isArray(r?.items) ? r.items : [];

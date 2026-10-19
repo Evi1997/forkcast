@@ -16,7 +16,7 @@ async function analyseFood(text, clarification){
     targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
     hasPhoto: !!S.logPhoto, clarification });
   try {
-    const opts = { modelTier:'default' };
+    const opts = { modelTier:'quick' }; // fast model, minimal thinking: a meal estimate doesn't need more
     if (S.logPhoto && S.canImages) opts.images = [S.logPhoto];
     const r = await S.sample.json(prompt, opts);
     const items = Array.isArray(r?.items) ? r.items : [];

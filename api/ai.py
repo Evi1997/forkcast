@@ -22,6 +22,7 @@ Environment (in .env.local for local runs):
 import json
 import os
 import re
+import time
 import urllib.error
 import urllib.request
 from http.server import BaseHTTPRequestHandler
@@ -101,19 +102,32 @@ def parse_json(text):
     return None
 
 
+# Gemini 3 models "think" before answering, which is slow. Food counting and
+# recipes need almost none; chat and plans get a little.
+THINKING = {"quick": "minimal", "default": "low"}
+
+
 def ask_gemini(contents, tier, want_json):
     key = os.environ.get("GEMINI_API_KEY")
     if not key:
         raise ApiError(500, "not_configured", "Server is missing GEMINI_API_KEY.")
-    body = {"contents": contents, "generationConfig": {"temperature": 0.7}}
+    config = {"temperature": 0.7, "thinkingConfig": {"thinkingLevel": THINKING.get(tier, "low")}}
     if want_json:
-        body["generationConfig"]["responseMimeType"] = "application/json"
+        config["responseMimeType"] = "application/json"
     last = None
     for model in models_for(tier):
         try:
-            res = http_json(GEMINI_URL.format(model), body, {"x-goog-api-key": key}, timeout=55)
+            try:
+                res = http_json(GEMINI_URL.format(model), {"contents": contents, "generationConfig": config}, {"x-goog-api-key": key}, timeout=55)
+            except urllib.error.HTTPError as e:
+                detail = e.read().decode(errors="ignore")[:300]
+                if e.code != 400 or "thinking" not in detail.lower():
+                    raise urllib.error.HTTPError(e.url, e.code, detail, e.headers, None)
+                # This model doesn't accept that thinking level: retry with its default.
+                plain = {k: v for k, v in config.items() if k != "thinkingConfig"}
+                res = http_json(GEMINI_URL.format(model), {"contents": contents, "generationConfig": plain}, {"x-goog-api-key": key}, timeout=55)
         except urllib.error.HTTPError as e:
-            detail = e.read().decode(errors="ignore")[:300]
+            detail = e.msg if isinstance(e.msg, str) and e.msg.startswith("{") else e.read().decode(errors="ignore")[:300]
             if e.code == 429:
                 raise ApiError(429, "rate_limited", "The free AI limit is used up for now. Try again in a minute, or tomorrow if it's the daily limit.")
             if e.code in (400, 404) and ("not found" in detail.lower() or "not supported" in detail.lower()):
@@ -128,7 +142,7 @@ def ask_gemini(contents, tier, want_json):
         text = "".join(p.get("text", "") for p in (cand.get("content") or {}).get("parts", []) if not p.get("thought"))
         if not text.strip():
             raise ApiError(502, "empty_completion", "The AI returned nothing. Try again.")
-        return text
+        return text, model
     raise ApiError(502, "upstream_error", f"No Gemini model available: {last}")
 
 
@@ -151,11 +165,12 @@ class handler(BaseHTTPRequestHandler):
             req = json.loads(self.rfile.read(length) or b"{}")
             contents = to_contents(req.get("input"), req.get("images"))
             want_json = req.get("json", True)
-            text = ask_gemini(contents, req.get("tier"), want_json)
+            started = time.time()
+            text, model = ask_gemini(contents, req.get("tier"), want_json)
             parsed = parse_json(text) if want_json else None
             if want_json and parsed is None:
                 raise ApiError(502, "invalid_json", "The answer came back garbled. Try again.")
-            self._send(200, {"text": text, "json": parsed})
+            self._send(200, {"text": text, "json": parsed, "model": model, "ms": int((time.time() - started) * 1000)})
         except ApiError as e:
             self._send(e.status, {"code": e.code, "message": e.message})
         except Exception as e:  # keep the app usable whatever happens

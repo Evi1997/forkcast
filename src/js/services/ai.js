@@ -44,6 +44,7 @@ const AI = {
     const body = await res.json().catch(() => ({}));
     // Errors may arrive with status 200, because the server starts streaming before Gemini answers.
     if (!res.ok || body.code) throw { code: body.code || 'upstream_error', message: body.message };
+    console.info(`AI answered with ${body.model} in ${body.ms} ms`);
     return body.json;
   }
 };
