@@ -3,6 +3,10 @@
 [build]
   publish = "."
   command = ""
+  # Save credits: each production deploy costs 15 of the free plan's 300/month.
+  # Pushes to GitHub only deploy when the commit message contains [deploy];
+  # every other push is skipped (exit 0 = skip, 1 = build).
+  ignore = "git log -1 --pretty=%B | grep -q '\\[deploy\\]' && exit 1 || exit 0"
 
 # The Supabase URL and publishable key are public by design (they ship to the
 # browser in config.js; row-level security protects the data). Skip only these
