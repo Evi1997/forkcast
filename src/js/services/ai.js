@@ -1,4 +1,4 @@
-// AI: calls our /api/ai server function, which checks sign-in and asks Gemini.
+// AI: calls the Supabase Edge Function "ai", which checks sign-in and asks Gemini.
 // S.sample.json(input, {modelTier, images}) keeps the same shape the rest of the app uses.
 const ERR = {
   rate_limited:'The free AI limit is used up for now. Try again in a minute, or tomorrow if it\'s the daily limit.',
@@ -7,7 +7,7 @@ const ERR = {
   invalid_json:'The answer came back garbled. Try again.',
   empty_completion:'The AI returned nothing. Try again.',
   prompt_too_large:'That was too much at once. Try a shorter message or a smaller photo.',
-  not_configured:'The AI isn\'t set up on the server yet (missing keys in Netlify).',
+  not_configured:'The AI isn\'t set up on the server yet (add GEMINI_API_KEY in Supabase → Edge Functions → Secrets).',
   offline:'You\'re offline. Connect to the internet and try again.'
 };
 const errText = e => ERR[e?.code] || e?.message || 'Something went wrong reaching the AI. Try again.';
@@ -38,7 +38,8 @@ const AI = {
     const images = opts.images ? await Promise.all([...opts.images].map(photoToBase64)) : [];
     let res;
     try {
-      res = await fetch('/api/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+      const c = window.FORKCAST_CONFIG || {};
+      res = await fetch(c.aiUrl || c.supabaseUrl + '/functions/v1/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token, apikey:c.supabaseAnonKey },
         body: JSON.stringify({ input, images, tier: opts.modelTier === 'quick' ? 'quick' : 'default', json:true }) });
     } catch { throw { code:'offline' }; }
     const body = await res.json().catch(() => ({}));

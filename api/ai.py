@@ -1,7 +1,7 @@
 """POST /api/ai for local runs (python3 dev.py).
 
-Production uses netlify/edge-functions/ai.js, which does the same thing in
-JavaScript; keep the two in step when changing behaviour.
+Production uses supabase/functions/ai/index.ts, which does the same thing in
+TypeScript; keep the two in step when changing behaviour.
 
 Checks the caller is signed in with Supabase, forwards the prompt (and any
 photo) to Google Gemini, and returns the answer. The Gemini key never leaves

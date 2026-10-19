@@ -1,7 +1,8 @@
 # Forkcast
 
-- Standalone PWA on Netlify (static files + Edge Function `netlify/edge-functions/ai.js` at /api/ai), Supabase for auth and data, Google Gemini free tier for AI. Must stay $0: no paid services.
-- `api/ai.py` is a Python twin of the edge function used only by `dev.py`; keep both in step.
+- Standalone PWA on GitHub Pages (https://evi1997.github.io/forkcast/, free unlimited deploys; all paths must stay relative), Supabase for auth, data and the AI Edge Function `supabase/functions/ai/index.ts` (deployed by pasting into the Supabase dashboard), Google Gemini free tier for AI. Must stay $0.
+- `api/ai.py` is a Python twin of the Supabase function used only by `dev.py`; keep both in step.
+- `netlify.toml` and `netlify/` remain only until the old Netlify project is deleted; then remove them.
 - Source is in `src/`; `index.html` is generated. After any change run `python3 build.py`, never edit `index.html` directly.
 - AI behaviour lives in `src/js/core/prompts.js`; the server calls Gemini with JSON output. The dietitian spec is `skill/ai-dietitian/SKILL.md`.
 - Scripts are classic (no import/export) sharing globals; add new files to the `SCRIPTS` list in `build.py`.

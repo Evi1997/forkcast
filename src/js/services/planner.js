@@ -67,7 +67,7 @@ async function loadRecipe(key, meal){
 // being viewed, then saved inside the plan so they never load twice.
 const photoBusy = new Set();
 async function loadDayPhotos(di){
-  if (S.photosOff || !S.plan?.days?.[di]) return;
+  if (S.photosOff || !window.FORKCAST_CONFIG?.photoUrl || !S.plan?.days?.[di]) return;
   S.plan.photos = S.plan.photos || {};
   const todo = S.plan.days[di].meals.map((m, j) => [di + '-' + j, m]).filter(([k]) => !(k in S.plan.photos) && !photoBusy.has(k));
   if (!todo.length) return;
@@ -76,7 +76,7 @@ async function loadDayPhotos(di){
   let changed = false;
   await Promise.all(todo.map(async ([k, m]) => {
     try {
-      const res = await fetch('/api/photo?q=' + encodeURIComponent(m.photo || m.name), { headers:{ Authorization:'Bearer ' + token } });
+      const res = await fetch(window.FORKCAST_CONFIG.photoUrl + '?q=' + encodeURIComponent(m.photo || m.name), { headers:{ Authorization:'Bearer ' + token } });
       const body = await res.json().catch(() => ({}));
       if (res.ok && body.src) { S.plan.photos[k] = body; changed = true; }
       else if (body.code === 'not_found') { S.plan.photos[k] = null; changed = true; }

@@ -7,9 +7,9 @@
 <meta name="description" content="Your AI dietitian and meal-prep planner.">
 <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="icon" href="/icons/icon-192.png" type="image/png">
-<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Forkcast">
@@ -490,7 +490,7 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
   </nav>
   <main><div class="view" id="view"></div></main>
 </div>
-<script src="/config.js"></script>
+<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 // === core/constants.js ===
@@ -784,7 +784,7 @@ function streak(){
 }
 
 // === services/ai.js ===
-// AI: calls our /api/ai server function, which checks sign-in and asks Gemini.
+// AI: calls the Supabase Edge Function "ai", which checks sign-in and asks Gemini.
 // S.sample.json(input, {modelTier, images}) keeps the same shape the rest of the app uses.
 const ERR = {
   rate_limited:'The free AI limit is used up for now. Try again in a minute, or tomorrow if it\'s the daily limit.',
@@ -793,7 +793,7 @@ const ERR = {
   invalid_json:'The answer came back garbled. Try again.',
   empty_completion:'The AI returned nothing. Try again.',
   prompt_too_large:'That was too much at once. Try a shorter message or a smaller photo.',
-  not_configured:'The AI isn\'t set up on the server yet (missing keys in Netlify).',
+  not_configured:'The AI isn\'t set up on the server yet (add GEMINI_API_KEY in Supabase → Edge Functions → Secrets).',
   offline:'You\'re offline. Connect to the internet and try again.'
 };
 const errText = e => ERR[e?.code] || e?.message || 'Something went wrong reaching the AI. Try again.';
@@ -824,7 +824,8 @@ const AI = {
     const images = opts.images ? await Promise.all([...opts.images].map(photoToBase64)) : [];
     let res;
     try {
-      res = await fetch('/api/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token },
+      const c = window.FORKCAST_CONFIG || {};
+      res = await fetch(c.aiUrl || c.supabaseUrl + '/functions/v1/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token, apikey:c.supabaseAnonKey },
         body: JSON.stringify({ input, images, tier: opts.modelTier === 'quick' ? 'quick' : 'default', json:true }) });
     } catch { throw { code:'offline' }; }
     const body = await res.json().catch(() => ({}));
@@ -1048,7 +1049,7 @@ async function loadRecipe(key, meal){
 // being viewed, then saved inside the plan so they never load twice.
 const photoBusy = new Set();
 async function loadDayPhotos(di){
-  if (S.photosOff || !S.plan?.days?.[di]) return;
+  if (S.photosOff || !window.FORKCAST_CONFIG?.photoUrl || !S.plan?.days?.[di]) return;
   S.plan.photos = S.plan.photos || {};
   const todo = S.plan.days[di].meals.map((m, j) => [di + '-' + j, m]).filter(([k]) => !(k in S.plan.photos) && !photoBusy.has(k));
   if (!todo.length) return;
@@ -1057,7 +1058,7 @@ async function loadDayPhotos(di){
   let changed = false;
   await Promise.all(todo.map(async ([k, m]) => {
     try {
-      const res = await fetch('/api/photo?q=' + encodeURIComponent(m.photo || m.name), { headers:{ Authorization:'Bearer ' + token } });
+      const res = await fetch(window.FORKCAST_CONFIG.photoUrl + '?q=' + encodeURIComponent(m.photo || m.name), { headers:{ Authorization:'Bearer ' + token } });
       const body = await res.json().catch(() => ({}));
       if (res.ok && body.src) { S.plan.photos[k] = body; changed = true; }
       else if (body.code === 'not_found') { S.plan.photos[k] = null; changed = true; }
@@ -1646,7 +1647,7 @@ document.addEventListener('visibilitychange', () => {
   syncRemote();
   navigator.serviceWorker?.getRegistration().then(r => r?.update()).catch(() => {});
 });
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
 </html>

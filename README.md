@@ -21,24 +21,22 @@ Clean, white, fintech-style layout inspired by Revolut, with Duolingo-style tact
 
 ## How it runs
 
-Forkcast is a web app you install on your phone's home screen. Everything runs on free tiers:
+Forkcast is a web app you install on your phone's home screen: **https://evi1997.github.io/forkcast/**. Everything runs on free tiers, and deploys never cost anything:
 
 | Piece | Service | Cost |
 | --- | --- | --- |
-| Website, link and server function | [Netlify](https://netlify.com) (Free) | Free |
-| Sign-in and database | [Supabase](https://supabase.com) (Free) | Free |
+| Website and link | [GitHub Pages](https://pages.github.com) | Free, unlimited deploys |
+| Sign-in, database, AI server function | [Supabase](https://supabase.com) (Free) | Free |
 | AI dietitian | [Google Gemini API](https://aistudio.google.com) (free tier) | Free, with daily limits |
-| Dish photos | [Pexels API](https://www.pexels.com/api/) | Free (200 searches/hour) |
 
-The browser never sees the Gemini key: the app calls `/api/ai`, a small Netlify Edge Function that checks you're signed in and then asks Gemini.
+The browser never sees the Gemini key: the app calls the Supabase Edge Function `ai`, which checks you're signed in and then asks Gemini.
 
 ## Project structure
 
-`build.py` joins `src/` into the `index.html` that Netlify serves.
+`build.py` joins `src/` into the `index.html` that GitHub Pages serves.
 
 ```
-netlify/edge-functions/ai.js   server function: checks sign-in, calls Gemini
-netlify/edge-functions/photo.js finds a dish photo on Pexels
+supabase/functions/ai/   AI server function: checks sign-in, calls Gemini
 api/ai.py                Python twin of it, for running locally
 src/
   index.template.html    page shell: head, install tags, nav
@@ -59,7 +57,7 @@ manifest.webmanifest · sw.js · icons/   home-screen install and offline suppor
 build.py · dev.py        build the page · run locally
 ```
 
-**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild and push; Netlify redeploys automatically:
+**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild and push; GitHub Pages updates automatically (free):
 
 ```bash
 python3 build.py

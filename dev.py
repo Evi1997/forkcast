@@ -26,6 +26,8 @@ from photo import handler as PhotoHandler  # noqa: E402
 
 
 class Dev(SimpleHTTPRequestHandler):
+    """Serves the app. Locally, set aiUrl: '/api/ai' in config.js to use the Python twin."""
+
     def __init__(self, *a, **kw):
         super().__init__(*a, directory=str(ROOT), **kw)
 
