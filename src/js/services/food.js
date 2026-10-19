@@ -41,4 +41,4 @@ function confirmLog(){
 function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
 let toastTimer;
-function showToast(text){ S.toast = text; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; render(); }, 2600); }
+function showToast(text, undo){ S.toast = text; S.toastUndo = undo || null; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; S.toastUndo = null; render(); }, undo ? 5000 : 2600); }

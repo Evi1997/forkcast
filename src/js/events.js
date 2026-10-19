@@ -72,7 +72,12 @@ document.addEventListener('click', e => {
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
   else if (a === 'bestguess') { S.logResult = { review:S.logResult.items, feedback:null }; render(); }
-  else if (a === 'del') { const L = S.logs[dkey()]; L.items = L.items.filter(i => i.id !== el.dataset.id); save.log(); render(); }
+  else if (a === 'del') {
+    const L = S.logs[dkey()], idx = L.items.findIndex(i => i.id === el.dataset.id); if (idx < 0) return;
+    const [gone] = L.items.splice(idx, 1); save.log();
+    showToast(`Removed ${gone.name}`, () => { L.items.splice(idx, 0, gone); save.log(); }); render();
+  }
+  else if (a === 'undo') { const u = S.toastUndo; S.toast = null; S.toastUndo = null; if (u) u(); render(); }
   else if (a === 'manual') {
     const n = $('#mName').value.trim(); if (!n) { $('#mName').focus(); return; }
     const slot = S.sheet?.slot || S.logSlot;
@@ -91,7 +96,11 @@ document.addEventListener('click', e => {
   else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
   else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
   else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
-  else if (a === 'delextra') { S.plan.extra = (S.plan.extra || []).filter(x => 'x-' + x.id !== el.dataset.k); save.plan(); render(); }
+  else if (a === 'delextra') {
+    const before = S.plan.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);
+    S.plan.extra = before.filter(x => x !== gone); save.plan();
+    if (gone) showToast(`Removed ${gone.name}`, () => { S.plan.extra = before; save.plan(); }); render();
+  }
   else if (a === 'weigh') {
     const kg = parseFloat($('#wKg').value), date = $('#wDate').value || dkey(), waist = parseFloat($('#wWaist').value);
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }

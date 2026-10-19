@@ -7,7 +7,7 @@ function vCoach(){
   const turns = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
   const last = turns[turns.length - 1];
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
-  const status = S.profile.onboarded ? 'Follow-up appointment' : `Consultation · ${done}/${SECTIONS.length}`;
+  const status = S.profile.onboarded ? 'Follow-up' : `Consultation · ${done}/${SECTIONS.length}`;
   const aiRow = (inner) => `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai">${inner}</div></div>`;
   const enter = S.aboutOpen === 'enter' ? ' enter' : '';
   return `

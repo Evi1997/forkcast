@@ -3,7 +3,7 @@
 import struct, zlib
 from pathlib import Path
 
-GREEN, DEEP, WHITE = (88, 204, 2), (70, 163, 2), (255, 255, 255)
+GREEN, DEEP, WHITE = (31, 122, 79), (23, 96, 61), (255, 255, 255)
 
 def pixel(x, y, n):
     cx = cy = n / 2

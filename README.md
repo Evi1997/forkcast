@@ -106,6 +106,10 @@ To use it in Claude Code, copy the folder into your personal skills:
 cp -r skill/ai-dietitian ~/.claude/skills/
 ```
 
+## The design skill
+
+[`skill/principal-ux-ui-designer/SKILL.md`](skill/principal-ux-ui-designer/SKILL.md) is the UX/UI guide the app's design follows: accessibility (WCAG 2.2 AA), clear hierarchy, recoverable actions, and no dark patterns or shame-based nudges. Install it the same way as the dietitian skill.
+
 ## Safety
 
 Forkcast never encourages starvation, purging, extreme fasting, crash diets or very-low-calorie diets, and does not build calorie-deficit plans for minors. For pregnancy, diabetes, kidney or liver disease, eating-disorder concerns or rapid unexplained weight change, it flags **Needs medical review** and recommends working with a healthcare professional.

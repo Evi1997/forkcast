@@ -7,3 +7,4 @@
 - Scripts are classic (no import/export) sharing globals; add new files to the `SCRIPTS` list in `build.py`.
 - Data model: table `user_docs(user_id, key, data jsonb)` with RLS; keys `profile`, `chat`, `plan`, `progress`, `log-YYYY-MM-DD`.
 - Local run: `python3 dev.py` (port 3000), secrets in `.env.local`.
+- Design follows `skill/principal-ux-ui-designer/SKILL.md`: own identity (basil green actions, paprika highlights, warm-neutral surfaces, tokens in `src/styles/tokens.css`), every text colour WCAG 2.2 AA, sentence-case buttons, no copied brand looks, no streak pressure or food shaming, undo for deletes, summary before detail.

@@ -1,6 +1,6 @@
 // Offline support: serve the app shell from cache when there's no network.
 // AI calls and database requests always go to the network.
-const CACHE = 'forkcast-v1';
+const CACHE = 'forkcast-v2';
 const SHELL = ['/', '/index.html', '/config.js', '/manifest.webmanifest', '/icons/icon-192.png'];
 
 self.addEventListener('install', e => {

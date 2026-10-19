@@ -2,7 +2,7 @@
 function weightChart(){
   const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
   if (w.length < 2) return `<div class="empty" style="padding:24px"><p>${w.length ? 'One weigh-in so far. Add a few more and the trend line appears; one reading on its own says little.' : 'Add your first weigh-in. Weighing 2–3 times a week, same time of day, gives a trend worth reading.'}</p></div>`;
-  const W = 640, H = 220, L = 44, R = 14, T = 14, B = 30;
+  const W = 360, H = 190, L = 38, R = 12, T = 12, B = 26;
   const t0 = fromKey(w[0].date).getTime(), t1 = Math.max(fromKey(w[w.length-1].date).getTime(), t0 + 864e5);
   const vals = w.map(x => +x.weight); let lo = Math.min(...vals), hi = Math.max(...vals);
   const pad = Math.max((hi - lo) * 0.15, 0.5); lo = Math.floor((lo - pad) * 2) / 2; hi = Math.ceil((hi + pad) * 2) / 2;
@@ -11,9 +11,9 @@ function weightChart(){
   const avg = w.map(x => { const win = w.filter(y => daysBetween(y.date, x.date) >= 0 && daysBetween(y.date, x.date) < 7); return { date:x.date, v: win.reduce((a, y) => a + +y.weight, 0) / win.length }; });
   const ticks = [lo, (lo + hi) / 2, hi];
   return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Weight trend">
-    ${ticks.map(v => `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${v.toFixed(1)}</text>`).join('')}
-    <text x="${L}" y="${H-8}" font-size="11" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${fromKey(w[0].date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</text>
-    <text x="${W-R}" y="${H-8}" text-anchor="end" font-size="11" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${fromKey(w[w.length-1].date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</text>
+    ${ticks.map(v => `<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-dasharray="3 4"/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="11.5" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${v.toFixed(1)}</text>`).join('')}
+    <text x="${L}" y="${H-8}" font-size="11.5" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${fromKey(w[0].date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</text>
+    <text x="${W-R}" y="${H-8}" text-anchor="end" font-size="11.5" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif">${fromKey(w[w.length-1].date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</text>
     <path d="M${avg.map(a => `${X(a.date)},${Y(a.v)}`).join(' L')} L${X(avg[avg.length-1].date)},${H-B} L${X(avg[0].date)},${H-B}Z" fill="var(--accent)" opacity=".08"/>
     <polyline points="${avg.map(a => `${X(a.date)},${Y(a.v)}`).join(' ')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round"/>
     ${w.map(x => `<circle cx="${X(x.date)}" cy="${Y(+x.weight)}" r="3" fill="var(--muted)"/>`).join('')}
@@ -28,7 +28,7 @@ function vProgress(){
   return `
   <div class="head"><div><div class="label">Trends over single readings</div><h1>Progress</h1></div></div>
   <div class="grid2">
-    <section class="card stack"><h2>Weight trend</h2>${weightChart()}</section>
+    <section class="card stack"><h2>Weight trend</h2>${trendSummary()}${weightChart()}</section>
     <section class="card stack">
       <h2>Add a weigh-in</h2>
       <div class="fields">
@@ -55,4 +55,16 @@ function vProgress(){
     <div class="field"><label for="ckNotes">Cravings, difficulties, social events</label><textarea id="ckNotes" rows="2"></textarea></div>
     <div class="row"><button class="btn primary" data-act="checkin">Send check-in to my dietitian</button><span class="muted" style="font-size:.85rem">Your dietitian reviews the trend and adjusts the plan with you.</span></div>
   </section>`;
+}
+
+// The answer first: current 7-day average and change since the first weigh-in.
+function trendSummary(){
+  const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
+  if (w.length < 2) return '';
+  const avg = end => { const win = w.filter(y => { const d = daysBetween(y.date, end); return d >= 0 && d < 7; }); return win.reduce((a, y) => a + +y.weight, 0) / win.length; };
+  const now = avg(w[w.length - 1].date), first = +w[0].weight, diff = now - first, days = daysBetween(w[0].date, w[w.length - 1].date);
+  const span = days >= 14 ? `${Math.round(days / 7)} weeks` : `${days} days`;
+  const dir = Math.abs(diff) < 0.1 ? 'steady' : (diff < 0 ? '↓ ' : '↑ ') + Math.abs(diff).toFixed(1) + ' kg';
+  return `<div class="trend-head"><span class="big num">${now.toFixed(1)}<span class="muted" style="font-size:1rem;font-weight:700"> kg</span></span><span class="trend-pill">${dir} in ${span}</span></div>
+  <p class="muted" style="font-size:.82rem">7-day average. Day-to-day changes are mostly water, so the trend matters more than any single weigh-in.</p>`;
 }

@@ -9,7 +9,7 @@ function render(){
   const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
   const view = $('#view');
   if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
-  view.innerHTML = v;
+  view.innerHTML = v + (S.toast ? `<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo ? '<button data-act="undo">Undo</button>' : ''}</div>` : '');
   if (S.view === 'coach') scrollChat();
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }

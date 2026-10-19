@@ -15,8 +15,8 @@ function vToday(){
     <section class="card hero fuel" aria-label="Calories and macros">
       <div class="ring">
         <svg viewBox="0 0 176 176"><circle cx="88" cy="88" r="78" fill="none" stroke="var(--hero-track)" stroke-width="16"/>
-        <circle cx="88" cy="88" r="78" fill="none" stroke="${left < 0 ? 'var(--amber)' : 'var(--accent)'}" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .6s ease"/></svg>
-        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? 'kcal left' : 'kcal over'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
+        <circle cx="88" cy="88" r="78" fill="none" stroke="var(--accent)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .6s ease"/></svg>
+        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? 'kcal left' : 'kcal above target'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
       </div>
       <div class="macros">
         ${bar('Protein', eaten.protein, t?.protein, 'var(--pink)')}
@@ -29,7 +29,7 @@ function vToday(){
   ${mealsSection(t)}
   ${focusCard()}
   ${S.sheet ? logSheet() : ''}
-  ${S.toast ? `<div class="toast" role="status">${esc(S.toast)}</div>` : ''}`;
+`;
 }
 
 // Meal icons: sunrise, sun, apple, moon
@@ -40,7 +40,7 @@ const MEAL_ICON = {
   Dinner:'<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>'
 };
 const MEAL_SHARE = { Breakfast:.25, Lunch:.35, Snack:.10, Dinner:.30 };
-const MEAL_COLOR = { Breakfast:'var(--amber)', Lunch:'var(--accent)', Snack:'var(--pink)', Dinner:'var(--violet)' };
+const MEAL_COLOR = { Breakfast:'var(--paprika)', Lunch:'var(--accent)', Snack:'var(--pink)', Dinner:'var(--violet)' };
 const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MEAL_ICON[s]}</svg></span>`;
 
 function mealsSection(t){
@@ -126,7 +126,8 @@ function focusCard(){
 }
 
 function streakPill(){
-  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf()), n = streak();
+  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf());
   const dots = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d); return `<span class="${days.has(k) ? 'on' : ''} ${k === dkey() ? 'today' : ''}" title="${l}">${l[0]}</span>`; }).join('');
-  return `<div class="streak" aria-label="${n} day logging streak"><span class="flame" aria-hidden="true">🔥</span><div><div class="n">${n}</div><div class="label" style="font-size:.7rem">day streak</div></div><div class="week-dots">${dots}</div></div>`;
+  const week = DAYS.filter((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return days.has(dkey(d)); }).length;
+  return `<div class="streak" aria-label="${week} of 7 days logged this week"><div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div><div class="week-dots">${dots}</div></div>`;
 }
