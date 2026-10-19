@@ -1,0 +1,55 @@
+/* Base elements, shell, cards, buttons, inputs */
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.025em}
+h1{font-size:clamp(1.9rem,4.4vw,2.6rem);font-weight:800;line-height:1.05}
+h2{font-size:1.2rem;font-weight:800}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+.num{font-variant-numeric:tabular-nums;font-weight:700;letter-spacing:-.02em}
+.label{font-size:.78rem;color:var(--muted);font-weight:600}
+.muted{color:var(--muted)}
+
+.app{display:grid;grid-template-columns:244px minmax(0,1fr);min-height:100%}
+.rail{position:sticky;top:0;height:100vh;padding:28px 16px;display:flex;flex-direction:column;gap:30px;background:var(--bg)}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:1.5rem;letter-spacing:-.04em;padding-left:10px}
+.brand i{width:30px;height:30px;border-radius:10px;background:var(--accent);display:inline-block;box-shadow:inset 0 -4px 0 var(--accent-deep);position:relative}
+.brand i::after{content:"";position:absolute;inset:9px;border-radius:50%;background:var(--accent-ink);opacity:.9}
+.tabs{display:flex;flex-direction:column;gap:4px}
+.tab{display:flex;align-items:center;gap:12px;border:0;background:none;padding:12px 14px;border-radius:16px;cursor:pointer;font-weight:700;color:var(--muted);text-align:left;transition:background .15s,color .15s}
+.tab svg{width:22px;height:22px;flex:none}
+.tab:hover{background:var(--surface-2);color:var(--ink)}
+.tab[aria-current="page"]{background:var(--accent-soft);color:var(--accent-deep)}
+:root[data-theme="dark"] .tab[aria-current="page"]{color:var(--accent)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .tab[aria-current="page"]{color:var(--accent)}}
+.rail-foot{margin-top:auto;font-size:.78rem;color:var(--muted);padding-left:10px}
+
+main{padding-block:36px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.view{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px}
+
+.card{background:var(--surface);border-radius:var(--r);padding:22px;min-width:0;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* tactile buttons */
+.btn{border:0;background:var(--surface-2);padding:11px 18px;border-radius:14px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;box-shadow:inset 0 -3px 0 rgba(11,11,18,.08);transition:transform .08s,filter .15s}
+.btn:hover{filter:brightness(.97)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:inset 0 -4px 0 var(--accent-deep);text-transform:uppercase;letter-spacing:.04em;font-size:.88rem}
+.btn.primary:hover{filter:brightness(1.05)}
+.btn.ink{background:var(--ink);color:var(--bg);box-shadow:none}
+.btn.small{padding:8px 13px;font-size:.84rem;border-radius:12px}
+.btn.ghost{background:none;box-shadow:none;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.chip{border:2px solid var(--line);background:var(--surface);padding:7px 14px;border-radius:999px;cursor:pointer;font-size:.88rem;font-weight:700;transition:border-color .15s,color .15s}
+.chip:hover{border-color:var(--accent);color:var(--accent-deep)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type=text],input[type=number],input[type=date],select,textarea{background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;width:100%;min-width:0;font-weight:500}
+textarea{resize:vertical;min-height:54px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);background:var(--surface)}

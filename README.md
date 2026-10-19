@@ -21,7 +21,7 @@ Clean, white, fintech-style layout inspired by Revolut, with Duolingo-style tact
 
 ## How it runs
 
-Forkcast is a single file, [`index.html`](index.html), built as a [Claude](https://claude.ai) artifact. On claude.ai it uses:
+Forkcast runs as a [Claude](https://claude.ai) artifact, so it costs nothing to run: the AI uses your own Claude account and there is no server to pay for. On claude.ai it uses:
 
 | Capability | Used for |
 | --- | --- |
@@ -29,6 +29,36 @@ Forkcast is a single file, [`index.html`](index.html), built as a [Claude](https
 | `db` + `user` | Saving your profile, diary, plan and progress privately to your Claude account |
 
 Opened outside Claude (for example straight from GitHub Pages), the page still loads, but the AI features are off and data is saved only in that browser.
+
+## Project structure
+
+The code lives in `src/`. `build.py` joins it into the single `index.html` that Claude runs.
+
+```
+src/
+  index.template.html    page shell: title, fonts, nav, main area
+  styles/                tokens.css (colours, fonts) · base.css · views.css
+  js/
+    core/
+      prompts.js         ← everything sent to the AI: dietitian rules and all prompts
+      nutrition.js       Mifflin-St Jeor targets, consultation progress, streaks
+      storage.js         private Claude db with a browser fallback
+      state.js           app state, loading and saving
+      constants.js · helpers.js
+    services/            coach chat · food logging · week plan, shopping and recipes
+    views/               one file per screen: today, coach, plan, shop, progress
+    events.js            clicks, typing and forms
+    main.js              start-up
+build.py                 python3 build.py → index.html
+```
+
+**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild:
+
+```bash
+python3 build.py
+```
+
+Never edit `index.html` by hand; it is overwritten on every build.
 
 ## The dietitian skill
 

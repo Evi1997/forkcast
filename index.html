@@ -3,6 +3,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
 <style>
+/* === tokens.css === */
 /* Layout: fintech-clean shell — white canvas, floating cards, one bold hero per view; chunky tactile buttons for the game-like moments */
 :root{
   --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F3F5FA; --ink:#0B0B12; --muted:#6B7080; --line:#ECEEF3;
@@ -32,6 +33,8 @@
   --hero:#16161E; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
   --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}
 
+/* === base.css === */
+/* Base elements, shell, cards, buttons, inputs */
 html,body{height:100%}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -87,6 +90,8 @@ input[type=text],input[type=number],input[type=date],select,textarea{background:
 textarea{resize:vertical;min-height:54px}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--blue);background:var(--surface)}
 
+/* === views.css === */
+/* Per-view styles and responsive rules */
 /* Today hero */
 .hero{background:var(--hero);color:var(--hero-ink);position:relative;overflow:hidden;box-shadow:none}
 .hero::before{content:"";position:absolute;width:340px;height:340px;right:-120px;top:-140px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 55%,transparent),transparent 65%);opacity:.55;pointer-events:none}
@@ -258,7 +263,8 @@ th{font-size:.75rem;color:var(--muted);font-weight:700}
 </div>
 
 <script>
-/* ---------- constants ---------- */
+// === core/constants.js ===
+// Icons, tabs, meal slots and consultation sections
 const ICONS = {
   today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5"/><path d="M12 8v4l2.5 2"/></svg>',
   coach:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2.5c.4 0 .7.3.8.7l.9 3.4a5 5 0 0 0 3.6 3.6l3.4.9a.8.8 0 0 1 0 1.6l-3.4.9a5 5 0 0 0-3.6 3.6l-.9 3.4a.8.8 0 0 1-1.6 0l-.9-3.4a5 5 0 0 0-3.6-3.6l-3.4-.9a.8.8 0 0 1 0-1.6l3.4-.9a5 5 0 0 0 3.6-3.6l.9-3.4c.1-.4.4-.7.8-.7z"/><path d="M18.5 1.5c.2 0 .4.1.4.3l.3 1.1c.2.6.6 1 1.2 1.2l1.1.3a.4.4 0 0 1 0 .8l-1.1.3c-.6.2-1 .6-1.2 1.2l-.3 1.1a.4.4 0 0 1-.8 0l-.3-1.1c-.2-.6-.6-1-1.2-1.2l-1.1-.3a.4.4 0 0 1 0-.8l1.1-.3c.6-.2 1-.6 1.2-1.2l.3-1.1c0-.2.2-.3.4-.3z" opacity=".55"/></svg>',
@@ -274,6 +280,9 @@ const SECTIONS = [
   ['current_diet','Current eating'],['obstacles','Weak points'],['preferences','Food preferences'],['cooking','Cooking & prep'],['shopping','Shopping & budget']
 ];
 
+// === core/prompts.js ===
+// Everything Forkcast says to Claude lives here: the dietitian rules and the
+// prompts for food logging, week plans, shopping lists and recipes.
 const COACH_RULES = `You are the dietitian inside "Forkcast", a meal-prep and nutrition app. Act as an experienced, evidence-based dietitian and nutrition coach with 10-15+ years of practice: clinical nutrition, Mediterranean-style principles, sports nutrition, weight-management science, behavioural habit change and meal-prep practicality. Never claim to be or imitate any real person.
 
 HOW YOU WORK
@@ -307,7 +316,78 @@ const GREETING = `Hi, I'm your dietitian here in Forkcast. Before I suggest a si
 
 Let's start simple: **how old are you, and what's your height and current weight?**`;
 
-/* ---------- helpers ---------- */
+const PLAN_RULES = `You are an experienced evidence-based dietitian writing a realistic 7-day meal-prep plan.
+Rules: build around foods the person enjoys and already eats; never include their dislikes or allergens; respect their dietary pattern, cooking time, prep style and budget; use ingredients sold in their country's normal supermarkets; overlap ingredients across days (batch-cooked proteins, grains, roasted veg, one or two sauces) to limit waste; leftovers and repeats only if they accept them; include 80/20 flexibility (a dessert, a pizza or restaurant night can fit). Keep each day within ~5% of the kcal target and hit protein. Never call foods good/bad/clean/cheat.`;
+
+// Prompt builders. Each takes plain data and returns the input sent to Claude,
+// so changing what the AI does never means touching the UI code.
+const PROMPTS = {
+  // Dietitian chat: standing instructions + app snapshot, then the conversation.
+  coach(state, history){
+    return [{ role:'user', content: COACH_RULES + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
+  },
+
+  // Food diary estimate from text and/or a photo.
+  food({ text, slot, country, targets, eaten, hasPhoto, clarification }){
+    return `You are an evidence-based dietitian estimating the nutrition of a meal someone logged in a food diary.
+Person's daily targets: ${targets ? JSON.stringify(targets) : 'not set yet'}.
+Already eaten today before this meal: ${JSON.stringify(eaten)}.
+Meal slot: ${slot}. Country/region if known: ${country || 'unknown'}.
+What they wrote: """${text || '(no text — see photo)'}"""${hasPhoto ? '\nA photo of the food is attached; use it to judge items and portions.' : ''}${clarification ? `\nTheir answer to your portion question: """${clarification}""". Do not ask another question.` : ''}
+
+Split it into separate foods with realistic portion estimates (use typical portions when unstated). Numbers are grams for macros.
+Ask a clarifying question ONLY if one portion is genuinely ambiguous and would change the total by more than ~150 kcal; otherwise clarify must be null.
+Reply with only JSON:
+{"items":[{"name":"Scrambled eggs","amount":"2 large","kcal":180,"protein":13,"carbs":2,"fat":13,"fiber":0}],
+ "clarify": null or "Approximately how much rice did you eat: 100 g, 200 g, or something else?",
+ "options": ["100 g","200 g","300 g"],
+ "feedback": "one neutral, practical sentence about the rest of today after this meal (e.g. protein or kcal remaining). Never moralise or label food good/bad."}`;
+  },
+
+  // Shared context for the plan and shopping prompts.
+  planContext({ profile, targets, focus, checkin }){
+    return `PERSON (from consultation): ${JSON.stringify(profile)}
+DAILY TARGETS (estimates): ${targets ? JSON.stringify(targets) : 'unknown — aim for a balanced ~2000 kcal day'}
+WEAK POINT FOCUS (design the week to help with this): ${JSON.stringify(focus || 'not known yet')}
+LATEST CHECK-IN: ${JSON.stringify(checkin || 'none')}`;
+  },
+
+  plan(ctx){
+    return `${PLAN_RULES}
+
+${PROMPTS.planContext(ctx)}
+
+Reply with only JSON:
+{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu"}]}],
+ "notes":"2-3 sentences: the idea behind this week and how prep works"}
+Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
+  },
+
+  shopping(ctx, days){
+    return `${PLAN_RULES}
+
+${PROMPTS.planContext(ctx)}
+
+THE WEEK'S PLAN:
+${days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
+
+Write ONE consolidated grocery list for this week with approximate quantities to buy (local package sizes where sensible, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
+Reply with only JSON:
+{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg","note":"optional short note"}]}],
+ "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Roast 1 kg chicken thighs","Cook 400 g dry rice"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day"}],
+ "budget_note":"one sentence: rough cost estimate in local currency, clearly marked as an estimate (prices not verified)"}
+Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
+  },
+
+  recipe(meal, person){
+    return `You are a dietitian who cooks. Write a simple, tasty, meal-prep-friendly recipe for: "${meal.name}" (${meal.portion}), about ${meal.kcal} kcal and ${meal.p} g protein per serving.
+Person: ${JSON.stringify(person)}.
+Reply with only JSON: {"time":"25 min","serves":"1 (scale ×3 for prep)","ingredients":["…"],"steps":["…"],"storage":"fridge/freezer guidance in one sentence"}`;
+  }
+};
+
+// === core/helpers.js ===
+// Small pure helpers: DOM, escaping, dates, merging, light markdown
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const r0 = n => Math.round(Number(n) || 0);
@@ -334,7 +414,8 @@ const sumItems = items => items.reduce((t, i) => ({kcal:t.kcal+r0(i.kcal), prote
 const pfc = i => `<span class="pfc"><span class="p">P ${r0(i.protein ?? i.p)}</span> · <span class="c">C ${r0(i.carbs ?? i.c)}</span> · <span class="f">F ${r0(i.fat ?? i.f)}</span></span>`;
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-/* ---------- storage: private per-person db, with browser copy as fallback ---------- */
+// === core/storage.js ===
+// Storage: private per-person Claude db, with a browser copy as fallback
 const LS = 'mise:v1:';
 const Store = {
   db: null, uid: null, pending: {}, writing: {},
@@ -367,7 +448,8 @@ const Store = {
   async remove(k){ try { localStorage.removeItem(LS + k); } catch {} if (this.db) { try { await this.ref(k).delete(); } catch {} } }
 };
 
-/* ---------- state ---------- */
+// === core/state.js ===
+// App state, local load, save helpers and sync with the Claude db
 const S = {
   view: 'today',
   profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
@@ -421,7 +503,8 @@ async function syncRemote(){
   render();
 }
 
-/* ---------- targets (Mifflin-St Jeor) ---------- */
+// === core/nutrition.js ===
+// Nutrition maths: Mifflin-St Jeor targets, consultation progress, streaks
 const ACT = { sedentary:1.2, light:1.375, moderate:1.55, very:1.725, extra:1.9 };
 function calcTargets(d){
   const b = d.basics || {};
@@ -450,7 +533,15 @@ function sectionDone(key){
   return !!(v && Object.values(v).some(x => x !== '' && x != null));
 }
 
-/* ---------- Claude ---------- */
+function streak(){
+  const days = new Set(S.profile.loggedDays || []); let n = 0; const d = new Date();
+  if (!days.has(dkey(d))) d.setDate(d.getDate() - 1);
+  while (days.has(dkey(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+// === services/claude.js ===
+// Claude connection, error copy and the app state snapshot sent to the dietitian
 const ERR = {
   not_granted:'Claude access was declined for this page, so the dietitian is off for now. Reload the page to allow it.',
   sampling_disabled:'Claude isn\'t available on this account.',
@@ -489,6 +580,8 @@ function appState(){
   };
 }
 
+// === services/coach.js ===
+// Dietitian chat: sends the conversation, applies profile, targets, focus and log updates
 async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
@@ -498,7 +591,7 @@ async function sendChat(text){
   S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
   const history = S.chat.turns.slice(-24).map(t => ({ role:t.role, content:t.content }));
-  const input = [{ role:'user', content: COACH_RULES + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(appState()) + '\n\nThe conversation follows.' }, ...history];
+  const input = PROMPTS.coach(appState(), history);
   try {
     const r = await S.sample.json(input, { cache:false });
     const reply = String(r?.reply || '').trim() || 'Could you tell me a bit more?';
@@ -521,43 +614,24 @@ async function sendChat(text){
 }
 function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
 
-/* ---------- food log ---------- */
+// === services/food.js ===
+// Food diary: adding items and estimating meals from text or photos
 function addItems(items, k = dkey()){
   S.logs[k] = S.logs[k] || {items:[]};
   for (const i of items) S.logs[k].items.push({ id:uid(), slot:i.slot || S.logSlot, name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber), at:Date.now() });
   save.log(k);
   const days = new Set(S.profile.loggedDays || []); if (!days.has(k)) { days.add(k); S.profile.loggedDays = [...days].sort().slice(-90); save.profile(); }
 }
-function streak(){
-  const days = new Set(S.profile.loggedDays || []); let n = 0; const d = new Date();
-  if (!days.has(dkey(d))) d.setDate(d.getDate() - 1);
-  while (days.has(dkey(d))) { n++; d.setDate(d.getDate() - 1); }
-  return n;
-}
-function streakPill(){
-  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf()), n = streak();
-  const dots = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d); return `<span class="${days.has(k) ? 'on' : ''} ${k === dkey() ? 'today' : ''}" title="${l}">${l[0]}</span>`; }).join('');
-  return `<div class="streak" aria-label="${n} day logging streak"><span class="flame" aria-hidden="true">🔥</span><div><div class="n">${n}</div><div class="label" style="font-size:.7rem">day streak</div></div><div class="week-dots">${dots}</div></div>`;
-}
+
 async function analyseFood(text, clarification){
   if (S.busy.log) return;
   if (!S.sampleOK) { S.err.log = 'Automatic counting needs Claude. Use “Add manually” below in the meantime.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
   const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
-  const prompt = `You are an evidence-based dietitian estimating the nutrition of a meal someone logged in a food diary.
-Person's daily targets: ${t ? JSON.stringify({kcal:t.kcal,protein:t.protein,carbs:t.carbs,fat:t.fat,fiber:t.fiber}) : 'not set yet'}.
-Already eaten today before this meal: ${JSON.stringify(eaten)}.
-Meal slot: ${S.logSlot}. Country/region if known: ${S.profile.data.shopping?.country || 'unknown'}.
-What they wrote: """${text || '(no text — see photo)'}"""${S.logPhoto ? '\nA photo of the food is attached; use it to judge items and portions.' : ''}${clarification ? `\nTheir answer to your portion question: """${clarification}""". Do not ask another question.` : ''}
-
-Split it into separate foods with realistic portion estimates (use typical portions when unstated). Numbers are grams for macros.
-Ask a clarifying question ONLY if one portion is genuinely ambiguous and would change the total by more than ~150 kcal; otherwise clarify must be null.
-Reply with only JSON:
-{"items":[{"name":"Scrambled eggs","amount":"2 large","kcal":180,"protein":13,"carbs":2,"fat":13,"fiber":0}],
- "clarify": null or "Approximately how much rice did you eat: 100 g, 200 g, or something else?",
- "options": ["100 g","200 g","300 g"],
- "feedback": "one neutral, practical sentence about the rest of today after this meal (e.g. protein or kcal remaining). Never moralise or label food good/bad."}`;
+  const prompt = PROMPTS.food({ text, slot:S.logSlot, country:S.profile.data.shopping?.country, eaten,
+    targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
+    hasPhoto: !!S.logPhoto, clarification });
   try {
     const opts = { modelTier:'default' };
     if (S.logPhoto && S.canImages) opts.images = [S.logPhoto];
@@ -574,45 +648,23 @@ Reply with only JSON:
   S.busy.log = false; render();
 }
 
-/* ---------- plan, groceries, recipes ---------- */
+// === services/planner.js ===
+// Week plan, shopping list, prep schedule and recipes
 function planContext(){
   const t = targets();
-  return `PERSON (from consultation): ${JSON.stringify(S.profile.data)}
-DAILY TARGETS (estimates): ${t ? JSON.stringify({kcal:t.kcal,protein:t.protein,carbs:t.carbs,fat:t.fat,fiber:t.fiber}) : 'unknown — aim for a balanced ~2000 kcal day'}
-WEAK POINT FOCUS (design the week to help with this): ${JSON.stringify(S.profile.focus || S.profile.data.obstacles || 'not known yet')}
-LATEST CHECK-IN: ${JSON.stringify(S.progress.checkins.slice(-1)[0] || 'none')}`;
+  return { profile:S.profile.data, targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
+    focus: S.profile.focus || S.profile.data.obstacles, checkin: S.progress.checkins.slice(-1)[0] };
 }
 async function generatePlan(){
   if (S.busy.plan) return;
   if (!S.sampleOK) { S.err.plan = 'Planning needs Claude. Open this page on claude.ai and allow Claude when asked.'; render(); return; }
   S.busy.plan = 'Writing your 7 days…'; S.err.plan = null; render();
-  const rules = `You are an experienced evidence-based dietitian writing a realistic 7-day meal-prep plan.
-Rules: build around foods the person enjoys and already eats; never include their dislikes or allergens; respect their dietary pattern, cooking time, prep style and budget; use ingredients sold in their country's normal supermarkets; overlap ingredients across days (batch-cooked proteins, grains, roasted veg, one or two sauces) to limit waste; leftovers and repeats only if they accept them; include 80/20 flexibility (a dessert, a pizza or restaurant night can fit). Keep each day within ~5% of the kcal target and hit protein. Never call foods good/bad/clean/cheat.`;
   try {
-    const plan = await S.sample.json(`${rules}
-
-${planContext()}
-
-Reply with only JSON:
-{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu"}]}],
- "notes":"2-3 sentences: the idea behind this week and how prep works"}
-Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`, { modelTier:'default', cache:false });
+    const plan = await S.sample.json(PROMPTS.plan(planContext()), { modelTier:'default', cache:false });
     if (!Array.isArray(plan?.days) || !plan.days.length) throw { code:'invalid_json' };
     S.plan = { weekOf: mondayOf(), created: Date.now(), days: plan.days.slice(0,7), notes: plan.notes || '', recipes:{}, checked:{} };
     save.plan(); S.busy.plan = 'Building your shopping list and prep schedule…'; render();
-    const shop = await S.sample.json(`${rules}
-
-${planContext()}
-
-THE WEEK'S PLAN:
-${S.plan.days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
-
-Write ONE consolidated grocery list for this week with approximate quantities to buy (local package sizes where sensible, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
-Reply with only JSON:
-{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg","note":"optional short note"}]}],
- "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Roast 1 kg chicken thighs","Cook 400 g dry rice"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day"}],
- "budget_note":"one sentence: rough cost estimate in local currency, clearly marked as an estimate (prices not verified)"}
-Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`, { modelTier:'default', cache:false });
+    const shop = await S.sample.json(PROMPTS.shopping(planContext(), S.plan.days), { modelTier:'default', cache:false });
     S.plan.grocery = Array.isArray(shop?.grocery) ? shop.grocery : [];
     S.plan.prep = Array.isArray(shop?.prep) ? shop.prep : [];
     S.plan.budget_note = shop?.budget_note || '';
@@ -625,15 +677,14 @@ async function loadRecipe(key, meal){
   if (!S.sampleOK) { S.err.plan = 'Recipes need Claude.'; render(); return; }
   S.busy.recipe = key; S.openRecipe = key; render();
   try {
-    const r = await S.sample.json(`You are a dietitian who cooks. Write a simple, tasty, meal-prep-friendly recipe for: "${meal.name}" (${meal.portion}), about ${meal.kcal} kcal and ${meal.p} g protein per serving.
-Person: ${JSON.stringify({prefs:S.profile.data.preferences, cooking:S.profile.data.cooking, country:S.profile.data.shopping?.country})}.
-Reply with only JSON: {"time":"25 min","serves":"1 (scale ×3 for prep)","ingredients":["…"],"steps":["…"],"storage":"fridge/freezer guidance in one sentence"}`, { modelTier:'quick', cache:{gcTime:864e5} });
+    const r = await S.sample.json(PROMPTS.recipe(meal, { prefs:S.profile.data.preferences, cooking:S.profile.data.cooking, country:S.profile.data.shopping?.country }), { modelTier:'quick', cache:{gcTime:864e5} });
     S.plan.recipes = S.plan.recipes || {}; S.plan.recipes[key] = r; save.plan();
   } catch (e) { hardFail(e); S.err.plan = errText(e); S.openRecipe = null; }
   S.busy.recipe = null; render();
 }
 
-/* ---------- render ---------- */
+// === views/shell.js ===
+// Top-level render: nav tabs, current view, shared banners
 function render(){
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').textContent = Store.db ? 'Saved privately to your Claude account.' : 'Saved in this browser only.';
@@ -650,6 +701,8 @@ function claudeBanner(){
   return `<div class="notice warn">Your dietitian runs on Claude. Open this page on claude.ai while signed in and allow Claude when it asks. Manual logging, plans you already have and progress tracking keep working without it.</div>`;
 }
 
+// === views/today.js ===
+// Today: calorie ring, macros, focus tips, food logging, streak
 function vToday(){
   const t = targets(), log = S.logs[dkey()] || {items:[]}, eaten = sumItems(log.items);
   const kcalT = t?.kcal || 0, left = kcalT - eaten.kcal, pct = kcalT ? Math.min(eaten.kcal / kcalT, 1) : 0;
@@ -711,6 +764,14 @@ function focusCard(){
   <ol class="tips">${f.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol></section>`;
 }
 
+function streakPill(){
+  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf()), n = streak();
+  const dots = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d); return `<span class="${days.has(k) ? 'on' : ''} ${k === dkey() ? 'today' : ''}" title="${l}">${l[0]}</span>`; }).join('');
+  return `<div class="streak" aria-label="${n} day logging streak"><span class="flame" aria-hidden="true">🔥</span><div><div class="n">${n}</div><div class="label" style="font-size:.7rem">day streak</div></div><div class="week-dots">${dots}</div></div>`;
+}
+
+// === views/coach.js ===
+// Dietitian chat view and profile sidebar
 function vCoach(){
   const turns = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
   const last = turns[turns.length - 1];
@@ -750,6 +811,8 @@ function vCoach(){
   </div>`;
 }
 
+// === views/plan.js ===
+// Week plan view
 function vPlan(){
   const head = `<div class="head"><div><div class="label">${S.plan ? `Week of ${fromKey(S.plan.weekOf).toLocaleDateString(undefined,{day:'numeric',month:'long'})}` : 'Seven days, prepped ahead'}</div><h1>Week plan</h1></div>
     <button class="btn ${S.plan ? '' : 'primary'}" data-act="genplan" ${S.busy.plan ? 'disabled' : ''}>${S.busy.plan ? `<span class="spinner"></span> ${esc(S.busy.plan)}` : S.plan ? 'Plan a new week' : 'Plan my week'}</button></div>`;
@@ -772,6 +835,8 @@ function vPlan(){
   </section>`;
 }
 
+// === views/shop.js ===
+// Grocery list and prep schedule view
 function vShop(){
   const head = `<div class="head"><div><div class="label">${S.profile.data.shopping?.supermarkets ? esc(S.profile.data.shopping.supermarkets) : 'One trip, one prep session'}</div><h1>Shop & prep</h1></div>${S.plan?.grocery ? `<button class="btn" data-act="clearchecks">Untick all</button>` : ''}</div>`;
   if (!S.plan?.grocery?.length) return head + `<section class="card empty"><div class="blob" aria-hidden="true">🛒</div><h2>No list yet</h2><p>Your shopping list and prep schedule come with your week plan, consolidated so you buy only what the week needs.</p><button class="btn primary" data-act="nav" data-v="plan">Go to week plan</button></section>`;
@@ -788,6 +853,8 @@ function vShop(){
     <dl class="kv" style="grid-template-columns:auto 1fr;margin-top:8px">${p.fridge ? `<dt>Fridge</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fridge)}</dd>` : ''}${p.freeze ? `<dt>Freeze</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.freeze)}</dd>` : ''}${p.fresh ? `<dt>Fresh</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fresh)}</dd>` : ''}</dl></div></div>`).join('')}</div></section>` : ''}`;
 }
 
+// === views/progress.js ===
+// Weight chart, weigh-ins and weekly check-in
 function weightChart(){
   const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
   if (w.length < 2) return `<div class="empty" style="padding:24px"><p>${w.length ? 'One weigh-in so far. Add a few more and the trend line appears; one reading on its own says little.' : 'Add your first weigh-in. Weighing 2–3 times a week, same time of day, gives a trend worth reading.'}</p></div>`;
@@ -846,7 +913,8 @@ function vProgress(){
   </section>`;
 }
 
-/* ---------- events ---------- */
+// === events.js ===
+// All user interactions, wired by data-act attributes
 document.addEventListener('input', e => {
   const id = e.target.id;
   if (id === 'logText') S.draft.log = e.target.value;
@@ -922,7 +990,8 @@ document.addEventListener('click', e => {
   }
 });
 
-/* ---------- boot ---------- */
+// === main.js ===
+// Boot
 loadLocal();
 try { const v = localStorage.getItem(LS + 'view'); if (v && TABS.some(t => t[0] === v)) S.view = v; } catch {}
 render();
