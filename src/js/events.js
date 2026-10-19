@@ -132,7 +132,13 @@ document.addEventListener('click', e => {
     S.chat = { turns:[] }; S.plan = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
   }
 });
-// Hide the bottom menu while a text field has focus (keyboard open on phones).
-const isField = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['checkbox','range','file','date'].includes(el.type)));
-document.addEventListener('focusin', e => { if (isField(e.target)) document.body.classList.add('kb-open'); });
-document.addEventListener('focusout', e => { if (isField(e.target)) setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove('kb-open'); }, 50); });
+// Hide the bottom menu only while the on-screen keyboard is really open.
+// (On iPhone a text box can stay focused after the keyboard closes, so focus
+// alone isn't a reliable signal; the visible viewport shrinking is.)
+function syncKeyboard(){
+  const vv = window.visualViewport;
+  const open = !!vv && window.innerWidth <= 820 && vv.height < window.innerHeight * 0.78;
+  document.body.classList.toggle('kb-open', open);
+}
+window.visualViewport?.addEventListener('resize', syncKeyboard);
+document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
