@@ -1,0 +1,15 @@
+# Netlify: serve the repo as a static site; /api/ai runs as an Edge Function
+# (netlify/edge-functions/ai.js, path set in its config export).
+[build]
+  publish = "."
+  command = ""
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/config.js"
+  [headers.values]
+    Cache-Control = "no-cache"

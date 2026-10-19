@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Forkcast: join src/ into one index.html, served by Vercel.
+"""Build Forkcast: join src/ into one index.html, served by Netlify.
 
 Usage:  python3 build.py
 No dependencies. Edit files in src/, never index.html directly.

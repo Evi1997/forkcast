@@ -1,4 +1,7 @@
-"""POST /api/ai — the only server code Forkcast has.
+"""POST /api/ai for local runs (python3 dev.py).
+
+Production uses netlify/edge-functions/ai.js, which does the same thing in
+JavaScript; keep the two in step when changing behaviour.
 
 Checks the caller is signed in with Supabase, forwards the prompt (and any
 photo) to Google Gemini, and returns the answer. The Gemini key never leaves
@@ -9,7 +12,7 @@ Request:  {"input": str | [{"role": "user"|"assistant", "content": str}],
            "tier": "quick" | "default", "json": true}
 Response: {"text": str, "json": <parsed value or null>}  or  {"code", "message"}
 
-Environment (set in Vercel → Settings → Environment Variables):
+Environment (in .env.local for local runs):
   GEMINI_API_KEY      required, from https://aistudio.google.com/apikey
   SUPABASE_URL        required, e.g. https://abcd.supabase.co
   SUPABASE_ANON_KEY   required, the project's public anon key

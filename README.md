@@ -25,11 +25,11 @@ Forkcast is a web app you install on your phone's home screen. Everything runs o
 
 | Piece | Service | Cost |
 | --- | --- | --- |
-| Website, link and server function | [Vercel](https://vercel.com) (Hobby) | Free |
+| Website, link and server function | [Netlify](https://netlify.com) (Free) | Free |
 | Sign-in and database | [Supabase](https://supabase.com) (Free) | Free |
 | AI dietitian | [Google Gemini API](https://aistudio.google.com) (free tier) | Free, with daily limits |
 
-The browser never sees the Gemini key: the app calls `/api/ai`, a small Python function that checks you're signed in and then asks Gemini.
+The browser never sees the Gemini key: the app calls `/api/ai`, a small Netlify Edge Function that checks you're signed in and then asks Gemini.
 
 ## Setup (about 15 minutes, once)
 
@@ -41,13 +41,13 @@ The browser never sees the Gemini key: the app calls `/api/ai`, a small Python f
 
 **2. Gemini key**
 1. Go to [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and click **Create API key**.
-2. Keep it secret. It only goes into Vercel, never into the code.
+2. Keep it secret. It only goes into Netlify, never into the code.
 
-**3. Vercel (your link)**
-1. Sign in at [vercel.com](https://vercel.com) with GitHub, click **Add New → Project** and import **forkcast**.
-2. Before deploying, add **Environment Variables**: `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
-3. Click **Deploy**. Your link looks like `forkcast.vercel.app`.
-4. Back in Supabase, open **Authentication → URL Configuration** and set **Site URL** to your Vercel link, so confirmation emails open the app.
+**3. Netlify (your link)**
+1. Sign up at [netlify.com](https://app.netlify.com/signup) with GitHub, then **Add new site → Import an existing project → GitHub** and pick **forkcast**.
+2. Leave the build settings empty (`netlify.toml` handles them). Under **Environment variables**, add `GEMINI_API_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`.
+3. Click **Deploy**. Your link looks like `forkcast.netlify.app` (rename it under **Site configuration → Change site name**).
+4. Back in Supabase, open **Authentication → URL Configuration** and set **Site URL** to your Netlify link, so confirmation emails open the app.
 
 **4. On your phone**
 Open your link, sign up, then **Share → Add to Home Screen** (iPhone, Safari) or **⋮ → Install app** (Android, Chrome).
@@ -58,14 +58,15 @@ Open your link, sign up, then **Share → Add to Home Screen** (iPhone, Safari) 
 python3 dev.py
 ```
 
-Then open http://localhost:3000. For the AI to work locally, create a `.env.local` file (never committed) with the same three variables as in Vercel.
+Then open http://localhost:3000. For the AI to work locally, create a `.env.local` file (never committed) with the same three variables as in Netlify. Locally the AI runs through `api/ai.py`, a Python twin of the Netlify function.
 
 ## Project structure
 
-`build.py` joins `src/` into the `index.html` that Vercel serves.
+`build.py` joins `src/` into the `index.html` that Netlify serves.
 
 ```
-api/ai.py                Python server function: checks sign-in, calls Gemini
+netlify/edge-functions/ai.js   server function: checks sign-in, calls Gemini
+api/ai.py                Python twin of it, for running locally
 src/
   index.template.html    page shell: head, install tags, nav
   styles/                tokens.css (colours, fonts) · base.css · views.css
@@ -85,7 +86,7 @@ manifest.webmanifest · sw.js · icons/   home-screen install and offline suppor
 build.py · dev.py        build the page · run locally
 ```
 
-**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild and push; Vercel redeploys automatically:
+**To change how the dietitian behaves**, edit `src/js/core/prompts.js`. **To change the look**, edit `src/styles/`. Then rebuild and push; Netlify redeploys automatically:
 
 ```bash
 python3 build.py

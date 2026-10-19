@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run Forkcast on your Mac: python3 dev.py  →  http://localhost:3000
 
-Serves the app and runs api/ai.py exactly like Vercel does. Put the same
-secrets you set in Vercel into a .env.local file (never committed):
+Serves the app and runs api/ai.py, a Python twin of the Netlify function. Put the same
+secrets you set in Netlify into a .env.local file (never committed):
   GEMINI_API_KEY=...
   SUPABASE_URL=...
   SUPABASE_ANON_KEY=...
