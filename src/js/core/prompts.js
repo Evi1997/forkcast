@@ -58,8 +58,7 @@ Reply with only JSON:
 {"items":[{"name":"Scrambled eggs","amount":"2 large","kcal":180,"protein":13,"carbs":2,"fat":13,"fiber":0}],
  "clarify": null or "Approximately how much rice did you eat: 100 g, 200 g, or something else?",
  "options": ["100 g","200 g","300 g"],
- "meal_name": "short, appetising name for this combination so it can be reused, 2-4 words, e.g. Protein oat bowl",
- "feedback": "one neutral, practical sentence about the rest of today after this meal (e.g. protein or kcal remaining). Never moralise or label food good/bad."}`;
+ "meal_name": "short, appetising name for this combination so it can be reused, 2-4 words, e.g. Protein oat bowl"}`;
   },
 
   // Shared context for the plan and shopping prompts.

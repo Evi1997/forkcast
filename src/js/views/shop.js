@@ -3,9 +3,9 @@
 const CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>';
 
 function vShop(){
-  const store = S.plan?.store, err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
+  const store = S.plan?.store || (S.plan?.grocery?.length ? storeOptions()[0] : ''), err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
   const head = (sub) => `<div class="head"><div><div class="label">${sub}</div><h1>Shop & prep</h1></div>
-    ${S.plan?.grocery?.length ? `<button class="store-btn" data-act="storesheet" aria-label="Supermarket: ${esc(store || 'choose')}. Change">${CART}<span>${esc(store || 'Supermarket')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}</div>`;
+    ${S.plan?.grocery?.length ? `<button class="store-btn" data-act="storesheet" aria-label="Shopping at ${esc(store || 'no supermarket yet')}. Change">${CART}<span><small>Shopping at</small>${esc(store || 'Choose store')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}</div>`;
   if (!S.plan?.days) return head('One trip, one prep session') + `<section class="card empty"><div class="blob" aria-hidden="true">${CART}</div><h2>No list yet</h2><p>Plan your week first. Then Forkcast turns it into one shopping list for your supermarket.</p><button class="btn primary" data-act="nav" data-v="plan">Plan my week</button></section>`;
   if (S.busy.shop) return head('Writing your list') + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true">${CART}</div><h2>Writing your list…</h2><p>Adding up every ingredient in your week${S.shopStore ? ` for ${esc(S.shopStore)}` : ''}.</p></section>`;
   if (!S.plan.grocery?.length) return head('One trip, one prep session') + err + askForList();
@@ -59,7 +59,7 @@ function askForList(){
 
 function storeChips(pick){
   return `<div class="stores" role="group" aria-label="Supermarket">
-      ${storeOptions().map(s => `<button class="chip" data-act="store" data-s="${esc(s)}" aria-pressed="${s === pick}">${esc(s)}</button>`).join('')}
+      ${storeOptions().map(s => `<button class="chip" data-act="store" data-s="${esc(s)}" aria-pressed="${s === pick}">${s === pick ? '✓ ' : ''}${esc(s)}</button>`).join('')}
       <button class="chip" data-act="storeother" aria-pressed="${!!S.storeOther}">Other…</button>
     </div>
     ${S.storeOther ? `<form class="additem" id="storeForm" style="margin-top:8px"><input type="text" id="storeName" placeholder="Supermarket name" aria-label="Supermarket name" autocomplete="off"><button class="btn small" type="submit">Use</button></form>` : ''}`;
@@ -67,11 +67,11 @@ function storeChips(pick){
 
 // Switch supermarket: pick one, then rebuild the list for it.
 function storeSheet(){
-  const cur = S.plan.store, pick = S.shopStore || cur, enter = S.storeSheet === 'enter' ? ' enter' : '';
+  const cur = S.plan.store || storeOptions()[0], pick = S.shopStore || cur, enter = S.storeSheet === 'enter' ? ' enter' : '';
   return `<div class="scrim${enter}" data-act="storesheet"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Supermarket">
     <div class="grip" aria-hidden="true"></div>
-    <div class="sheet-head"><h2>Supermarket</h2><button class="x close" data-act="storesheet" aria-label="Close">×</button></div>
+    <div class="sheet-head"><h2>Where are you shopping?</h2><button class="x close" data-act="storesheet" aria-label="Close">×</button></div>
     ${storeChips(pick)}
     <p class="muted" style="font-size:.88rem">Rebuilding uses that store's products and package sizes. Your own items stay; ticks are cleared.</p>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="genshop" ${pick && pick !== cur ? '' : 'disabled'}>${pick && pick !== cur ? `Rebuild for ${esc(pick)}` : `Using ${esc(cur || '')}`}</button></div>

@@ -40,7 +40,7 @@ function confirmLog(){
   if (r.replaceIds) { const L = S.logs[dkey()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
   if (r.save && items.length) rememberMeal(r, items, slot);
-  showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal`);
+  showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
   closeSheet();
 }
 
@@ -84,7 +84,7 @@ async function addToReview(text){
   try {
     const out = await S.sample.json(PROMPTS.food({ text, slot:S.sheet.slot, country:S.profile.data.shopping?.country, eaten:{}, targets:null, hasPhoto:false, clarification:'use a typical portion' }), { modelTier:'quick' });
     (Array.isArray(out?.items) ? out.items : []).forEach(i => r.review.push(cleanItem(i)));
-    S.draft.more = '';
+    S.draft.more = ''; r.adding = false;
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.addItem = false; render();
 }

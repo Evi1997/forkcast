@@ -79,8 +79,7 @@ function logSheet(){
   } else if (r?.review) {
     const tot = sumItems(r.review);
     body = `<div class="review">
-      <div class="review-total"><span class="label">Total</span><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
-      <p class="muted" style="font-size:.82rem">Tap a food to change it. Numbers are estimates.</p>
+      <div class="review-total"><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
       ${r.review.map((i, n) => r.editing === n ? `<div class="mi-edit" data-n="${n}">
           <div class="fields two"><div class="field"><label for="e-name-${n}">Food</label><input type="text" id="e-name-${n}" data-edit="${n}.name" value="${esc(i.name)}" placeholder="e.g. Olive oil"></div>
           <div class="field"><label for="e-amount-${n}">Amount</label><input type="text" id="e-amount-${n}" data-edit="${n}.amount" value="${esc(i.amount)}" placeholder="e.g. 1 tbsp"></div></div>
@@ -90,9 +89,8 @@ function logSheet(){
           <div class="field"><label for="e-f-${n}">Fat</label><input type="number" inputmode="decimal" id="e-f-${n}" data-edit="${n}.fat" value="${r0(i.fat)}"></div></div>
           <div class="row" style="justify-content:space-between"><button class="btn ghost small" data-act="dropitem" data-n="${n}">Remove</button><button class="btn small" data-act="doneedit">Done</button></div>
         </div>` : `<button class="mi mi-btn" data-act="edititem" data-n="${n}" aria-label="Edit ${esc(i.name || 'item')}"><span><span class="name">${esc(i.name || 'New item')}</span><span class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</span></span><span class="num">${r0(i.kcal)}</span><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>`).join('')}
-      <form class="additem" id="moreForm"><input type="text" id="moreText" placeholder="Missing something? e.g. 1 tbsp olive oil" aria-label="Add a missing item" autocomplete="off"><button class="btn small" type="submit" ${S.busy.addItem ? 'disabled' : ''}>${S.busy.addItem ? '<span class="spinner"></span>' : 'Add'}</button></form>
-      ${r.feedback ? `<div class="notice">${esc(r.feedback)}</div>` : ''}
-      ${r.replaceIds ? '' : `<label class="savebox"><input type="checkbox" id="saveMeal" ${r.save ? 'checked' : ''}><span>Save to My meals as</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></label>`}
+      ${r.adding || S.busy.addItem ? `<form class="additem" id="moreForm"><input type="text" id="moreText" placeholder="e.g. 1 tbsp olive oil" aria-label="Item to add" autocomplete="off"><button class="btn small" type="submit" ${S.busy.addItem ? 'disabled' : ''}>${S.busy.addItem ? '<span class="spinner"></span>' : 'Add'}</button></form>`
+        : `<button class="add-row" data-act="addrow"><span aria-hidden="true">+</span> Add item</button>`}
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>${r.replaceIds ? 'Save changes' : `Add to ${slot}`}</button>${r.replaceIds ? '' : '<button class="btn ghost" data-act="editlog">Start over</button>'}</div>`;
   } else if (r?.clarify) {
@@ -125,7 +123,10 @@ function logSheet(){
   return `<div class="scrim${enter}" data-act="closesheet"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Add food to ${slot}">
     <div class="grip" aria-hidden="true"></div>
-    <div class="sheet-head">${mealIcon(slot)}<h2>Add to ${slot}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>
+    ${r?.review && !r.replaceIds ? `<div class="sheet-head">${mealIcon(slot)}<div class="title-edit"><span class="label">${slot}</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></div>
+      <button class="bookmark" data-act="togglesave" aria-pressed="${!!r.save}" aria-label="${r.save ? 'Saved to My meals. Tap to not save' : 'Save to My meals'}" title="${r.save ? 'Saved to My meals' : 'Save to My meals'}"><svg viewBox="0 0 24 24" fill="${r.save ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button>
+      <button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`
+    : `<div class="sheet-head">${mealIcon(slot)}<h2>${r?.replaceIds ? `Edit ${slot}` : `Add to ${slot}`}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`}
     ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
     ${body}
   </div>`;

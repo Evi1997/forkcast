@@ -82,6 +82,8 @@ document.addEventListener('click', e => {
   else if (a === 'editlog') { S.logResult = null; render(); }
   else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); S.logResult.editing = null; render(); }
   else if (a === 'edititem') { S.logResult.editing = +el.dataset.n; render(); $(`#e-amount-${el.dataset.n}`)?.focus(); }
+  else if (a === 'addrow') { S.logResult.adding = true; render(); $('#moreText')?.focus(); }
+  else if (a === 'togglesave') { S.logResult.save = !S.logResult.save; render(); }
   else if (a === 'doneedit') { S.logResult.editing = null; render(); }
   else if (a === 'usesaved') useSaved(el.dataset.id);
   else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
