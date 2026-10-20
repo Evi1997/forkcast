@@ -40,7 +40,7 @@ class ApiError(Exception):
 def models_for(tier):
     main = os.environ.get("GEMINI_MODEL", "gemini-3.8-flash")
     quick = os.environ.get("GEMINI_MODEL_QUICK", "gemini-3.5-flash-lite")
-    order = [quick, main] if tier == "quick" else [main]
+    order = [quick, main] if tier == "quick" else [main, quick]
     # Fallback alias if Google renames or retires a model.
     return order + ["gemini-flash-latest"]
 
@@ -128,6 +128,9 @@ def ask_gemini(contents, tier, want_json):
                 res = http_json(GEMINI_URL.format(model), {"contents": contents, "generationConfig": plain}, {"x-goog-api-key": key}, timeout=55)
         except urllib.error.HTTPError as e:
             detail = e.msg if isinstance(e.msg, str) and e.msg.startswith("{") else e.read().decode(errors="ignore")[:300]
+            if e.code in (500, 502, 503, 504) or "overloaded" in detail.lower() or "unavailable" in detail.lower():
+                last = f"{model} busy"
+                continue  # busy: try the next model
             if e.code == 429:
                 raise ApiError(429, "rate_limited", "The free AI limit is used up for now. Try again in a minute, or tomorrow if it's the daily limit.")
             if e.code in (400, 404) and ("not found" in detail.lower() or "not supported" in detail.lower()):

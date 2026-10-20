@@ -4,10 +4,19 @@ document.addEventListener('input', e => {
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
+  if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
+  if (e.target.dataset.edit && S.logResult?.review) {
+    // Live edit of a reviewed item; totals update without redrawing the form.
+    const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
+    it[f] = ['kcal','protein','carbs','fat'].includes(f) ? Math.max(0, Number(e.target.value) || 0) : e.target.value;
+    const tot = sumItems(S.logResult.review); const k = $('#revKcal'), p = $('#revPfc');
+    if (k) k.textContent = tot.kcal; if (p) p.innerHTML = pfc(tot);
+  }
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
+  if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
     const k = e.target.dataset.k;
     if (k.startsWith('x-')) { const x = (S.plan.extra || []).find(x => 'x-' + x.id === k); if (x) x.done = e.target.checked; }
@@ -16,6 +25,7 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'moreForm') { e.preventDefault(); addToReview($('#moreText').value); return; }
   if (e.target.id === 'addItemForm') {
     e.preventDefault();
     const name = $('#extraName').value.trim(); if (!name) return;
@@ -38,6 +48,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
+  if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
@@ -52,7 +63,7 @@ document.addEventListener('click', e => {
   const go = v => { S.view = v; render(); window.scrollTo(0, 0); };
   if (a === 'nav') { go(el.dataset.v); try { localStorage.setItem(LS + 'view', el.dataset.v); } catch {} }
   else if (a === 'send') sendChat(S.draft.chat);
-  else if (a === 'quick') sendChat(el.dataset.q);
+  else if (a === 'quick') { if (el.dataset.q === 'Weekly check-in') { go('progress'); S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); render(); S.ckSheet = true; } else sendChat(el.dataset.q); }
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
   else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; render(); }
@@ -60,6 +71,8 @@ document.addEventListener('click', e => {
     if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
     else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }
   }
+  else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
+  else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
@@ -67,7 +80,13 @@ document.addEventListener('click', e => {
   else if (a === 'manualmode') { S.sheet.manual = !S.sheet.manual; render(); }
   else if (a === 'confirmlog') confirmLog();
   else if (a === 'editlog') { S.logResult = null; render(); }
-  else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); render(); }
+  else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); S.logResult.editing = null; render(); }
+  else if (a === 'edititem') { S.logResult.editing = +el.dataset.n; render(); $(`#e-amount-${el.dataset.n}`)?.focus(); }
+  else if (a === 'doneedit') { S.logResult.editing = null; render(); }
+  else if (a === 'usesaved') useSaved(el.dataset.id);
+  else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
+  else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; render(); }
+  else if (a === 'editmeal') editMeal(el.dataset.s);
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
@@ -85,16 +104,26 @@ document.addEventListener('click', e => {
     showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
   else if (a === 'genplan') generatePlan();
-  else if (a === 'day') { S.planDay = +el.dataset.i; S.openRecipe = null; render(); }
+  else if (a === 'day') { S.planDay = +el.dataset.i; render(); }
+  else if (a === 'planmeal') { S.planSheet = { i:+el.dataset.i, j:+el.dataset.j, enter:true }; document.body.classList.add('sheet-open'); render(); S.planSheet.enter = false; }
+  else if (a === 'closeplan') { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'recipe') loadRecipe(el.dataset.k, S.plan.days[+el.dataset.i].meals[+el.dataset.j]);
   else if (a === 'logmeal') {
     const m = S.plan.days[+el.dataset.i].meals[+el.dataset.j];
-    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot:SLOTS.includes(m.slot) ? m.slot : slotNow() }]);
-    el.textContent = '✓ Logged'; el.disabled = true;
+    const slot = SLOTS.includes(m.slot) ? m.slot : slotNow();
+    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }]);
+    S.planSheet = null; document.body.classList.remove('sheet-open');
+    showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }
   else if (a === 'clearchecks') { S.plan.checked = {}; (S.plan.extra || []).forEach(x => x.done = false); save.plan(); render(); }
-  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
+  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; S.storeSheet = null; document.body.classList.remove('sheet-open'); go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
   else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
+  else if (a === 'shoptab') { S.shopTab = el.dataset.t; render(); }
+  else if (a === 'storesheet') {
+    if (S.storeSheet) { S.storeSheet = null; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); }
+    else { S.storeSheet = 'enter'; document.body.classList.add('sheet-open'); }
+    render(); if (S.storeSheet) S.storeSheet = true;
+  }
   else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
   else if (a === 'delextra') {
     const before = S.plan.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);
@@ -106,9 +135,18 @@ document.addEventListener('click', e => {
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
     S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
     if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }
-    save.progress(); render();
+    save.progress(); showToast(`Saved ${Math.round(kg*10)/10} kg`); render();
   }
-  else if (a === 'delw') { S.progress.weighins = S.progress.weighins.filter(x => x.date !== el.dataset.d); save.progress(); render(); }
+  else if (a === 'delw') {
+    const before = S.progress.weighins; S.progress.weighins = before.filter(x => x.date !== el.dataset.d); save.progress();
+    showToast('Removed weigh-in', () => { S.progress.weighins = before; save.progress(); }); render();
+  }
+  else if (a === 'startcheckin') { go('progress'); S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); render(); S.ckSheet = true; }
+  else if (a === 'cksheet') {
+    if (S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
+    else { S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); }
+    render(); if (S.ckSheet) S.ckSheet = true;
+  }
   else if (a === 'checkin') {
     const v = id => $('#' + id).value.trim();
     const c = { date:dkey(), ...S.ck, sleep:v('ckSleep'), digestion:v('ckDig'), training:v('ckTrain'), loved:v('ckLoved'), disliked:v('ckDisliked'), changes:v('ckChange'), weak:v('ckWeak'), notes:v('ckNotes') };
@@ -118,7 +156,7 @@ document.addEventListener('click', e => {
       (c.sleep ? `\nSleep: ${c.sleep}` : '') + (c.digestion ? `\nDigestion: ${c.digestion}` : '') + (c.training ? `\nTraining: ${c.training}` : '') +
       (c.weak ? `\nWeak point${S.profile.focus ? ' (' + S.profile.focus.weak_point + ')' : ''}: ${c.weak}` : '') + (c.loved ? `\nLoved: ${c.loved}` : '') + (c.disliked ? `\nDisliked / tired of: ${c.disliked}` : '') + (c.changes ? `\nChanges: ${c.changes}` : '') +
       (c.notes ? `\nNotes: ${c.notes}` : '') + (w ? `\nRecent weigh-ins: ${w}` : '');
-    S.ck = null; go('coach'); sendChat(msg);
+    S.ck = null; S.ckSheet = null; document.body.classList.remove('sheet-open'); go('coach'); sendChat(msg);
   }
   else if (a === 'askweak') { go('coach'); sendChat(S.profile.focus ? `Let's talk about my weak point (${S.profile.focus.weak_point}). What else could help?` : 'I want to talk about what I think holds me back.'); }
   else if (a === 'authmode') { S.authDraft = { email: $('#authEmail')?.value || '' }; S.auth = { status:'signed-out', mode: S.auth.mode === 'signup' ? 'signin' : 'signup' }; render(); }

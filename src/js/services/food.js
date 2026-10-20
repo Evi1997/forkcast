@@ -23,20 +23,70 @@ async function analyseFood(text, clarification){
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      S.logResult = { review: items, feedback: r?.feedback ? String(r.feedback) : null };
+      S.logResult = { review: items.map(cleanItem), feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
 }
 
-// Save the reviewed items to the open meal and close the sheet.
+const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber) });
+
+// Save the reviewed (and possibly edited) items to the open meal, remember the
+// combination under "My meals", and close the sheet.
 function confirmLog(){
-  const items = S.logResult?.review || [];
+  const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
   if (!items.length) return;
   const slot = S.sheet.slot;
+  if (r.replaceIds) { const L = S.logs[dkey()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
-  showToast(`Added to ${slot} · ${sumItems(items).kcal} kcal`);
+  if (r.save && items.length) rememberMeal(r, items, slot);
+  showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal`);
   closeSheet();
+}
+
+// "My meals": reusable combinations, most used first for each meal slot.
+function rememberMeal(r, items, slot){
+  const meals = S.profile.savedMeals || [];
+  const name = (r.name || items.map(i => i.name).slice(0, 2).join(' & ')).trim().slice(0, 40);
+  const sig = items.map(i => i.name.toLowerCase()).sort().join('|');
+  let m = meals.find(x => x.id === r.savedId) || meals.find(x => x.items.map(i => i.name.toLowerCase()).sort().join('|') === sig);
+  if (!m) { m = { id:uid(), uses:0, slots:{} }; meals.unshift(m); }
+  Object.assign(m, { name, items: items.map(cleanItem), last: Date.now(), uses: (m.uses || 0) + 1 });
+  m.slots[slot] = (m.slots[slot] || 0) + 1;
+  S.profile.savedMeals = meals.slice(0, 40); save.profile();
+}
+function savedFor(slot){
+  return [...(S.profile.savedMeals || [])].sort((a, b) => ((b.slots?.[slot] || 0) - (a.slots?.[slot] || 0)) || (b.last - a.last));
+}
+function useSaved(id){
+  const m = (S.profile.savedMeals || []).find(x => x.id === id); if (!m) return;
+  S.logResult = { review: m.items.map(i => ({...i})), name: m.name, savedId: m.id, save: true, feedback: null };
+  render();
+}
+function forgetSaved(id){
+  const before = S.profile.savedMeals || [], gone = before.find(x => x.id === id);
+  S.profile.savedMeals = before.filter(x => x.id !== id); save.profile();
+  if (gone) showToast(`Removed ${gone.name}`, () => { S.profile.savedMeals = before; save.profile(); });
+  render();
+}
+// Re-open a logged meal in the editor; saving replaces those items.
+function editMeal(slot){
+  const its = (S.logs[dkey()]?.items || []).filter(i => i.slot === slot);
+  openSheet(slot);
+  S.logResult = { review: its.map(cleanItem), replaceIds: its.map(i => i.id), name: '', save: false, feedback: null };
+  render();
+}
+// Add a forgotten item to the review: estimated by the AI, or blank to fill in.
+async function addToReview(text){
+  text = text.trim(); const r = S.logResult; if (!r) return;
+  if (!text) { r.review.push(cleanItem({ name:'', kcal:0 })); r.editing = r.review.length - 1; render(); return; }
+  S.busy.addItem = true; render();
+  try {
+    const out = await S.sample.json(PROMPTS.food({ text, slot:S.sheet.slot, country:S.profile.data.shopping?.country, eaten:{}, targets:null, hasPhoto:false, clarification:'use a typical portion' }), { modelTier:'quick' });
+    (Array.isArray(out?.items) ? out.items : []).forEach(i => r.review.push(cleanItem(i)));
+    S.draft.more = '';
+  } catch (e) { hardFail(e); S.err.log = errText(e); }
+  S.busy.addItem = false; render();
 }
 function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }

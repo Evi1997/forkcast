@@ -6,6 +6,7 @@ function render(){
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
+  if (S.view === 'coach' && !S.busy.chat) maybeNewSession();
   const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
   const view = $('#view');
   if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
@@ -14,6 +15,10 @@ function render(){
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
   document.body.classList.toggle('on-coach', S.view === 'coach');
+  if (S.view === 'plan') keepDayInView();
+  if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
+  if (S.view !== 'shop' && S.storeSheet) { S.storeSheet = null; document.body.classList.remove('sheet-open'); }
+  if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view === 'plan' && S.plan?.days) loadDayPhotos(Math.min(S.planDay, S.plan.days.length - 1));
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }

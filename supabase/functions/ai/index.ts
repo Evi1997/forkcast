@@ -30,8 +30,8 @@ class ApiError extends Error {
 function modelsFor(tier: string) {
   const main = env("GEMINI_MODEL") || "gemini-3.8-flash";
   const quick = env("GEMINI_MODEL_QUICK") || "gemini-3.5-flash-lite";
-  // Fallback alias in case Google renames or retires a model.
-  return [...(tier === "quick" ? [quick, main] : [main]), "gemini-flash-latest"];
+  // When one model is busy or slow, the next one answers instead.
+  return [...(tier === "quick" ? [quick, main] : [main, quick]), "gemini-flash-latest"];
 }
 
 async function verifyUser(req: Request) {
@@ -79,21 +79,29 @@ async function askGemini(contents: unknown, tier: string, wantJson: boolean) {
   if (!key) throw new ApiError(500, "not_configured", "Server is missing GEMINI_API_KEY.");
   const config: Record<string, unknown> = { temperature: 0.7, thinkingConfig: { thinkingLevel: THINKING[tier] || "low" } };
   if (wantJson) config.responseMimeType = "application/json";
-  let last = "";
+  let last = "", busy = false, limited = false;
   for (const model of modelsFor(tier)) {
     const call = (cfg: Record<string, unknown>) => fetch(GEMINI_URL(model), {
       method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
       body: JSON.stringify({ contents, generationConfig: cfg }),
+      signal: AbortSignal.timeout(25000), // a stuck model shouldn't hold the user up
     });
-    let res = await call(config), detail = "";
+    let res: Response, detail = "";
+    try { res = await call(config); }
+    catch { last = `${model} timed out`; continue; }
     if (res.status === 400) {
       detail = (await res.text()).slice(0, 300);
       // This model doesn't accept that thinking level: retry with its default.
-      if (/thinking/i.test(detail)) { const { thinkingConfig: _, ...rest } = config; res = await call(rest); detail = ""; }
+      if (/thinking/i.test(detail)) {
+        const { thinkingConfig: _, ...rest } = config;
+        try { res = await call(rest); detail = ""; } catch { last = `${model} timed out`; continue; }
+      }
     }
     if (!res.ok) {
       detail = detail || (await res.text()).slice(0, 300);
-      if (res.status === 429) throw new ApiError(429, "rate_limited", "The free AI limit is used up for now. Try again in a minute, or tomorrow if it's the daily limit.");
+      // Busy / overloaded / temporary errors: move on to the next model.
+      if ([500, 502, 503, 504].includes(res.status) || /overloaded|unavailable|high demand/i.test(detail)) { last = `${model} busy`; busy = true; continue; }
+      if (res.status === 429) { last = `${model} rate limited`; limited = true; continue; }
       if ((res.status === 400 || res.status === 404) && /not found|not supported/i.test(detail)) { last = detail; continue; }
       throw new ApiError(502, "upstream_error", `Gemini error ${res.status}: ${detail}`);
     }
@@ -106,6 +114,8 @@ async function askGemini(contents: unknown, tier: string, wantJson: boolean) {
     if (!text.trim()) throw new ApiError(502, "empty_completion", "The AI returned nothing. Try again.");
     return { text, model };
   }
+  if (limited) throw new ApiError(429, "rate_limited", "The free AI limit is used up for now. Try again in a minute, or tomorrow if it's the daily limit.");
+  if (busy) throw new ApiError(503, "overloaded", "Gemini is very busy right now. Try again in a minute.");
   throw new ApiError(502, "upstream_error", "No Gemini model available: " + last);
 }
 

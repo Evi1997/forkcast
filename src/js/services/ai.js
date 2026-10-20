@@ -2,6 +2,7 @@
 // S.sample.json(input, {modelTier, images}) keeps the same shape the rest of the app uses.
 const ERR = {
   rate_limited:'The free AI limit is used up for now. Try again in a minute, or tomorrow if it\'s the daily limit.',
+  overloaded:'Gemini is very busy right now. Try again in a minute.',
   unauthorized:'Your session expired. Sign in again, then retry.',
   refused:'The AI couldn\'t answer that one. Try rephrasing.',
   invalid_json:'The answer came back garbled. Try again.',

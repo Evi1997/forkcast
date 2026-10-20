@@ -3,11 +3,11 @@ async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
   if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
-  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING });
-  S.chat.turns.push({ role:'user', content:text });
-  S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
+  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING, at:Date.now() });
+  S.chat.turns.push({ role:'user', content:text, at:Date.now() });
+  S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
-  const history = S.chat.turns.slice(-24).map(t => ({ role:t.role, content:t.content }));
+  const history = S.chat.turns.slice(S.chat.start || 0).slice(-20).map(t => ({ role:t.role, content:t.content }));
   const input = PROMPTS.coach(appState(), history);
   try {
     const r = await S.sample.json(input, { cache:false });
@@ -22,7 +22,7 @@ async function sendChat(text){
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
     if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()}))); logged = r.log_items.length; }
-    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged });
+    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, at:Date.now() });
     save.profile(); save.chat();
   } catch (e) {
     hardFail(e); S.err.chat = errText(e);
@@ -30,3 +30,30 @@ async function sendChat(text){
   S.busy.chat = false; render(); scrollChat();
 }
 function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
+
+// A fresh conversation each day (or after 6 quiet hours): a short greeting that
+// fits the moment, with suggestions. Earlier messages stay available on request.
+// The greeting is written on the device, so it costs no AI call.
+function maybeNewSession(force){
+  const turns = S.chat.turns, last = turns[turns.length - 1];
+  if (!force && (!turns.length || !S.profile.onboarded)) return;
+  const lastAt = last?.at || 0, stale = !lastAt || dkey(new Date(lastAt)) !== dkey() || Date.now() - lastAt > 6 * 36e5;
+  if (!force && !stale) return;
+  if (last?.fresh) turns.pop(); // an untouched old greeting: refresh it instead of stacking
+  const h = new Date().getHours(), hi = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
+  const checkDue = (() => { const l = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return l && daysBetween(l, dkey()) >= 7; })();
+  const line = !S.profile.onboarded ? 'Shall we pick up your consultation where we left off?'
+    : checkDue ? 'It\'s been a week, so a quick check-in would help me fine-tune your plan.'
+    : eaten.kcal && t ? `So far today: ${eaten.kcal} of ${t.kcal} kcal and ${eaten.protein} g protein. How can I help?`
+    : 'What would you like to work on today?';
+  const quick = !S.profile.onboarded ? ['Let\'s continue'] : [
+    ...(checkDue ? ['Weekly check-in'] : []),
+    h < 11 ? 'Ideas for breakfast' : h < 16 ? 'Ideas for lunch' : 'What should I have for dinner?',
+    'How am I doing this week?', 'I have a question'
+  ].slice(0, 4);
+  S.chat.start = turns.length;
+  turns.push({ role:'assistant', content:`${hi}! ${line}`, quick, at:Date.now(), fresh:true });
+  S.chat.history = false;
+  save.chat();
+}

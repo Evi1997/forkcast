@@ -258,7 +258,7 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 
 @media (max-width:900px){
   .about-side{display:none}
-  .about-btn{display:inline-flex}
+  .about-btn{display:grid}
 }
 @media (max-width:820px){
   body.on-coach main{padding-block:10px 0}
@@ -350,3 +350,109 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .trend-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .trend-head .big{font-size:2.2rem;font-weight:800;letter-spacing:-.04em}
 .trend-pill{font-size:.85rem;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--surface-2);color:var(--ink)}
+
+/* Editable review + My meals */
+.mi-btn{width:100%;border:0;text-align:left;cursor:pointer;font:inherit;color:inherit;grid-template-columns:minmax(0,1fr) auto auto}
+.mi-btn > span:first-child{display:flex;flex-direction:column;min-width:0}
+.mi-btn .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-btn .pen{width:16px;height:16px;color:var(--muted)}
+.mi-btn:hover{outline:2px solid var(--line)}
+.mi-edit{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:var(--surface);border:2px solid var(--accent)}
+.fields.two{grid-template-columns:1.4fr 1fr}
+.fields.four{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.fields.four input{padding:10px 8px;text-align:center}
+.savebox{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:8px;font-size:.88rem;font-weight:600;padding:10px 12px;border-radius:14px;background:var(--accent-soft)}
+.savebox input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.savebox input[type=text]{min-height:38px;padding:8px 10px;background:var(--surface)}
+.mymeals{display:flex;flex-direction:column;gap:6px}
+.saved{display:flex;align-items:center;gap:8px;border-radius:14px;background:var(--surface-2)}
+.saved-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;padding:10px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.saved-main b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.saved-main .muted{font-size:.82rem}
+.saved-plus{width:32px;height:32px;margin-right:8px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;flex:none}
+@media (max-width:420px){.fields.two{grid-template-columns:1fr}}
+
+/* Smart tip (Today) */
+.tipcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;cursor:pointer;font:inherit;color:inherit;background:var(--paprika-soft);border-radius:20px;padding:14px 16px}
+.tip-ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--surface);color:var(--paprika);flex:none}
+.tip-ic svg{width:22px;height:22px}
+.tip-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.tip-txt b{font-size:.95rem}
+.tip-txt span{font-size:.88rem;color:var(--muted);line-height:1.4}
+.tip-go{width:18px;height:18px;color:var(--muted);flex:none}
+.iconbtn2{margin-left:auto;width:40px;height:40px;border-radius:12px;border:0;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn2 svg{width:20px;height:20px}
+.chat-head .about-btn{margin-left:0}
+.chat-title b{white-space:nowrap}
+.chat-head .iconbtn2 + .about-btn{margin-left:0}
+@media (min-width:901px){.iconbtn2{margin-left:auto}}
+.earlier{align-self:center;border:0;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:.82rem;padding:6px 12px;border-radius:99px;cursor:pointer}
+
+/* Week plan: day picker + slim meal rows */
+.daypick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px;scroll-behavior:auto}
+.daypick::-webkit-scrollbar{display:none}
+.dp{flex:1 0 46px;min-height:62px;border:0;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;color:var(--ink)}
+.dp span{font-size:.72rem;font-weight:700;color:var(--muted)}
+.dp b{font-size:1.15rem}
+.dp i{position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:var(--paprika)}
+.dp[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.dp[aria-selected="true"] span{color:color-mix(in srgb,var(--bg) 70%,transparent)}
+.plan-day{display:flex;flex-direction:column;padding:8px 18px 10px}
+.day-sum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.day-sum b{font-size:1.05rem}
+.prow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;cursor:pointer;font:inherit;color:inherit;width:100%}
+.prow:last-child{border-bottom:0}
+.prow .meal-ic{width:42px;height:42px;border-radius:14px}
+.prow-txt{display:flex;flex-direction:column;min-width:0;gap:1px}
+.prow-txt .label{font-size:.72rem}
+.prow-txt b{font-size:.95rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prow .num{font-size:.9rem}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:.92rem}
+.facts dt{color:var(--muted);font-weight:600}
+.facts dd{margin:0}
+.recipe-body{display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:.92rem}
+.recipe-body ul,.recipe-body ol{margin:0 0 6px;padding-left:18px}
+.sheet .sheet-head h2{font-size:1.1rem;line-height:1.25}
+
+/* Shop & prep */
+.store-btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;background:var(--surface);box-shadow:var(--shadow);padding:9px 12px 9px 14px;font-weight:700;cursor:pointer;color:var(--ink)}
+.store-btn svg{width:18px;height:18px}
+.store-btn svg:last-child{width:14px;height:14px;color:var(--muted)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:16px;background:var(--surface-2)}
+.seg button{border:0;background:none;padding:10px;border-radius:12px;font-weight:700;color:var(--muted);cursor:pointer;font-size:.92rem}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(16,20,15,.08),0 2px 8px rgba(16,20,15,.06)}
+.seg .num{font-size:.8rem;margin-left:4px;color:var(--accent)}
+.shoplist{display:flex;flex-direction:column;gap:12px}
+.basket{display:flex;align-items:center;gap:12px}
+.basket .basket-bar{flex:1}
+.basket .num{font-size:.85rem}
+.shoplist .grp{margin:0}
+.shoplist .grp h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:4px 0 2px}
+.gi{min-height:46px}
+.gi .gname{font-weight:600}
+.basket-done{border-top:1px solid var(--line);padding-top:8px}
+.basket-done summary{cursor:pointer;font-weight:700;color:var(--muted);padding:6px 0;list-style:none}
+.basket-done summary::-webkit-details-marker{display:none}
+.basket-done summary::before{content:"▸ ";}
+.basket-done[open] summary::before{content:"▾ ";}
+.foot-note{font-size:.8rem;color:var(--muted);padding:0 6px}
+.prep h2{font-size:1.05rem}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* Progress: overview tiles, one-line weight entry */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;gap:2px;padding:16px;border-radius:20px;background:var(--surface);box-shadow:var(--shadow);min-width:0;text-align:left;border:0;font:inherit;color:inherit}
+.tile b{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.tile small{font-size:.9rem;font-weight:700;color:var(--muted)}
+.tile .muted{font-size:.8rem}
+.tile-btn{cursor:pointer;background:var(--accent-soft)}
+.weigh-row{display:flex;gap:10px;align-items:stretch}
+.unit-input{flex:1;display:flex;align-items:center;border-radius:14px;background:var(--surface-2);border:2px solid transparent;padding-right:14px}
+.unit-input:focus-within{border-color:var(--accent);background:var(--surface)}
+.unit-input input{background:transparent!important;border:0!important;box-shadow:none!important;font-size:1.3rem;font-weight:800}
+.unit-input span{font-weight:700;color:var(--muted)}
+.hist{margin-top:6px}
+/* iOS date inputs ignore width and spill out of their box; make them behave */
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:46px;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
+@media (max-width:820px){.tiles{grid-template-columns:1fr 1fr}}

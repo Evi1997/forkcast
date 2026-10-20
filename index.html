@@ -389,7 +389,7 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 
 @media (max-width:900px){
   .about-side{display:none}
-  .about-btn{display:inline-flex}
+  .about-btn{display:grid}
 }
 @media (max-width:820px){
   body.on-coach main{padding-block:10px 0}
@@ -481,6 +481,112 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .trend-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .trend-head .big{font-size:2.2rem;font-weight:800;letter-spacing:-.04em}
 .trend-pill{font-size:.85rem;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--surface-2);color:var(--ink)}
+
+/* Editable review + My meals */
+.mi-btn{width:100%;border:0;text-align:left;cursor:pointer;font:inherit;color:inherit;grid-template-columns:minmax(0,1fr) auto auto}
+.mi-btn > span:first-child{display:flex;flex-direction:column;min-width:0}
+.mi-btn .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mi-btn .pen{width:16px;height:16px;color:var(--muted)}
+.mi-btn:hover{outline:2px solid var(--line)}
+.mi-edit{display:flex;flex-direction:column;gap:10px;padding:12px;border-radius:16px;background:var(--surface);border:2px solid var(--accent)}
+.fields.two{grid-template-columns:1.4fr 1fr}
+.fields.four{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.fields.four input{padding:10px 8px;text-align:center}
+.savebox{display:grid;grid-template-columns:auto auto minmax(0,1fr);align-items:center;gap:8px;font-size:.88rem;font-weight:600;padding:10px 12px;border-radius:14px;background:var(--accent-soft)}
+.savebox input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.savebox input[type=text]{min-height:38px;padding:8px 10px;background:var(--surface)}
+.mymeals{display:flex;flex-direction:column;gap:6px}
+.saved{display:flex;align-items:center;gap:8px;border-radius:14px;background:var(--surface-2)}
+.saved-main{flex:1;min-width:0;display:flex;flex-direction:column;align-items:flex-start;border:0;background:none;padding:10px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.saved-main b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.saved-main .muted{font-size:.82rem}
+.saved-plus{width:32px;height:32px;margin-right:8px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-weight:800;flex:none}
+@media (max-width:420px){.fields.two{grid-template-columns:1fr}}
+
+/* Smart tip (Today) */
+.tipcard{display:flex;align-items:center;gap:14px;width:100%;text-align:left;border:0;cursor:pointer;font:inherit;color:inherit;background:var(--paprika-soft);border-radius:20px;padding:14px 16px}
+.tip-ic{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;background:var(--surface);color:var(--paprika);flex:none}
+.tip-ic svg{width:22px;height:22px}
+.tip-txt{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.tip-txt b{font-size:.95rem}
+.tip-txt span{font-size:.88rem;color:var(--muted);line-height:1.4}
+.tip-go{width:18px;height:18px;color:var(--muted);flex:none}
+.iconbtn2{margin-left:auto;width:40px;height:40px;border-radius:12px;border:0;background:var(--surface-2);color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn2 svg{width:20px;height:20px}
+.chat-head .about-btn{margin-left:0}
+.chat-title b{white-space:nowrap}
+.chat-head .iconbtn2 + .about-btn{margin-left:0}
+@media (min-width:901px){.iconbtn2{margin-left:auto}}
+.earlier{align-self:center;border:0;background:var(--surface-2);color:var(--muted);font-weight:700;font-size:.82rem;padding:6px 12px;border-radius:99px;cursor:pointer}
+
+/* Week plan: day picker + slim meal rows */
+.daypick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px;scroll-behavior:auto}
+.daypick::-webkit-scrollbar{display:none}
+.dp{flex:1 0 46px;min-height:62px;border:0;border-radius:16px;background:var(--surface);box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;position:relative;color:var(--ink)}
+.dp span{font-size:.72rem;font-weight:700;color:var(--muted)}
+.dp b{font-size:1.15rem}
+.dp i{position:absolute;bottom:6px;width:5px;height:5px;border-radius:50%;background:var(--paprika)}
+.dp[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.dp[aria-selected="true"] span{color:color-mix(in srgb,var(--bg) 70%,transparent)}
+.plan-day{display:flex;flex-direction:column;padding:8px 18px 10px}
+.day-sum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.day-sum b{font-size:1.05rem}
+.prow{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:12px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;cursor:pointer;font:inherit;color:inherit;width:100%}
+.prow:last-child{border-bottom:0}
+.prow .meal-ic{width:42px;height:42px;border-radius:14px}
+.prow-txt{display:flex;flex-direction:column;min-width:0;gap:1px}
+.prow-txt .label{font-size:.72rem}
+.prow-txt b{font-size:.95rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prow .num{font-size:.9rem}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0;font-size:.92rem}
+.facts dt{color:var(--muted);font-weight:600}
+.facts dd{margin:0}
+.recipe-body{display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:.92rem}
+.recipe-body ul,.recipe-body ol{margin:0 0 6px;padding-left:18px}
+.sheet .sheet-head h2{font-size:1.1rem;line-height:1.25}
+
+/* Shop & prep */
+.store-btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:99px;background:var(--surface);box-shadow:var(--shadow);padding:9px 12px 9px 14px;font-weight:700;cursor:pointer;color:var(--ink)}
+.store-btn svg{width:18px;height:18px}
+.store-btn svg:last-child{width:14px;height:14px;color:var(--muted)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:16px;background:var(--surface-2)}
+.seg button{border:0;background:none;padding:10px;border-radius:12px;font-weight:700;color:var(--muted);cursor:pointer;font-size:.92rem}
+.seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(16,20,15,.08),0 2px 8px rgba(16,20,15,.06)}
+.seg .num{font-size:.8rem;margin-left:4px;color:var(--accent)}
+.shoplist{display:flex;flex-direction:column;gap:12px}
+.basket{display:flex;align-items:center;gap:12px}
+.basket .basket-bar{flex:1}
+.basket .num{font-size:.85rem}
+.shoplist .grp{margin:0}
+.shoplist .grp h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:4px 0 2px}
+.gi{min-height:46px}
+.gi .gname{font-weight:600}
+.basket-done{border-top:1px solid var(--line);padding-top:8px}
+.basket-done summary{cursor:pointer;font-weight:700;color:var(--muted);padding:6px 0;list-style:none}
+.basket-done summary::-webkit-details-marker{display:none}
+.basket-done summary::before{content:"▸ ";}
+.basket-done[open] summary::before{content:"▾ ";}
+.foot-note{font-size:.8rem;color:var(--muted);padding:0 6px}
+.prep h2{font-size:1.05rem}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+
+/* Progress: overview tiles, one-line weight entry */
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;gap:2px;padding:16px;border-radius:20px;background:var(--surface);box-shadow:var(--shadow);min-width:0;text-align:left;border:0;font:inherit;color:inherit}
+.tile b{font-size:1.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.tile small{font-size:.9rem;font-weight:700;color:var(--muted)}
+.tile .muted{font-size:.8rem}
+.tile-btn{cursor:pointer;background:var(--accent-soft)}
+.weigh-row{display:flex;gap:10px;align-items:stretch}
+.unit-input{flex:1;display:flex;align-items:center;border-radius:14px;background:var(--surface-2);border:2px solid transparent;padding-right:14px}
+.unit-input:focus-within{border-color:var(--accent);background:var(--surface)}
+.unit-input input{background:transparent!important;border:0!important;box-shadow:none!important;font-size:1.3rem;font-weight:800}
+.unit-input span{font-weight:700;color:var(--muted)}
+.hist{margin-top:6px}
+/* iOS date inputs ignore width and spill out of their box; make them behave */
+input[type=date]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:46px;text-align:left}
+input[type=date]::-webkit-date-and-time-value{text-align:left}
+@media (max-width:820px){.tiles{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -573,6 +679,7 @@ Reply with only JSON:
 {"items":[{"name":"Scrambled eggs","amount":"2 large","kcal":180,"protein":13,"carbs":2,"fat":13,"fiber":0}],
  "clarify": null or "Approximately how much rice did you eat: 100 g, 200 g, or something else?",
  "options": ["100 g","200 g","300 g"],
+ "meal_name": "short, appetising name for this combination so it can be reused, 2-4 words, e.g. Protein oat bowl",
  "feedback": "one neutral, practical sentence about the rest of today after this meal (e.g. protein or kcal remaining). Never moralise or label food good/bad."}`;
   },
 
@@ -790,6 +897,7 @@ function streak(){
 // S.sample.json(input, {modelTier, images}) keeps the same shape the rest of the app uses.
 const ERR = {
   rate_limited:'The free AI limit is used up for now. Try again in a minute, or tomorrow if it\'s the daily limit.',
+  overloaded:'Gemini is very busy right now. Try again in a minute.',
   unauthorized:'Your session expired. Sign in again, then retry.',
   refused:'The AI couldn\'t answer that one. Try rephrasing.',
   invalid_json:'The answer came back garbled. Try again.',
@@ -907,11 +1015,11 @@ async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
   if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
-  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING });
-  S.chat.turns.push({ role:'user', content:text });
-  S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
+  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING, at:Date.now() });
+  S.chat.turns.push({ role:'user', content:text, at:Date.now() });
+  S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
-  const history = S.chat.turns.slice(-24).map(t => ({ role:t.role, content:t.content }));
+  const history = S.chat.turns.slice(S.chat.start || 0).slice(-20).map(t => ({ role:t.role, content:t.content }));
   const input = PROMPTS.coach(appState(), history);
   try {
     const r = await S.sample.json(input, { cache:false });
@@ -926,7 +1034,7 @@ async function sendChat(text){
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
     if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()}))); logged = r.log_items.length; }
-    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged });
+    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, at:Date.now() });
     save.profile(); save.chat();
   } catch (e) {
     hardFail(e); S.err.chat = errText(e);
@@ -934,6 +1042,33 @@ async function sendChat(text){
   S.busy.chat = false; render(); scrollChat();
 }
 function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
+
+// A fresh conversation each day (or after 6 quiet hours): a short greeting that
+// fits the moment, with suggestions. Earlier messages stay available on request.
+// The greeting is written on the device, so it costs no AI call.
+function maybeNewSession(force){
+  const turns = S.chat.turns, last = turns[turns.length - 1];
+  if (!force && (!turns.length || !S.profile.onboarded)) return;
+  const lastAt = last?.at || 0, stale = !lastAt || dkey(new Date(lastAt)) !== dkey() || Date.now() - lastAt > 6 * 36e5;
+  if (!force && !stale) return;
+  if (last?.fresh) turns.pop(); // an untouched old greeting: refresh it instead of stacking
+  const h = new Date().getHours(), hi = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+  const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
+  const checkDue = (() => { const l = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return l && daysBetween(l, dkey()) >= 7; })();
+  const line = !S.profile.onboarded ? 'Shall we pick up your consultation where we left off?'
+    : checkDue ? 'It\'s been a week, so a quick check-in would help me fine-tune your plan.'
+    : eaten.kcal && t ? `So far today: ${eaten.kcal} of ${t.kcal} kcal and ${eaten.protein} g protein. How can I help?`
+    : 'What would you like to work on today?';
+  const quick = !S.profile.onboarded ? ['Let\'s continue'] : [
+    ...(checkDue ? ['Weekly check-in'] : []),
+    h < 11 ? 'Ideas for breakfast' : h < 16 ? 'Ideas for lunch' : 'What should I have for dinner?',
+    'How am I doing this week?', 'I have a question'
+  ].slice(0, 4);
+  S.chat.start = turns.length;
+  turns.push({ role:'assistant', content:`${hi}! ${line}`, quick, at:Date.now(), fresh:true });
+  S.chat.history = false;
+  save.chat();
+}
 
 // === services/food.js ===
 // Food diary: adding items and estimating meals from text or photos
@@ -961,20 +1096,70 @@ async function analyseFood(text, clarification){
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      S.logResult = { review: items, feedback: r?.feedback ? String(r.feedback) : null };
+      S.logResult = { review: items.map(cleanItem), feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
 }
 
-// Save the reviewed items to the open meal and close the sheet.
+const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber) });
+
+// Save the reviewed (and possibly edited) items to the open meal, remember the
+// combination under "My meals", and close the sheet.
 function confirmLog(){
-  const items = S.logResult?.review || [];
+  const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
   if (!items.length) return;
   const slot = S.sheet.slot;
+  if (r.replaceIds) { const L = S.logs[dkey()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
-  showToast(`Added to ${slot} · ${sumItems(items).kcal} kcal`);
+  if (r.save && items.length) rememberMeal(r, items, slot);
+  showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal`);
   closeSheet();
+}
+
+// "My meals": reusable combinations, most used first for each meal slot.
+function rememberMeal(r, items, slot){
+  const meals = S.profile.savedMeals || [];
+  const name = (r.name || items.map(i => i.name).slice(0, 2).join(' & ')).trim().slice(0, 40);
+  const sig = items.map(i => i.name.toLowerCase()).sort().join('|');
+  let m = meals.find(x => x.id === r.savedId) || meals.find(x => x.items.map(i => i.name.toLowerCase()).sort().join('|') === sig);
+  if (!m) { m = { id:uid(), uses:0, slots:{} }; meals.unshift(m); }
+  Object.assign(m, { name, items: items.map(cleanItem), last: Date.now(), uses: (m.uses || 0) + 1 });
+  m.slots[slot] = (m.slots[slot] || 0) + 1;
+  S.profile.savedMeals = meals.slice(0, 40); save.profile();
+}
+function savedFor(slot){
+  return [...(S.profile.savedMeals || [])].sort((a, b) => ((b.slots?.[slot] || 0) - (a.slots?.[slot] || 0)) || (b.last - a.last));
+}
+function useSaved(id){
+  const m = (S.profile.savedMeals || []).find(x => x.id === id); if (!m) return;
+  S.logResult = { review: m.items.map(i => ({...i})), name: m.name, savedId: m.id, save: true, feedback: null };
+  render();
+}
+function forgetSaved(id){
+  const before = S.profile.savedMeals || [], gone = before.find(x => x.id === id);
+  S.profile.savedMeals = before.filter(x => x.id !== id); save.profile();
+  if (gone) showToast(`Removed ${gone.name}`, () => { S.profile.savedMeals = before; save.profile(); });
+  render();
+}
+// Re-open a logged meal in the editor; saving replaces those items.
+function editMeal(slot){
+  const its = (S.logs[dkey()]?.items || []).filter(i => i.slot === slot);
+  openSheet(slot);
+  S.logResult = { review: its.map(cleanItem), replaceIds: its.map(i => i.id), name: '', save: false, feedback: null };
+  render();
+}
+// Add a forgotten item to the review: estimated by the AI, or blank to fill in.
+async function addToReview(text){
+  text = text.trim(); const r = S.logResult; if (!r) return;
+  if (!text) { r.review.push(cleanItem({ name:'', kcal:0 })); r.editing = r.review.length - 1; render(); return; }
+  S.busy.addItem = true; render();
+  try {
+    const out = await S.sample.json(PROMPTS.food({ text, slot:S.sheet.slot, country:S.profile.data.shopping?.country, eaten:{}, targets:null, hasPhoto:false, clarification:'use a typical portion' }), { modelTier:'quick' });
+    (Array.isArray(out?.items) ? out.items : []).forEach(i => r.review.push(cleanItem(i)));
+    S.draft.more = '';
+  } catch (e) { hardFail(e); S.err.log = errText(e); }
+  S.busy.addItem = false; render();
 }
 function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
@@ -1036,8 +1221,7 @@ async function generateShopping(store){
   S.busy.shop = false; render();
 }
 async function loadRecipe(key, meal){
-  if (S.openRecipe === key) { S.openRecipe = null; render(); return; }
-  if (S.plan.recipes?.[key]) { S.openRecipe = key; render(); return; }
+  if (S.plan.recipes?.[key]) { render(); return; }
   if (!S.sampleOK) { S.err.plan = 'Sign in to see recipes.'; render(); return; }
   S.busy.recipe = key; S.openRecipe = key; render();
   try {
@@ -1080,6 +1264,7 @@ function render(){
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
+  if (S.view === 'coach' && !S.busy.chat) maybeNewSession();
   const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
   const view = $('#view');
   if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
@@ -1088,6 +1273,10 @@ function render(){
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
   document.body.classList.toggle('on-coach', S.view === 'coach');
+  if (S.view === 'plan') keepDayInView();
+  if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
+  if (S.view !== 'shop' && S.storeSheet) { S.storeSheet = null; document.body.classList.remove('sheet-open'); }
+  if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view === 'plan' && S.plan?.days) loadDayPhotos(Math.min(S.planDay, S.plan.days.length - 1));
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
@@ -1112,7 +1301,7 @@ function vToday(){
   ${streakPill()}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
-  ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="nav" data-v="progress">Check in</button></div>` : ''}
+  ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
     <section class="card hero fuel" aria-label="Calories and macros">
       <div class="ring">
         <svg viewBox="0 0 176 176"><circle cx="88" cy="88" r="78" fill="none" stroke="var(--hero-track)" stroke-width="16"/>
@@ -1127,8 +1316,8 @@ function vToday(){
         <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
       </div>
     </section>
-  ${mealsSection(t)}
   ${focusCard()}
+  ${mealsSection(t)}
   ${S.sheet ? logSheet() : ''}
 `;
 }
@@ -1147,7 +1336,7 @@ const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg v
 function mealsSection(t){
   const items = S.logs[dkey()]?.items || [];
   return `<section class="card meals" aria-label="Meals">
-    <div class="row" style="justify-content:space-between"><h2>Meals</h2><span class="muted" style="font-size:.85rem">Tap + to add food</span></div>
+    <h2>Meals</h2>
     ${SLOTS.map(s => {
       const its = items.filter(i => i.slot === s), k = sumItems(its).kcal, open = S.openMeal === s;
       const sub = its.length ? `${k} kcal · ${its.length} item${its.length > 1 ? 's' : ''}` : t ? `Suggested ~${Math.round(t.kcal * MEAL_SHARE[s] / 10) * 10} kcal` : 'Nothing yet';
@@ -1157,7 +1346,7 @@ function mealsSection(t){
         </button>
         <button class="addbtn" data-act="openlog" data-s="${s}" aria-label="Add food to ${s}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
         ${open && its.length ? `<div class="meal-list">
-          <div class="meal-macros">${pfc(sumItems(its))}<span class="muted">Tap × to remove</span></div>
+          <div class="meal-macros">${pfc(sumItems(its))}<button class="btn ghost small" data-act="editmeal" data-s="${s}">Edit</button></div>
           ${its.map(i => `<div class="mrow"><span class="mname">${esc(i.name)}${i.amount ? ` <span class="muted">· ${esc(i.amount)}</span>` : ''}</span><span class="num">${r0(i.kcal)}</span><button class="x small-x" data-act="del" data-id="${i.id}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}
         </div>` : ''}
       </div>`;
@@ -1180,12 +1369,22 @@ function logSheet(){
   } else if (r?.review) {
     const tot = sumItems(r.review);
     body = `<div class="review">
-      <div class="review-total"><span class="label">Total</span><span class="big num">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(tot)}</span></div>
-      ${r.review.map((i, n) => `<div class="mi"><div><div class="name">${esc(i.name)}</div><div class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</div></div><span class="num">${r0(i.kcal)}</span><button class="x" data-act="dropitem" data-n="${n}" aria-label="Remove ${esc(i.name)}">×</button></div>`).join('')}
+      <div class="review-total"><span class="label">Total</span><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
+      <p class="muted" style="font-size:.82rem">Tap a food to change it. Numbers are estimates.</p>
+      ${r.review.map((i, n) => r.editing === n ? `<div class="mi-edit" data-n="${n}">
+          <div class="fields two"><div class="field"><label for="e-name-${n}">Food</label><input type="text" id="e-name-${n}" data-edit="${n}.name" value="${esc(i.name)}" placeholder="e.g. Olive oil"></div>
+          <div class="field"><label for="e-amount-${n}">Amount</label><input type="text" id="e-amount-${n}" data-edit="${n}.amount" value="${esc(i.amount)}" placeholder="e.g. 1 tbsp"></div></div>
+          <div class="fields four"><div class="field"><label for="e-kcal-${n}">kcal</label><input type="number" inputmode="numeric" id="e-kcal-${n}" data-edit="${n}.kcal" value="${r0(i.kcal)}"></div>
+          <div class="field"><label for="e-p-${n}">Protein</label><input type="number" inputmode="decimal" id="e-p-${n}" data-edit="${n}.protein" value="${r0(i.protein)}"></div>
+          <div class="field"><label for="e-c-${n}">Carbs</label><input type="number" inputmode="decimal" id="e-c-${n}" data-edit="${n}.carbs" value="${r0(i.carbs)}"></div>
+          <div class="field"><label for="e-f-${n}">Fat</label><input type="number" inputmode="decimal" id="e-f-${n}" data-edit="${n}.fat" value="${r0(i.fat)}"></div></div>
+          <div class="row" style="justify-content:space-between"><button class="btn ghost small" data-act="dropitem" data-n="${n}">Remove</button><button class="btn small" data-act="doneedit">Done</button></div>
+        </div>` : `<button class="mi mi-btn" data-act="edititem" data-n="${n}" aria-label="Edit ${esc(i.name || 'item')}"><span><span class="name">${esc(i.name || 'New item')}</span><span class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</span></span><span class="num">${r0(i.kcal)}</span><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>`).join('')}
+      <form class="additem" id="moreForm"><input type="text" id="moreText" placeholder="Missing something? e.g. 1 tbsp olive oil" aria-label="Add a missing item" autocomplete="off"><button class="btn small" type="submit" ${S.busy.addItem ? 'disabled' : ''}>${S.busy.addItem ? '<span class="spinner"></span>' : 'Add'}</button></form>
       ${r.feedback ? `<div class="notice">${esc(r.feedback)}</div>` : ''}
-      <p class="muted" style="font-size:.8rem"><span class="tag est">Estimated</span> Numbers are close estimates, not exact.</p>
+      ${r.replaceIds ? '' : `<label class="savebox"><input type="checkbox" id="saveMeal" ${r.save ? 'checked' : ''}><span>Save to My meals as</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></label>`}
     </div>
-    <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>Add to ${slot}</button><button class="btn ghost" data-act="editlog">Change description</button></div>`;
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>${r.replaceIds ? 'Save changes' : `Add to ${slot}`}</button>${r.replaceIds ? '' : '<button class="btn ghost" data-act="editlog">Start over</button>'}</div>`;
   } else if (r?.clarify) {
     body = `<div class="stack"><div class="bubble">${esc(r.clarify)}</div>
       <div class="opts">${r.options.map(o => `<button class="opt" data-act="clarify" data-o="${esc(o)}">${esc(o)}</button>`).join('')}</div>
@@ -1200,7 +1399,11 @@ function logSheet(){
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="manual">Add to ${slot}</button><button class="btn ghost" data-act="manualmode">Back to describing</button></div>`;
   } else {
+    const mine = savedFor(slot), all = S.sheet.allMeals;
     body = `<div class="stack">
+      ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">My meals</span>${mine.length > 3 ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
+        ${(all ? mine : mine.slice(0, 3)).map(m => `<div class="saved"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`).join('')}
+      </div><div class="or"><span>or add something new</span></div>` : ''}
       ${S.canImages ? `<label class="snap" for="photo">${S.logPhoto ? `<img alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span><b>Photo added</b><span class="muted">Add a few words below if you like</span></span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Take a photo</b><span class="muted">We'll recognise the food for you</span></span>`}</label><input class="hidden-file" type="file" id="photo" accept="image/*">
       <div class="or"><span>or describe it</span></div>` : ''}
       <textarea id="logText" class="describe" rows="3" placeholder="Type what you ate, in your own words" aria-label="What you ate"></textarea>
@@ -1218,12 +1421,31 @@ function logSheet(){
   </div>`;
 }
 
+// One short, timely tip instead of a big static card. Picked on the device from
+// the time of day, the day of the week and what's been eaten: no AI call.
+function smartTip(){
+  const t = targets(), items = S.logs[dkey()]?.items || [], eaten = sumItems(items);
+  const now = new Date(), h = now.getHours(), dow = now.getDay(), weekend = dow === 0 || dow === 6 || (dow === 5 && h >= 16);
+  const f = S.profile.focus, dayN = Math.floor(now / 864e5);
+  const pick = arr => arr[dayN % arr.length];
+  const pLeft = t ? t.protein - eaten.protein : 0, kLeft = t ? t.kcal - eaten.kcal : 0;
+  if (!t) return null;
+  if (t && kLeft < -150) return { title:'A little above today\'s target', text:'Totally fine once in a while. A lighter, veggie-heavy next meal keeps the week balanced.', q:'I went a bit over my calories today. What would be a good light next meal?' };
+  if (f && weekend && f.tips?.length) return { title:`Weekend focus: ${f.weak_point}`, text: pick(f.tips), q:`It's the weekend. Help me with my weak point (${f.weak_point}) today.` };
+  if (h >= 16 && pLeft > 30) return { title:`${r0(pLeft)} g protein to go`, text:`About ${pLeft > 45 ? 'two palm-sized portions' : 'a palm-sized portion'} of chicken, fish, tofu or Greek yogurt at dinner gets you there.`, q:`I still need about ${r0(pLeft)} g protein today. What could I have?` };
+  if (!items.length && h < 11) return { title:'Start with breakfast', text:'Logging as you eat takes seconds; remembering later is harder.', q:'Give me a quick breakfast idea that fits my targets.' };
+  if (h >= 14 && t.fiber && eaten.fiber < t.fiber * 0.4) return { title:'Room for more fibre', text:'Beans, lentils, berries, oats or a big side of veg all help, and keep you full.', q:'How can I add more fibre to the rest of today?' };
+  if (f?.tips?.length) return { title:`Your focus: ${f.weak_point}`, text: pick(f.tips), q:`Let's talk about my weak point (${f.weak_point}). What else could help?` };
+  if (!f && S.profile.onboarded) return { title:'What holds you back most?', text:'Weekends, evenings, eating out… tell your dietitian and the plan will work around it.', q:'I want to talk about what I think holds me back.' };
+  return null;
+}
 function focusCard(){
-  const f = S.profile.focus;
-  if (!f) return S.profile.data.basics?.age ? `<section class="card row" style="justify-content:space-between"><span><span class="label">Your focus</span><br><b>What do you think holds you back most?</b> <span class="muted">Weekends, evenings, eating out… naming it lets your dietitian plan around it.</span></span><button class="btn small" data-act="askweak">Tell my dietitian</button></section>` : '';
-  return `<section class="card stack focus" aria-label="Your focus"><div class="row" style="justify-content:space-between"><div><div class="label">Your focus this week</div><h2>${esc(f.weak_point)}</h2></div><button class="btn small" data-act="askweak">Talk it through</button></div>
-  ${f.why ? `<p class="muted">${esc(f.why)}</p>` : ''}
-  <ol class="tips">${f.tips.map(t => `<li>${esc(t)}</li>`).join('')}</ol></section>`;
+  const tip = smartTip(); if (!tip) return '';
+  return `<button class="tipcard" data-act="askquick" data-q="${esc(tip.q)}" aria-label="${esc(tip.title)}. Talk it through with your dietitian">
+    <span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></span>
+    <span class="tip-txt"><b>${esc(tip.title)}</b><span>${esc(tip.text)}</span></span>
+    <svg class="tip-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+  </button>`;
 }
 
 function streakPill(){
@@ -1240,8 +1462,9 @@ const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2.5c.4 0
 const SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>';
 
 function vCoach(){
-  const turns = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
-  const last = turns[turns.length - 1];
+  const all = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
+  const start = S.chat.history ? 0 : Math.min(S.chat.start || 0, all.length - 1);
+  const turns = all.slice(start), last = all[all.length - 1];
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
   const status = S.profile.onboarded ? 'Follow-up' : `Consultation · ${done}/${SECTIONS.length}`;
   const aiRow = (inner) => `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai">${inner}</div></div>`;
@@ -1252,11 +1475,13 @@ function vCoach(){
       <header class="chat-head">
         <span class="ai-avatar" aria-hidden="true">${STAR}</span>
         <div class="chat-title"><b>Your dietitian</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
-        <button class="btn small about-btn" data-act="about">About you</button>
+        <button class="iconbtn2" data-act="newchat" aria-label="New conversation" title="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
       </header>
       ${!S.profile.onboarded ? `<div class="consult-bar" aria-hidden="true"><span style="width:${Math.max(4, done / SECTIONS.length * 100)}%"></span></div>` : ''}
       <div class="msgs" aria-live="polite">
         ${statusBanner()}
+        ${start > 0 ? `<button class="earlier" data-act="history">Show earlier messages</button>` : ''}
         ${turns.map(m => m.role === 'user' ? `<div class="msg me">${esc(m.content)}</div>` :
           aiRow(`${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's meals</div>` : ''}`)).join('')}
         ${S.busy.chat ? aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`) : ''}
@@ -1303,32 +1528,46 @@ function fitChatBox(){
 }
 
 // === views/plan.js ===
-// Week plan view
+// Week plan: a slim day picker that keeps the chosen day in view, the day's
+// meals as one-line rows, and the details (portion, swap, recipe) in a sheet.
 function vPlan(){
   const head = `<div class="head"><div><div class="label">${S.plan ? `Week of ${fromKey(S.plan.weekOf).toLocaleDateString(undefined,{day:'numeric',month:'long'})}` : 'Seven days, prepped ahead'}</div><h1>Week plan</h1></div>
     <button class="btn ${S.plan ? 'small' : 'primary'}" data-act="genplan" ${S.busy.plan ? 'disabled' : ''}>${S.busy.plan ? `<span class="spinner"></span> ${esc(S.busy.plan)}` : S.plan ? '↻ New week' : 'Plan my week'}</button></div>`;
   const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}${!S.profile.onboarded && !S.plan ? `<div class="notice accent">Your plan is built from your consultation. Finish it first for a plan that fits your tastes, schedule and supermarket. You can still plan now with what's known.</div>` : ''}`;
-  if (!S.plan?.days) return head + notes + `<section class="card empty"><div class="blob" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></div><h2>No plan yet</h2><p>Forkcast writes seven days of meals around the food you like, your targets and how often you want to cook, then turns them into one shopping list and a prep schedule.</p></section>`;
+  if (!S.plan?.days) return head + notes + `<section class="card empty"><div class="blob" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></div><h2>No plan yet</h2><p>Forkcast writes seven days of meals around the food you like, your targets and how often you want to cook, then turns them into one shopping list.</p></section>`;
   const di = Math.min(S.planDay, S.plan.days.length - 1), day = S.plan.days[di], t = targets();
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
+  const mon = fromKey(S.plan.weekOf), todayIdx = (new Date().getDay() + 6) % 7, thisWeek = S.plan.weekOf === mondayOf();
+  const chevron = '<svg class="tip-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   return head + notes + `
-  ${S.plan.grocery?.length ? '' : askForList()}
+  ${S.plan.grocery?.length ? '' : `<button class="tipcard" data-act="nav" data-v="shop"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="tip-txt"><b>Create your shopping list</b><span>One list for the whole week, for your supermarket.</span></span>${chevron}</button>`}
+  <div class="daypick" role="tablist" aria-label="Day">${S.plan.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${thisWeek && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
+  <section class="card plan-day">
+    <div class="day-sum"><b class="num">${tot.kcal.toLocaleString()} kcal</b>${pfc(tot)}</div>
+    ${day.meals.map((m, j) => `<button class="prow" data-act="planmeal" data-i="${di}" data-j="${j}">
+      ${SLOTS.includes(m.slot) ? mealIcon(m.slot) : ''}
+      <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${esc(m.name)}</b></span>
+      <span class="num">${r0(m.kcal)}</span>${chevron}
+    </button>`).join('')}
+  </section>
   ${S.plan.notes ? `<details class="plan-notes"><summary>How this week works</summary><p>${esc(S.plan.notes)}</p></details>` : ''}
-  <div class="days" role="group" aria-label="Day">${S.plan.days.map((d, i) => { const k = d.meals.reduce((a, m) => a + r0(m.kcal), 0); return `<button class="day-btn" data-act="day" data-i="${i}" aria-pressed="${i === di}"><b>${esc(d.day)}</b><span class="num" style="font-size:.74rem;opacity:.75">${k} kcal</span></button>`; }).join('')}</div>
-  <section class="card">
-    ${day.meals.map((m, j) => { const key = di + '-' + j, rec = S.plan.recipes?.[key], open = S.openRecipe === key; return `
-      <div class="meal ${S.plan.photos?.[key] ? 'with-photo' : ''}">
-        ${dishPhoto(key, m)}
-        <div class="meal-body">
-          <div class="meal-tags"><span class="label">${esc(m.slot)}</span><span class="prep-pill ${m.prep === 'fresh' ? 'fresh' : ''}">${m.prep === 'fresh' ? 'Cook fresh' : 'Prepped'}</span></div>
-          <div class="title">${esc(m.name)}</div><div style="margin-top:4px"><span class="num" style="font-size:.85rem">${r0(m.kcal)} kcal</span> &nbsp;${pfc(m)}</div>
-        </div>
-        <div class="acts"><button class="btn small" data-act="recipe" data-k="${key}" data-i="${di}" data-j="${j}">${S.busy.recipe === key ? '<span class="spinner"></span>' : open ? 'Hide' : 'Details'}</button><button class="btn small" data-act="logmeal" data-i="${di}" data-j="${j}">I ate this</button></div>
-        ${open ? `<div class="recipe"><div class="recipe-top"><div><div class="label">Portion</div><p>${esc(m.portion)}</p></div>${m.swap ? `<div><div class="label">Swap</div><p>${esc(m.swap)}</p></div>` : ''}</div>${rec ? `<div><div class="label">Ingredients · ${esc(rec.serves || '')}</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul></div><div><div class="label">Method · ${esc(rec.time || '')}</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted" style="font-size:.88rem;margin-top:8px">${esc(rec.storage)}</p>` : ''}</div>` : `<div class="muted" style="font-size:.9rem"><span class="spinner"></span> Loading the recipe…</div>`}</div>` : ''}
-      </div>`; }).join('')}
-    <div class="totals"><span><span class="label">Day total</span> <span class="num">${tot.kcal} kcal</span></span><span class="num" style="color:var(--pink)">P ${tot.p} g</span><span class="num" style="color:var(--amber)">C ${tot.c} g</span><span class="num" style="color:var(--blue)">F ${tot.f} g</span></div>
-    ${Object.values(S.plan.photos || {}).some(Boolean) ? `<p class="photo-credit">Photos from <a href="https://www.pexels.com" target="_blank" rel="noopener">Pexels</a>. They show a similar dish, not your exact recipe.</p>` : ''}
-  </section>`;
+  ${S.planSheet ? planMealSheet() : ''}`;
+}
+
+function planMealSheet(){
+  const { i, j } = S.planSheet, m = S.plan.days[i]?.meals[j]; if (!m) return '';
+  const key = i + '-' + j, rec = S.plan.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '';
+  return `<div class="scrim${enter}" data-act="closeplan"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head">${SLOTS.includes(m.slot) ? mealIcon(m.slot) : ''}<div style="min-width:0"><div class="label">${esc(S.plan.days[i].day)} · ${esc(m.slot)}</div><h2>${esc(m.name)}</h2></div><button class="x close" data-act="closeplan" aria-label="Close">×</button></div>
+    ${dishPhoto(key, m)}
+    <div class="review-total"><span class="big num">${r0(m.kcal)}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(m)}</span></div>
+    <dl class="facts"><dt>Portion</dt><dd>${esc(m.portion)}</dd>${m.swap ? `<dt>Swap</dt><dd>${esc(m.swap)}</dd>` : ''}</dl>
+    ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>`
+      : `<button class="btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button></div>
+  </div>`;
 }
 
 function dishPhoto(key, m){
@@ -1337,60 +1576,92 @@ function dishPhoto(key, m){
   return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)} · Pexels</a></figcaption></figure>`;
 }
 
-// === views/shop.js ===
-// Shopping list (built from the week plan on request), your own extra items,
-// supermarket picker, and the prep schedule.
-function vShop(){
-  const store = S.plan?.store;
-  const head = `<div class="head"><div><div class="label">${store ? esc(store) : 'One trip, one prep session'}</div><h1>Shop & prep</h1></div>${S.plan?.grocery?.length ? `<button class="btn small" data-act="clearchecks">Untick all</button>` : ''}</div>`;
-  const err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
-  if (!S.plan?.days) return head + `<section class="card empty"><div class="blob" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></div><h2>No list yet</h2><p>Plan your week first. Then Forkcast turns it into one shopping list for your supermarket, so you buy only what the week needs.</p><button class="btn primary" data-act="nav" data-v="plan">Plan my week</button></section>`;
-  if (S.busy.shop) return head + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></div><h2>Writing your list…</h2><p>Adding up every ingredient in your week${S.shopStore ? ` for ${esc(S.shopStore)}` : ''}. This takes a few seconds.</p></section>`;
-  if (!S.plan.grocery?.length) return head + err + askForList();
-
-  const ch = S.plan.checked || {}, extra = S.plan.extra || [];
-  const total = S.plan.grocery.reduce((a, g) => a + (g.items || []).length, 0) + extra.length;
-  const got = Object.values(ch).filter(Boolean).length + extra.filter(x => x.done).length;
-  const item = (k, name, qty, note, done, mine) => `<div class="gi ${done ? 'done' : ''}">
-      <label><input type="checkbox" data-act="check" data-k="${k}" ${done ? 'checked' : ''}><span><span class="gname">${esc(name)}</span>${note ? `<br><span class="muted" style="font-size:.8rem">${esc(note)}</span>` : ''}</span></label>
-      <span class="gq">${esc(qty || '')}</span>${mine ? `<button class="x" data-act="delextra" data-k="${k}" aria-label="Remove ${esc(name)}">×</button>` : ''}</div>`;
-  return head + err + `
-  <section class="card stack">
-    <div class="row" style="justify-content:space-between"><h2>Shopping list</h2><span class="num muted" style="font-size:.85rem">${got} / ${total} in the basket</span></div>
-    <div class="basket-bar"><span style="width:${total ? got / total * 100 : 0}%"></span></div>
-    ${storePicker(store, true)}
-    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add something else, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
-    ${S.plan.budget_note ? `<p class="muted" style="font-size:.85rem"><span class="tag est">Estimated</span> ${esc(S.plan.budget_note)}</p>` : ''}
-    <div class="groc">
-      ${extra.length ? `<div class="grp"><h3>My items</h3>${extra.map(x => item('x-' + x.id, x.name, '', '', x.done, true)).join('')}</div>` : ''}
-      ${S.plan.grocery.map((g, gi) => `<div class="grp"><h3>${esc(g.group)}</h3>${(g.items || []).map((it, ii) => item(gi + '-' + ii, it.name, it.qty, it.note, ch[gi + '-' + ii], false)).join('')}</div>`).join('')}
-    </div>
-    <p class="muted" style="font-size:.8rem">Products and prices are estimated for ${store ? esc(store) : 'your supermarket'}, not checked live.</p>
-  </section>
-  ${S.plan.prep?.length ? `<section class="card"><h2>Prep schedule</h2><div class="timeline">${S.plan.prep.map(p => `<div class="tl"><div><h3>${esc(p.when)}</h3><span class="num muted" style="font-size:.8rem">${esc(p.minutes || '')}</span></div><div><ul>${(p.tasks || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-    <dl class="kv" style="grid-template-columns:auto 1fr;margin-top:8px">${p.fridge ? `<dt>Fridge</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fridge)}</dd>` : ''}${p.freeze ? `<dt>Freeze</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.freeze)}</dd>` : ''}${p.fresh ? `<dt>Fresh</dt><dd style="text-align:left;font-family:var(--body);font-size:.88rem">${esc(p.fresh)}</dd>` : ''}</dl></div></div>`).join('')}</div></section>` : ''}`;
+// Keep the chosen day visible in the day picker after every redraw.
+function keepDayInView(){
+  const el = document.querySelector('.dp[aria-selected="true"]'); if (!el) return;
+  const row = el.parentElement;
+  row.scrollLeft = el.offsetLeft - row.offsetLeft - (row.clientWidth - el.offsetWidth) / 2;
 }
 
-// "Shall I create your shopping list?" card, used here and under the week plan.
+// === views/shop.js ===
+// Shop & prep: the list first (what's left to buy), ticked items fold away,
+// supermarket as a small switch, prep plan on its own tab, cost at the bottom.
+const CART = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>';
+
+function vShop(){
+  const store = S.plan?.store, err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
+  const head = (sub) => `<div class="head"><div><div class="label">${sub}</div><h1>Shop & prep</h1></div>
+    ${S.plan?.grocery?.length ? `<button class="store-btn" data-act="storesheet" aria-label="Supermarket: ${esc(store || 'choose')}. Change">${CART}<span>${esc(store || 'Supermarket')}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>` : ''}</div>`;
+  if (!S.plan?.days) return head('One trip, one prep session') + `<section class="card empty"><div class="blob" aria-hidden="true">${CART}</div><h2>No list yet</h2><p>Plan your week first. Then Forkcast turns it into one shopping list for your supermarket.</p><button class="btn primary" data-act="nav" data-v="plan">Plan my week</button></section>`;
+  if (S.busy.shop) return head('Writing your list') + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true">${CART}</div><h2>Writing your list…</h2><p>Adding up every ingredient in your week${S.shopStore ? ` for ${esc(S.shopStore)}` : ''}.</p></section>`;
+  if (!S.plan.grocery?.length) return head('One trip, one prep session') + err + askForList();
+
+  const tab = S.shopTab || 'list';
+  const ch = S.plan.checked || {}, extra = S.plan.extra || [];
+  const rows = [
+    ...extra.map(x => ({ k:'x-' + x.id, group:'My items', name:x.name, qty:'', note:'', done:!!x.done, mine:true })),
+    ...S.plan.grocery.flatMap((g, gi) => (g.items || []).map((it, ii) => ({ k:gi + '-' + ii, group:g.group, name:it.name, qty:it.qty, note:it.note, done:!!ch[gi + '-' + ii] })))
+  ];
+  const todo = rows.filter(r => !r.done), done = rows.filter(r => r.done);
+  const groups = [...new Set(todo.map(r => r.group))];
+  const row = r => `<div class="gi ${r.done ? 'done' : ''}"><label><input type="checkbox" data-act="check" data-k="${r.k}" ${r.done ? 'checked' : ''}><span class="gname">${esc(r.name)}</span></label><span class="gq">${esc(r.qty || '')}</span>${r.mine ? `<button class="x small-x" data-act="delextra" data-k="${r.k}" aria-label="Remove ${esc(r.name)}">×</button>` : ''}</div>`;
+
+  return head(`${todo.length ? `${todo.length} to buy` : 'All in the basket'}`) + err + `
+  <div class="seg" role="tablist" aria-label="Shop & prep">
+    <button role="tab" data-act="shoptab" data-t="list" aria-selected="${tab === 'list'}">List <span class="num">${todo.length}</span></button>
+    <button role="tab" data-act="shoptab" data-t="prep" aria-selected="${tab === 'prep'}">Prep plan</button>
+  </div>
+  ${tab === 'list' ? `
+  <section class="card shoplist">
+    <div class="basket"><div class="basket-bar"><span style="width:${rows.length ? done.length / rows.length * 100 : 0}%"></span></div><span class="muted num">${done.length}/${rows.length}</span></div>
+    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add an item, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
+    ${groups.map(g => `<div class="grp"><h3>${esc(g)}</h3>${todo.filter(r => r.group === g).map(row).join('')}</div>`).join('')}
+    ${!todo.length ? `<div class="empty" style="padding:18px 0"><h3>All done</h3><p>Everything's in the basket.</p></div>` : ''}
+    ${done.length ? `<details class="basket-done"><summary>In the basket · ${done.length}</summary>${done.map(row).join('')}<button class="btn ghost small" data-act="clearchecks">Untick all</button></details>` : ''}
+  </section>
+  ${S.plan.budget_note ? `<p class="foot-note"><span class="tag est">Estimated</span> ${esc(S.plan.budget_note)} Products and prices for ${esc(store || 'your supermarket')} are estimates, not checked live.</p>` : ''}`
+  : prepPlan()}
+  ${S.storeSheet ? storeSheet() : ''}`;
+}
+
+function prepPlan(){
+  const prep = S.plan.prep || [];
+  if (!prep.length) return `<section class="card empty"><h2>No prep plan</h2><p>Rebuild your list to get a prep schedule with it.</p></section>`;
+  return `<div class="stack">${prep.map(p => `<section class="card prep">
+    <div class="row" style="justify-content:space-between"><h2>${esc(p.when)}</h2>${p.minutes ? `<span class="trend-pill">${esc(p.minutes)}</span>` : ''}</div>
+    <ol class="steps">${(p.tasks || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+    ${p.fridge || p.freeze || p.fresh ? `<details class="plan-notes"><summary>Storage</summary><dl class="facts" style="margin-top:8px">${p.fridge ? `<dt>Fridge</dt><dd>${esc(p.fridge)}</dd>` : ''}${p.freeze ? `<dt>Freeze</dt><dd>${esc(p.freeze)}</dd>` : ''}${p.fresh ? `<dt>Fresh</dt><dd>${esc(p.fresh)}</dd>` : ''}</dl></details>` : ''}
+  </section>`).join('')}</div>`;
+}
+
+// "Shall I create your shopping list?" card, used when there's a plan but no list.
 function askForList(){
   return `<section class="card stack ask-list">
     <div class="asker"><span class="ai-avatar" aria-hidden="true">${STAR}</span><div class="bubble">Your week is planned. Shall I create your shopping list?</div></div>
-    <div><div class="label" style="margin-bottom:8px">Where are you shopping?</div>${storePicker(S.shopStore || S.plan?.store || storeOptions()[0], false)}</div>
+    <div><div class="label" style="margin-bottom:8px">Where are you shopping?</div>${storeChips(S.shopStore || S.plan?.store || storeOptions()[0])}</div>
     <button class="btn primary big-btn" data-act="genshop">Create my shopping list</button>
   </section>`;
 }
 
-// Supermarket chips plus "Other". With rebuild, picking a different one offers to redo the list.
-function storePicker(current, rebuild){
-  const opts = storeOptions();
-  const pick = S.shopStore || current;
-  const changed = rebuild && S.shopStore && S.shopStore !== current;
+function storeChips(pick){
   return `<div class="stores" role="group" aria-label="Supermarket">
-      ${opts.map(s => `<button class="chip" data-act="store" data-s="${esc(s)}" aria-pressed="${s === pick}">${esc(s)}</button>`).join('')}
+      ${storeOptions().map(s => `<button class="chip" data-act="store" data-s="${esc(s)}" aria-pressed="${s === pick}">${esc(s)}</button>`).join('')}
       <button class="chip" data-act="storeother" aria-pressed="${!!S.storeOther}">Other…</button>
     </div>
-    ${S.storeOther ? `<form class="additem" id="storeForm" style="margin-top:8px"><input type="text" id="storeName" placeholder="Supermarket name" aria-label="Supermarket name" autocomplete="off"><button class="btn small" type="submit">Use</button></form>` : ''}
-    ${changed ? `<div class="notice accent row" style="justify-content:space-between;margin-top:8px"><span>Rebuild the list for <b>${esc(S.shopStore)}</b>? Your ticks are cleared; your own items stay.</span><button class="btn primary small" data-act="genshop">Rebuild list</button></div>` : ''}`;
+    ${S.storeOther ? `<form class="additem" id="storeForm" style="margin-top:8px"><input type="text" id="storeName" placeholder="Supermarket name" aria-label="Supermarket name" autocomplete="off"><button class="btn small" type="submit">Use</button></form>` : ''}`;
+}
+
+// Switch supermarket: pick one, then rebuild the list for it.
+function storeSheet(){
+  const cur = S.plan.store, pick = S.shopStore || cur, enter = S.storeSheet === 'enter' ? ' enter' : '';
+  return `<div class="scrim${enter}" data-act="storesheet"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Supermarket">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head"><h2>Supermarket</h2><button class="x close" data-act="storesheet" aria-label="Close">×</button></div>
+    ${storeChips(pick)}
+    <p class="muted" style="font-size:.88rem">Rebuilding uses that store's products and package sizes. Your own items stay; ticks are cleared.</p>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="genshop" ${pick && pick !== cur ? '' : 'disabled'}>${pick && pick !== cur ? `Rebuild for ${esc(pick)}` : `Using ${esc(cur || '')}`}</button></div>
+  </div>`;
 }
 
 // === views/progress.js ===
@@ -1420,37 +1691,59 @@ function weightChart(){
 
 function vProgress(){
   const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
-  const ck = S.ck || (S.ck = { adherence:7, hunger:5, energy:7 });
+  const avg = end => { const win = w.filter(y => { const d = daysBetween(y.date, end); return d >= 0 && d < 7; }); return win.reduce((a, y) => a + +y.weight, 0) / win.length; };
+  const now = w.length ? avg(w[w.length - 1].date) : null;
+  const diff = w.length > 1 ? now - +w[0].weight : null, span = w.length > 1 ? daysBetween(w[0].date, w[w.length - 1].date) : 0;
+  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf());
+  const logged = DAYS.filter((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return days.has(dkey(d)); }).length;
+  const lastCk = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt, ckIn = lastCk ? 7 - daysBetween(lastCk, dkey()) : 0;
+  const tile = (label, value, sub, act) => `<${act ? `button class="tile tile-btn" data-act="${act}"` : 'div class="tile"'}><span class="label">${label}</span><b class="num">${value}</b><span class="muted">${sub}</span></${act ? 'button' : 'div'}>`;
   return `
   <div class="head"><div><div class="label">Trends over single readings</div><h1>Progress</h1></div></div>
-  <div class="grid2">
-    <section class="card stack"><h2>Weight trend</h2>${trendSummary()}${weightChart()}</section>
-    <section class="card stack">
-      <h2>Add a weigh-in</h2>
-      <div class="fields">
-        <div class="field"><label for="wDate">Date</label><input type="date" id="wDate" value="${dkey()}"></div>
-        <div class="field"><label for="wKg">Weight (kg)</label><input type="number" id="wKg" step="0.1" inputmode="decimal" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"></div>
-        <div class="field"><label for="wWaist">Waist (cm, optional)</label><input type="number" id="wWaist" step="0.5" inputmode="decimal"></div>
-      </div>
-      <div class="row"><button class="btn ink" data-act="weigh">Save weigh-in</button></div>
-      ${w.length ? `<div class="tablewrap"><table><thead><tr><th>Date</th><th>Weight</th><th>Waist</th><th></th></tr></thead><tbody>${w.slice(-6).reverse().map(x => `<tr><td>${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</td><td class="num">${x.weight} kg</td><td class="num">${x.waist ? x.waist + ' cm' : '–'}</td><td style="text-align:right"><button class="x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in">×</button></td></tr>`).join('')}</tbody></table></div>` : ''}
-    </section>
+  <div class="tiles">
+    ${tile('Weight', now ? now.toFixed(1) + '<small> kg</small>' : '–', now ? '7-day average' : 'Log your first weigh-in')}
+    ${tile('Change', diff === null ? '–' : (Math.abs(diff) < 0.1 ? 'Steady' : (diff < 0 ? '↓ ' : '↑ ') + Math.abs(diff).toFixed(1) + '<small> kg</small>'), diff === null ? 'Needs 2 weigh-ins' : `over ${span >= 14 ? Math.round(span / 7) + ' weeks' : span + ' days'}`)}
+    ${tile('Logged', logged + '<small>/7</small>', 'days this week')}
+    ${tile('Check-in', ckIn <= 0 ? 'Due' : `${ckIn}<small> day${ckIn > 1 ? 's' : ''}</small>`, ckIn <= 0 ? 'Tap to start' : 'until the next one', 'cksheet')}
   </div>
   <section class="card stack">
-    <div class="row" style="justify-content:space-between"><h2>Weekly check-in</h2><span class="muted" style="font-size:.85rem">${S.progress.checkins.length ? 'Last: ' + fromKey(S.progress.checkins.slice(-1)[0].date).toLocaleDateString(undefined,{day:'numeric',month:'short'}) : 'Like a follow-up appointment'}</span></div>
-    <div class="sliders">${[['adherence','How closely did you follow the plan?'],['hunger','How hungry were you?'],['energy','How was your energy?']].map(([k, l]) => `<div class="sl"><label for="ck-${k}"><span>${l}</span><span class="num">${ck[k]}/10</span></label><input type="range" min="1" max="10" id="ck-${k}" data-ck="${k}" value="${ck[k]}"></div>`).join('')}</div>
-    <div class="fields">
-      <div class="field"><label for="ckSleep">Sleep</label><input type="text" id="ckSleep" placeholder="~7 h, waking at night"></div>
-      <div class="field"><label for="ckDig">Digestion</label><input type="text" id="ckDig" placeholder="Fine / bloated / …"></div>
-      <div class="field"><label for="ckTrain">Training</label><input type="text" id="ckTrain" placeholder="3 gym sessions, felt strong"></div>
-      <div class="field" style="grid-column:1/-1"><label for="ckWeak">How did your weak point go${S.profile.focus ? ` (${esc(S.profile.focus.weak_point)})` : ''}?</label><input type="text" id="ckWeak" placeholder="e.g. Saturday was fine, Sunday brunch got away from me"></div>
-      <div class="field"><label for="ckLoved">Meals you loved</label><input type="text" id="ckLoved"></div>
-      <div class="field"><label for="ckDisliked">Meals you disliked or are tired of</label><input type="text" id="ckDisliked"></div>
-      <div class="field"><label for="ckChange">Anything changed?</label><input type="text" id="ckChange" placeholder="Schedule, budget, supermarket…"></div>
-    </div>
-    <div class="field"><label for="ckNotes">Cravings, difficulties, social events</label><textarea id="ckNotes" rows="2"></textarea></div>
-    <div class="row"><button class="btn primary" data-act="checkin">Send check-in to my dietitian</button><span class="muted" style="font-size:.85rem">Your dietitian reviews the trend and adjusts the plan with you.</span></div>
-  </section>`;
+    <div class="row" style="justify-content:space-between"><h2>Weight trend</h2><span class="muted" style="font-size:.8rem">Trend matters more than one day</span></div>
+    ${weightChart()}
+  </section>
+  <section class="card stack">
+    <h2>Log weight</h2>
+    <div class="weigh-row"><div class="unit-input"><input type="number" id="wKg" step="0.1" inputmode="decimal" aria-label="Weight in kg" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"><span>kg</span></div><button class="btn primary" data-act="weigh">Save</button></div>
+    <details class="plan-notes"><summary>Another day or add waist</summary>
+      <div class="fields two" style="margin-top:10px"><div class="field"><label for="wDate">Date</label><input type="date" id="wDate" value="${dkey()}" max="${dkey()}"></div>
+      <div class="field"><label for="wWaist">Waist (cm)</label><input type="number" id="wWaist" step="0.5" inputmode="decimal"></div></div>
+    </details>
+    ${w.length ? `<details class="plan-notes"><summary>Recent weigh-ins</summary><div class="hist">${w.slice(-8).reverse().map(x => `<div class="mrow"><span class="mname">${fromKey(x.date).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}${x.waist ? ` <span class="muted">· waist ${x.waist} cm</span>` : ''}</span><span class="num">${x.weight} kg</span><button class="x small-x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in">×</button></div>`).join('')}</div></details>` : ''}
+  </section>
+  ${S.ckSheet ? checkinSheet() : ''}`;
+}
+
+function checkinSheet(){
+  const ck = S.ck || (S.ck = { adherence:7, hunger:5, energy:7 }), enter = S.ckSheet === 'enter' ? ' enter' : '';
+  return `<div class="scrim${enter}" data-act="cksheet"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Weekly check-in">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head"><h2>Weekly check-in</h2><button class="x close" data-act="cksheet" aria-label="Close">×</button></div>
+    <p class="muted" style="font-size:.88rem">Two minutes. Your dietitian looks at the trend and adjusts the plan with you.</p>
+    <div class="sliders">${[['adherence','Followed the plan'],['hunger','Hunger'],['energy','Energy']].map(([k, l]) => `<div class="sl"><label for="ck-${k}"><span>${l}</span><span class="num">${ck[k]}/10</span></label><input type="range" min="1" max="10" id="ck-${k}" data-ck="${k}" value="${ck[k]}"></div>`).join('')}</div>
+    <div class="field"><label for="ckWeak">How did ${S.profile.focus ? esc(S.profile.focus.weak_point.toLowerCase()) : 'your weak point'} go?</label><input type="text" id="ckWeak" placeholder="e.g. Saturday was fine, Sunday brunch got away from me"></div>
+    <details class="plan-notes"><summary>More details (optional)</summary>
+      <div class="stack" style="margin-top:10px">
+        <div class="field"><label for="ckSleep">Sleep</label><input type="text" id="ckSleep" placeholder="~7 h, waking at night"></div>
+        <div class="field"><label for="ckDig">Digestion</label><input type="text" id="ckDig" placeholder="Fine / bloated / …"></div>
+        <div class="field"><label for="ckTrain">Training</label><input type="text" id="ckTrain" placeholder="3 gym sessions, felt strong"></div>
+        <div class="field"><label for="ckLoved">Meals you loved</label><input type="text" id="ckLoved"></div>
+        <div class="field"><label for="ckDisliked">Meals you're tired of</label><input type="text" id="ckDisliked"></div>
+        <div class="field"><label for="ckChange">Anything changed?</label><input type="text" id="ckChange" placeholder="Schedule, budget, supermarket…"></div>
+        <div class="field"><label for="ckNotes">Cravings, difficulties, social events</label><textarea id="ckNotes" rows="2"></textarea></div>
+      </div>
+    </details>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="checkin">Send to my dietitian</button></div>
+  </div>`;
 }
 
 // The answer first: current 7-day average and change since the first weigh-in.
@@ -1501,10 +1794,19 @@ document.addEventListener('input', e => {
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
+  if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
+  if (e.target.dataset.edit && S.logResult?.review) {
+    // Live edit of a reviewed item; totals update without redrawing the form.
+    const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
+    it[f] = ['kcal','protein','carbs','fat'].includes(f) ? Math.max(0, Number(e.target.value) || 0) : e.target.value;
+    const tot = sumItems(S.logResult.review); const k = $('#revKcal'), p = $('#revPfc');
+    if (k) k.textContent = tot.kcal; if (p) p.innerHTML = pfc(tot);
+  }
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
+  if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
     const k = e.target.dataset.k;
     if (k.startsWith('x-')) { const x = (S.plan.extra || []).find(x => 'x-' + x.id === k); if (x) x.done = e.target.checked; }
@@ -1513,6 +1815,7 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'moreForm') { e.preventDefault(); addToReview($('#moreText').value); return; }
   if (e.target.id === 'addItemForm') {
     e.preventDefault();
     const name = $('#extraName').value.trim(); if (!name) return;
@@ -1535,6 +1838,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
+  if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
@@ -1549,7 +1853,7 @@ document.addEventListener('click', e => {
   const go = v => { S.view = v; render(); window.scrollTo(0, 0); };
   if (a === 'nav') { go(el.dataset.v); try { localStorage.setItem(LS + 'view', el.dataset.v); } catch {} }
   else if (a === 'send') sendChat(S.draft.chat);
-  else if (a === 'quick') sendChat(el.dataset.q);
+  else if (a === 'quick') { if (el.dataset.q === 'Weekly check-in') { go('progress'); S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); render(); S.ckSheet = true; } else sendChat(el.dataset.q); }
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
   else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; render(); }
@@ -1557,6 +1861,8 @@ document.addEventListener('click', e => {
     if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
     else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }
   }
+  else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
+  else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
@@ -1564,7 +1870,13 @@ document.addEventListener('click', e => {
   else if (a === 'manualmode') { S.sheet.manual = !S.sheet.manual; render(); }
   else if (a === 'confirmlog') confirmLog();
   else if (a === 'editlog') { S.logResult = null; render(); }
-  else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); render(); }
+  else if (a === 'dropitem') { S.logResult.review.splice(+el.dataset.n, 1); S.logResult.editing = null; render(); }
+  else if (a === 'edititem') { S.logResult.editing = +el.dataset.n; render(); $(`#e-amount-${el.dataset.n}`)?.focus(); }
+  else if (a === 'doneedit') { S.logResult.editing = null; render(); }
+  else if (a === 'usesaved') useSaved(el.dataset.id);
+  else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
+  else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; render(); }
+  else if (a === 'editmeal') editMeal(el.dataset.s);
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
@@ -1582,16 +1894,26 @@ document.addEventListener('click', e => {
     showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
   else if (a === 'genplan') generatePlan();
-  else if (a === 'day') { S.planDay = +el.dataset.i; S.openRecipe = null; render(); }
+  else if (a === 'day') { S.planDay = +el.dataset.i; render(); }
+  else if (a === 'planmeal') { S.planSheet = { i:+el.dataset.i, j:+el.dataset.j, enter:true }; document.body.classList.add('sheet-open'); render(); S.planSheet.enter = false; }
+  else if (a === 'closeplan') { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'recipe') loadRecipe(el.dataset.k, S.plan.days[+el.dataset.i].meals[+el.dataset.j]);
   else if (a === 'logmeal') {
     const m = S.plan.days[+el.dataset.i].meals[+el.dataset.j];
-    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot:SLOTS.includes(m.slot) ? m.slot : slotNow() }]);
-    el.textContent = '✓ Logged'; el.disabled = true;
+    const slot = SLOTS.includes(m.slot) ? m.slot : slotNow();
+    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }]);
+    S.planSheet = null; document.body.classList.remove('sheet-open');
+    showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }
   else if (a === 'clearchecks') { S.plan.checked = {}; (S.plan.extra || []).forEach(x => x.done = false); save.plan(); render(); }
-  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
+  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; S.storeSheet = null; document.body.classList.remove('sheet-open'); go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
   else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
+  else if (a === 'shoptab') { S.shopTab = el.dataset.t; render(); }
+  else if (a === 'storesheet') {
+    if (S.storeSheet) { S.storeSheet = null; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); }
+    else { S.storeSheet = 'enter'; document.body.classList.add('sheet-open'); }
+    render(); if (S.storeSheet) S.storeSheet = true;
+  }
   else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
   else if (a === 'delextra') {
     const before = S.plan.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);
@@ -1603,9 +1925,18 @@ document.addEventListener('click', e => {
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
     S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
     if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }
-    save.progress(); render();
+    save.progress(); showToast(`Saved ${Math.round(kg*10)/10} kg`); render();
   }
-  else if (a === 'delw') { S.progress.weighins = S.progress.weighins.filter(x => x.date !== el.dataset.d); save.progress(); render(); }
+  else if (a === 'delw') {
+    const before = S.progress.weighins; S.progress.weighins = before.filter(x => x.date !== el.dataset.d); save.progress();
+    showToast('Removed weigh-in', () => { S.progress.weighins = before; save.progress(); }); render();
+  }
+  else if (a === 'startcheckin') { go('progress'); S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); render(); S.ckSheet = true; }
+  else if (a === 'cksheet') {
+    if (S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
+    else { S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); }
+    render(); if (S.ckSheet) S.ckSheet = true;
+  }
   else if (a === 'checkin') {
     const v = id => $('#' + id).value.trim();
     const c = { date:dkey(), ...S.ck, sleep:v('ckSleep'), digestion:v('ckDig'), training:v('ckTrain'), loved:v('ckLoved'), disliked:v('ckDisliked'), changes:v('ckChange'), weak:v('ckWeak'), notes:v('ckNotes') };
@@ -1615,7 +1946,7 @@ document.addEventListener('click', e => {
       (c.sleep ? `\nSleep: ${c.sleep}` : '') + (c.digestion ? `\nDigestion: ${c.digestion}` : '') + (c.training ? `\nTraining: ${c.training}` : '') +
       (c.weak ? `\nWeak point${S.profile.focus ? ' (' + S.profile.focus.weak_point + ')' : ''}: ${c.weak}` : '') + (c.loved ? `\nLoved: ${c.loved}` : '') + (c.disliked ? `\nDisliked / tired of: ${c.disliked}` : '') + (c.changes ? `\nChanges: ${c.changes}` : '') +
       (c.notes ? `\nNotes: ${c.notes}` : '') + (w ? `\nRecent weigh-ins: ${w}` : '');
-    S.ck = null; go('coach'); sendChat(msg);
+    S.ck = null; S.ckSheet = null; document.body.classList.remove('sheet-open'); go('coach'); sendChat(msg);
   }
   else if (a === 'askweak') { go('coach'); sendChat(S.profile.focus ? `Let's talk about my weak point (${S.profile.focus.weak_point}). What else could help?` : 'I want to talk about what I think holds me back.'); }
   else if (a === 'authmode') { S.authDraft = { email: $('#authEmail')?.value || '' }; S.auth = { status:'signed-out', mode: S.auth.mode === 'signup' ? 'signin' : 'signup' }; render(); }
