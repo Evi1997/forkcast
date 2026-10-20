@@ -1,6 +1,6 @@
 # Forkcast
 
-- Standalone PWA on GitHub Pages (https://evi1997.github.io/forkcast/, free unlimited deploys; all paths must stay relative), Supabase for auth, data and the AI Edge Function `supabase/functions/ai/index.ts` (deployed by pasting into the Supabase dashboard), Google Gemini free tier for AI. Must stay $0.
+- Standalone PWA on GitHub Pages (https://evi1997.github.io/forkcast/, free unlimited deploys; all paths must stay relative), Supabase for auth, data and the AI Edge Function `supabase/functions/ai/index.ts` (deployed automatically by `.github/workflows/deploy-ai-function.yml` when it changes; needs the SUPABASE_ACCESS_TOKEN repo secret), Google Gemini free tier for AI. Must stay $0.
 - `api/ai.py` is a Python twin of the Supabase function used only by `dev.py`; keep both in step.
 - `netlify.toml` and `netlify/` remain only until the old Netlify project is deleted; then remove them.
 - Source is in `src/`; `index.html` is generated. After any change run `python3 build.py`, never edit `index.html` directly.

@@ -1,0 +1,35 @@
+# Deploys the Supabase Edge Function "ai" whenever its code changes on main
+# (or when run by hand from the Actions tab). Free for public repos.
+#
+# One-time setup: add a repository secret named SUPABASE_ACCESS_TOKEN
+# (Supabase → Account → Access Tokens → Generate new token), under
+# GitHub → Settings → Secrets and variables → Actions. Without it, the job skips.
+name: Deploy AI function
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/functions/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: kiiaucxcqigbmjhguezh
+    steps:
+      - name: Skip until the Supabase token is set up
+        if: env.SUPABASE_ACCESS_TOKEN == ''
+        run: echo "SUPABASE_ACCESS_TOKEN secret is not set; skipping deploy."
+      - uses: actions/checkout@v4
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+      - uses: supabase/setup-cli@v1
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        with:
+          version: latest
+      # The function checks sign-in itself, and browsers send an unauthenticated
+      # CORS preflight first, so the gateway's JWT check stays off.
+      - name: Deploy
+        if: env.SUPABASE_ACCESS_TOKEN != ''
+        run: supabase functions deploy ai --project-ref "$PROJECT_REF" --no-verify-jwt
