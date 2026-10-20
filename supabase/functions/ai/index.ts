@@ -1,7 +1,7 @@
 // Supabase Edge Function "ai" — Forkcast's only server code.
-// Deploy: Supabase → Edge Functions → Deploy a new function → Via editor,
-// name it "ai", paste this file, Deploy. Add the secret GEMINI_API_KEY under
-// Edge Functions → Secrets. (SUPABASE_URL and SUPABASE_ANON_KEY are built in.)
+// Deployed automatically by .github/workflows/deploy-ai-function.yml when this
+// file changes on main. Needs the secret GEMINI_API_KEY in Supabase → Edge
+// Functions → Secrets. (SUPABASE_URL and SUPABASE_ANON_KEY are built in.)
 //
 // Checks the caller is signed in, forwards the prompt (and any photo) to
 // Google Gemini, and returns the answer. The Gemini key never leaves Supabase.
