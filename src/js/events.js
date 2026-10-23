@@ -74,8 +74,8 @@ document.addEventListener('click', e => {
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
   else if (a === 'gotoday') gotoDay(el.dataset.k);
-  else if (a === 'prevday') shiftDay(-1);
-  else if (a === 'nextday') shiftDay(1);
+  else if (a === 'prevweek') shiftDay(-7);
+  else if (a === 'nextweek') shiftDay(7);
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }

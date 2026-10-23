@@ -472,20 +472,14 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .store-btn span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
 .store-btn small{font-size:.68rem;font-weight:600;color:var(--muted)}
 
-/* Today: week strip to move between days */
-.weekstrip{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:6px}
-.ws-arrow{width:36px;height:52px;border:0;background:none;border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}
-.ws-arrow svg{width:20px;height:20px}
-.ws-arrow:disabled{color:var(--line);cursor:default}
-.ws-days{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
-.ws-day{border:0;background:none;border-radius:14px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--ink);position:relative}
-.ws-day span{font-size:.7rem;font-weight:700;color:var(--muted)}
-.ws-day b{font-size:1rem}
-.ws-day.on::after{content:"";position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
-.ws-day.is-today b{color:var(--accent)}
-.ws-day[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.ws-day[aria-pressed="true"] span,.ws-day[aria-pressed="true"] b{color:var(--bg)}
-.ws-day[aria-pressed="true"].on::after{background:var(--bg)}
-.ws-day:disabled{opacity:.35;cursor:default}
-.ws-note{font-size:.8rem;margin:-10px 0 0 8px}
+/* Today: tappable days-logged circles */
+.week-nav{display:flex;align-items:center;gap:2px}
+.week-dots button{width:26px;height:26px;border-radius:50%;border:0;display:grid;place-items:center;font-size:.68rem;font-weight:800;background:var(--surface-2);color:var(--muted);cursor:pointer;padding:0}
+.week-dots button.on{background:var(--accent);color:var(--accent-ink)}
+.week-dots button[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}
+.week-dots button:disabled{opacity:.4;cursor:default}
+.wk-arrow{width:24px;height:30px;border:0;background:none;color:var(--muted);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;padding:0}
+.wk-arrow:disabled{opacity:.25;cursor:default}
 .sheet-date{display:block;font-size:.78rem;font-weight:600;color:var(--muted);font-family:var(--body);letter-spacing:0}
+.streak .label{white-space:nowrap}
+@media (max-width:420px){.streak{gap:8px;padding:10px 10px 10px 14px}.week-dots{gap:4px}.week-dots button{width:25px;height:25px}.wk-arrow{width:18px}}

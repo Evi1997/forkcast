@@ -603,23 +603,17 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .store-btn span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
 .store-btn small{font-size:.68rem;font-weight:600;color:var(--muted)}
 
-/* Today: week strip to move between days */
-.weekstrip{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:6px}
-.ws-arrow{width:36px;height:52px;border:0;background:none;border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}
-.ws-arrow svg{width:20px;height:20px}
-.ws-arrow:disabled{color:var(--line);cursor:default}
-.ws-days{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
-.ws-day{border:0;background:none;border-radius:14px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--ink);position:relative}
-.ws-day span{font-size:.7rem;font-weight:700;color:var(--muted)}
-.ws-day b{font-size:1rem}
-.ws-day.on::after{content:"";position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
-.ws-day.is-today b{color:var(--accent)}
-.ws-day[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.ws-day[aria-pressed="true"] span,.ws-day[aria-pressed="true"] b{color:var(--bg)}
-.ws-day[aria-pressed="true"].on::after{background:var(--bg)}
-.ws-day:disabled{opacity:.35;cursor:default}
-.ws-note{font-size:.8rem;margin:-10px 0 0 8px}
+/* Today: tappable days-logged circles */
+.week-nav{display:flex;align-items:center;gap:2px}
+.week-dots button{width:26px;height:26px;border-radius:50%;border:0;display:grid;place-items:center;font-size:.68rem;font-weight:800;background:var(--surface-2);color:var(--muted);cursor:pointer;padding:0}
+.week-dots button.on{background:var(--accent);color:var(--accent-ink)}
+.week-dots button[aria-pressed="true"]{outline:2px solid var(--ink);outline-offset:2px}
+.week-dots button:disabled{opacity:.4;cursor:default}
+.wk-arrow{width:24px;height:30px;border:0;background:none;color:var(--muted);font-size:1.3rem;font-weight:700;cursor:pointer;line-height:1;padding:0}
+.wk-arrow:disabled{opacity:.25;cursor:default}
 .sheet-date{display:block;font-size:.78rem;font-weight:600;color:var(--muted);font-family:var(--body);letter-spacing:0}
+.streak .label{white-space:nowrap}
+@media (max-width:420px){.streak{gap:8px;padding:10px 10px 10px 14px}.week-dots{gap:4px}.week-dots button{width:25px;height:25px}.wk-arrow{width:18px}}
 </style>
 </head>
 <body>
@@ -1341,9 +1335,8 @@ function vToday(){
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head"><div><div class="label">${isToday ? now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'}) : 'Looking back'}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'short'})}</h1></div>
-  ${isToday ? '' : '<button class="btn small" data-act="gotoday" data-k="' + dkey() + '">Back to today</button>'}</div>
-  ${weekStrip(day)}
+  <div class="head"><div><div class="label">${fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long'}) + '\'s food'}</h1></div>
+  ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
@@ -1494,18 +1487,18 @@ function focusCard(){
   </button>`;
 }
 
-// The week of the viewed day: ‹ › to move a day, tap any past day to open it.
-// Green = something logged. Future days can't be opened.
-function weekStrip(day){
-  const mon = fromKey(mondayOf(fromKey(day))), today = dkey(), days = new Set(S.profile.loggedDays || []);
-  const cells = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { l, k:dkey(d), n:d.getDate() }; });
-  const logged = cells.filter(c => days.has(c.k)).length;
-  return `<div class="weekstrip" role="group" aria-label="Choose a day">
-    <button class="ws-arrow" data-act="prevday" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
-    <div class="ws-days">${cells.map(c => `<button class="ws-day ${days.has(c.k) ? 'on' : ''} ${c.k === today ? 'is-today' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}"><span>${c.l[0]}</span><b>${c.n}</b></button>`).join('')}</div>
-    <button class="ws-arrow" data-act="nextday" aria-label="Next day" ${day >= today ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
-  </div>
-  <div class="ws-note muted">${logged} of 7 days logged this week</div>`;
+// "x/7 days logged" with the week's days as circles (green = logged).
+// Tap a circle to open that day; the dark ring marks the day shown.
+// The small arrows move a week back or forward.
+function streakPill(day){
+  const today = dkey(), days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf(fromKey(day)));
+  const cells = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { l, k:dkey(d) }; });
+  const week = cells.filter(c => days.has(c.k)).length, thisWeek = cells.some(c => c.k === today);
+  const dots = cells.map(c => `<button class="${days.has(c.k) ? 'on' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}">${c.l[0]}</button>`).join('');
+  return `<div class="streak" aria-label="${week} of 7 days logged ${thisWeek ? 'this week' : 'that week'}">
+    <div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div>
+    <div class="week-nav"><button class="wk-arrow" data-act="prevweek" aria-label="Previous week">‹</button><div class="week-dots">${dots}</div><button class="wk-arrow" data-act="nextweek" aria-label="Next week" ${thisWeek ? 'disabled' : ''}>›</button></div>
+  </div>`;
 }
 
 // === views/coach.js ===
@@ -1917,8 +1910,8 @@ document.addEventListener('click', e => {
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
   else if (a === 'gotoday') gotoDay(el.dataset.k);
-  else if (a === 'prevday') shiftDay(-1);
-  else if (a === 'nextday') shiftDay(1);
+  else if (a === 'prevweek') shiftDay(-7);
+  else if (a === 'nextweek') shiftDay(7);
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }

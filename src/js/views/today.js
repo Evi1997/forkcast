@@ -7,9 +7,8 @@ function vToday(){
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head"><div><div class="label">${isToday ? now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'}) : 'Looking back'}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'short'})}</h1></div>
-  ${isToday ? '' : '<button class="btn small" data-act="gotoday" data-k="' + dkey() + '">Back to today</button>'}</div>
-  ${weekStrip(day)}
+  <div class="head"><div><div class="label">${fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long'}) + '\'s food'}</h1></div>
+  ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
@@ -160,16 +159,16 @@ function focusCard(){
   </button>`;
 }
 
-// The week of the viewed day: ‹ › to move a day, tap any past day to open it.
-// Green = something logged. Future days can't be opened.
-function weekStrip(day){
-  const mon = fromKey(mondayOf(fromKey(day))), today = dkey(), days = new Set(S.profile.loggedDays || []);
-  const cells = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { l, k:dkey(d), n:d.getDate() }; });
-  const logged = cells.filter(c => days.has(c.k)).length;
-  return `<div class="weekstrip" role="group" aria-label="Choose a day">
-    <button class="ws-arrow" data-act="prevday" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
-    <div class="ws-days">${cells.map(c => `<button class="ws-day ${days.has(c.k) ? 'on' : ''} ${c.k === today ? 'is-today' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}"><span>${c.l[0]}</span><b>${c.n}</b></button>`).join('')}</div>
-    <button class="ws-arrow" data-act="nextday" aria-label="Next day" ${day >= today ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
-  </div>
-  <div class="ws-note muted">${logged} of 7 days logged this week</div>`;
+// "x/7 days logged" with the week's days as circles (green = logged).
+// Tap a circle to open that day; the dark ring marks the day shown.
+// The small arrows move a week back or forward.
+function streakPill(day){
+  const today = dkey(), days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf(fromKey(day)));
+  const cells = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { l, k:dkey(d) }; });
+  const week = cells.filter(c => days.has(c.k)).length, thisWeek = cells.some(c => c.k === today);
+  const dots = cells.map(c => `<button class="${days.has(c.k) ? 'on' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}">${c.l[0]}</button>`).join('');
+  return `<div class="streak" aria-label="${week} of 7 days logged ${thisWeek ? 'this week' : 'that week'}">
+    <div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div>
+    <div class="week-nav"><button class="wk-arrow" data-act="prevweek" aria-label="Previous week">‹</button><div class="week-dots">${dots}</div><button class="wk-arrow" data-act="nextweek" aria-label="Next week" ${thisWeek ? 'disabled' : ''}>›</button></div>
+  </div>`;
 }
