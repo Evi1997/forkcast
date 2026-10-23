@@ -471,3 +471,21 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .sheet-head h2{flex:1;min-width:0}
 .store-btn span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
 .store-btn small{font-size:.68rem;font-weight:600;color:var(--muted)}
+
+/* Today: week strip to move between days */
+.weekstrip{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:6px}
+.ws-arrow{width:36px;height:52px;border:0;background:none;border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}
+.ws-arrow svg{width:20px;height:20px}
+.ws-arrow:disabled{color:var(--line);cursor:default}
+.ws-days{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.ws-day{border:0;background:none;border-radius:14px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--ink);position:relative}
+.ws-day span{font-size:.7rem;font-weight:700;color:var(--muted)}
+.ws-day b{font-size:1rem}
+.ws-day.on::after{content:"";position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.ws-day.is-today b{color:var(--accent)}
+.ws-day[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.ws-day[aria-pressed="true"] span,.ws-day[aria-pressed="true"] b{color:var(--bg)}
+.ws-day[aria-pressed="true"].on::after{background:var(--bg)}
+.ws-day:disabled{opacity:.35;cursor:default}
+.ws-note{font-size:.8rem;margin:-10px 0 0 8px}
+.sheet-date{display:block;font-size:.78rem;font-weight:600;color:var(--muted);font-family:var(--body);letter-spacing:0}

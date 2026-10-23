@@ -1,5 +1,5 @@
 // Food diary: adding items and estimating meals from text or photos
-function addItems(items, k = dkey()){
+function addItems(items, k = vday()){
   S.logs[k] = S.logs[k] || {items:[]};
   for (const i of items) S.logs[k].items.push({ id:uid(), slot:i.slot || S.logSlot, name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber), at:Date.now() });
   save.log(k);
@@ -11,7 +11,7 @@ async function analyseFood(text, clarification){
   if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically, or tap “I know the calories”.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
-  const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
+  const t = targets(), eaten = sumItems(S.logs[vday()]?.items || []);
   const prompt = PROMPTS.food({ text, slot:S.logSlot, country:S.profile.data.shopping?.country, eaten,
     targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
     hasPhoto: !!S.logPhoto, clarification });
@@ -37,7 +37,7 @@ function confirmLog(){
   const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
   if (!items.length) return;
   const slot = S.sheet.slot;
-  if (r.replaceIds) { const L = S.logs[dkey()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
+  if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
   if (r.save && items.length) rememberMeal(r, items, slot);
   showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
@@ -71,7 +71,7 @@ function forgetSaved(id){
 }
 // Re-open a logged meal in the editor; saving replaces those items.
 function editMeal(slot){
-  const its = (S.logs[dkey()]?.items || []).filter(i => i.slot === slot);
+  const its = (S.logs[vday()]?.items || []).filter(i => i.slot === slot);
   openSheet(slot);
   S.logResult = { review: its.map(cleanItem), replaceIds: its.map(i => i.id), name: '', save: false, feedback: null };
   render();
@@ -92,3 +92,14 @@ function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.lo
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
 let toastTimer;
 function showToast(text, undo){ S.toast = text; S.toastUndo = undo || null; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; S.toastUndo = null; render(); }, undo ? 5000 : 2600); }
+
+// Show another day on Today; its food log loads from the device, then the account.
+async function gotoDay(k){
+  const today = dkey(); if (k > today) k = today;
+  S.day = k === today ? null : k; S.openMeal = null;
+  if (!S.logs[k]) S.logs[k] = Store.local('log-' + k) || { items:[] };
+  render(); window.scrollTo(0, 0);
+  const v = await Store.remote('log-' + k);
+  if (v && vday() === k) { S.logs[k] = v; render(); }
+}
+function shiftDay(n){ const d = fromKey(vday()); d.setDate(d.getDate() + n); gotoDay(dkey(d)); }

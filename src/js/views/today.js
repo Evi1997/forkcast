@@ -1,14 +1,15 @@
 // Today: calorie ring, macros, focus tips, food logging, streak
 function vToday(){
-  const t = targets(), log = S.logs[dkey()] || {items:[]}, eaten = sumItems(log.items);
+  const day = vday(), isToday = day === dkey(), t = targets(), log = S.logs[day] || {items:[]}, eaten = sumItems(log.items);
   const kcalT = t?.kcal || 0, left = kcalT - eaten.kcal, pct = kcalT ? Math.min(eaten.kcal / kcalT, 1) : 0;
   const C = 2 * Math.PI * 78;
   const now = new Date();
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head"><div><div class="label">${now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?'}</h1></div>
-  ${streakPill()}</div>
+  <div class="head"><div><div class="label">${isToday ? now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'}) : 'Looking back'}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'short'})}</h1></div>
+  ${isToday ? '' : '<button class="btn small" data-act="gotoday" data-k="' + dkey() + '">Back to today</button>'}</div>
+  ${weekStrip(day)}
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
@@ -16,7 +17,7 @@ function vToday(){
       <div class="ring">
         <svg viewBox="0 0 176 176"><circle cx="88" cy="88" r="78" fill="none" stroke="var(--hero-track)" stroke-width="16"/>
         <circle cx="88" cy="88" r="78" fill="none" stroke="var(--accent)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .6s ease"/></svg>
-        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? 'kcal left' : 'kcal above target'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
+        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? (isToday ? 'kcal left' : 'kcal under target') : 'kcal above target'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
       </div>
       <div class="macros">
         ${bar('Protein', eaten.protein, t?.protein, 'var(--pink)')}
@@ -26,7 +27,7 @@ function vToday(){
         <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
       </div>
     </section>
-  ${focusCard()}
+  ${isToday ? focusCard() : ''}
   ${mealsSection(t)}
   ${S.sheet ? logSheet() : ''}
 `;
@@ -44,7 +45,7 @@ const MEAL_COLOR = { Breakfast:'var(--paprika)', Lunch:'var(--accent)', Snack:'v
 const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MEAL_ICON[s]}</svg></span>`;
 
 function mealsSection(t){
-  const items = S.logs[dkey()]?.items || [];
+  const items = S.logs[vday()]?.items || [];
   return `<section class="card meals" aria-label="Meals">
     <h2>Meals</h2>
     ${SLOTS.map(s => {
@@ -123,10 +124,10 @@ function logSheet(){
   return `<div class="scrim${enter}" data-act="closesheet"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Add food to ${slot}">
     <div class="grip" aria-hidden="true"></div>
-    ${r?.review && !r.replaceIds ? `<div class="sheet-head">${mealIcon(slot)}<div class="title-edit"><span class="label">${slot}</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></div>
+    ${r?.review && !r.replaceIds ? `<div class="sheet-head">${mealIcon(slot)}<div class="title-edit"><span class="label">${slot}${vday() !== dkey() ? ' · ' + fromKey(vday()).toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'}) : ''}</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></div>
       <button class="bookmark" data-act="togglesave" aria-pressed="${!!r.save}" aria-label="${r.save ? 'Saved to My meals. Tap to not save' : 'Save to My meals'}" title="${r.save ? 'Saved to My meals' : 'Save to My meals'}"><svg viewBox="0 0 24 24" fill="${r.save ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button>
       <button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`
-    : `<div class="sheet-head">${mealIcon(slot)}<h2>${r?.replaceIds ? `Edit ${slot}` : `Add to ${slot}`}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`}
+    : `<div class="sheet-head">${mealIcon(slot)}<h2>${r?.replaceIds ? `Edit ${slot}` : `Add to ${slot}`}${vday() !== dkey() ? `<small class="sheet-date">${fromKey(vday()).toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'})}</small>` : ''}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`}
     ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
     ${body}
   </div>`;
@@ -135,7 +136,7 @@ function logSheet(){
 // One short, timely tip instead of a big static card. Picked on the device from
 // the time of day, the day of the week and what's been eaten: no AI call.
 function smartTip(){
-  const t = targets(), items = S.logs[dkey()]?.items || [], eaten = sumItems(items);
+  const t = targets(), items = S.logs[dkey()]?.items || [], eaten = sumItems(items); // tips are always about today
   const now = new Date(), h = now.getHours(), dow = now.getDay(), weekend = dow === 0 || dow === 6 || (dow === 5 && h >= 16);
   const f = S.profile.focus, dayN = Math.floor(now / 864e5);
   const pick = arr => arr[dayN % arr.length];
@@ -159,9 +160,16 @@ function focusCard(){
   </button>`;
 }
 
-function streakPill(){
-  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf());
-  const dots = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d); return `<span class="${days.has(k) ? 'on' : ''} ${k === dkey() ? 'today' : ''}" title="${l}">${l[0]}</span>`; }).join('');
-  const week = DAYS.filter((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return days.has(dkey(d)); }).length;
-  return `<div class="streak" aria-label="${week} of 7 days logged this week"><div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div><div class="week-dots">${dots}</div></div>`;
+// The week of the viewed day: ‹ › to move a day, tap any past day to open it.
+// Green = something logged. Future days can't be opened.
+function weekStrip(day){
+  const mon = fromKey(mondayOf(fromKey(day))), today = dkey(), days = new Set(S.profile.loggedDays || []);
+  const cells = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { l, k:dkey(d), n:d.getDate() }; });
+  const logged = cells.filter(c => days.has(c.k)).length;
+  return `<div class="weekstrip" role="group" aria-label="Choose a day">
+    <button class="ws-arrow" data-act="prevday" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
+    <div class="ws-days">${cells.map(c => `<button class="ws-day ${days.has(c.k) ? 'on' : ''} ${c.k === today ? 'is-today' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}"><span>${c.l[0]}</span><b>${c.n}</b></button>`).join('')}</div>
+    <button class="ws-arrow" data-act="nextday" aria-label="Next day" ${day >= today ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+  </div>
+  <div class="ws-note muted">${logged} of 7 days logged this week</div>`;
 }

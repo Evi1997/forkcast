@@ -602,6 +602,24 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .sheet-head h2{flex:1;min-width:0}
 .store-btn span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15}
 .store-btn small{font-size:.68rem;font-weight:600;color:var(--muted)}
+
+/* Today: week strip to move between days */
+.weekstrip{display:flex;align-items:center;gap:4px;background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:6px}
+.ws-arrow{width:36px;height:52px;border:0;background:none;border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}
+.ws-arrow svg{width:20px;height:20px}
+.ws-arrow:disabled{color:var(--line);cursor:default}
+.ws-days{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.ws-day{border:0;background:none;border-radius:14px;min-height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:var(--ink);position:relative}
+.ws-day span{font-size:.7rem;font-weight:700;color:var(--muted)}
+.ws-day b{font-size:1rem}
+.ws-day.on::after{content:"";position:absolute;bottom:5px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
+.ws-day.is-today b{color:var(--accent)}
+.ws-day[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.ws-day[aria-pressed="true"] span,.ws-day[aria-pressed="true"] b{color:var(--bg)}
+.ws-day[aria-pressed="true"].on::after{background:var(--bg)}
+.ws-day:disabled{opacity:.35;cursor:default}
+.ws-note{font-size:.8rem;margin:-10px 0 0 8px}
+.sheet-date{display:block;font-size:.78rem;font-weight:600;color:var(--muted);font-family:var(--body);letter-spacing:0}
 </style>
 </head>
 <body>
@@ -750,6 +768,7 @@ const fromKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date
 const daysBetween = (a, b) => Math.round((fromKey(b) - fromKey(a)) / 864e5);
 const mondayOf = (d = new Date()) => { const x = new Date(d); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return dkey(x); };
 const slotNow = () => { const h = new Date().getHours() + new Date().getMinutes()/60; return h < 10.5 ? 'Breakfast' : h < 15 ? 'Lunch' : h < 17.5 ? 'Snack' : 'Dinner'; };
+const vday = () => S.day || dkey(); // the day shown on Today
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
 function merge(a, b){ const o = {...(a||{})}; for (const k in (b||{})) { const v = b[k]; if (v === null || v === undefined || v === '') continue; o[k] = isObj(v) && isObj(o[k]) ? merge(o[k], v) : v; } return o; }
 function md(s){
@@ -1047,7 +1066,7 @@ async function sendChat(text){
     S.profile.nextQuestion = q ? q.replace(/\*\*/g,'') : null;
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
-    if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()}))); logged = r.log_items.length; }
+    if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()})), dkey()); logged = r.log_items.length; }
     S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, at:Date.now() });
     save.profile(); save.chat();
   } catch (e) {
@@ -1086,7 +1105,7 @@ function maybeNewSession(force){
 
 // === services/food.js ===
 // Food diary: adding items and estimating meals from text or photos
-function addItems(items, k = dkey()){
+function addItems(items, k = vday()){
   S.logs[k] = S.logs[k] || {items:[]};
   for (const i of items) S.logs[k].items.push({ id:uid(), slot:i.slot || S.logSlot, name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber), at:Date.now() });
   save.log(k);
@@ -1098,7 +1117,7 @@ async function analyseFood(text, clarification){
   if (!S.sampleOK) { S.err.log = 'Sign in to count meals automatically, or tap “I know the calories”.'; render(); return; }
   if (!text.trim() && !S.logPhoto) return;
   S.busy.log = true; S.err.log = null; render();
-  const t = targets(), eaten = sumItems(S.logs[dkey()]?.items || []);
+  const t = targets(), eaten = sumItems(S.logs[vday()]?.items || []);
   const prompt = PROMPTS.food({ text, slot:S.logSlot, country:S.profile.data.shopping?.country, eaten,
     targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
     hasPhoto: !!S.logPhoto, clarification });
@@ -1124,7 +1143,7 @@ function confirmLog(){
   const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
   if (!items.length) return;
   const slot = S.sheet.slot;
-  if (r.replaceIds) { const L = S.logs[dkey()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
+  if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
   if (r.save && items.length) rememberMeal(r, items, slot);
   showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
@@ -1158,7 +1177,7 @@ function forgetSaved(id){
 }
 // Re-open a logged meal in the editor; saving replaces those items.
 function editMeal(slot){
-  const its = (S.logs[dkey()]?.items || []).filter(i => i.slot === slot);
+  const its = (S.logs[vday()]?.items || []).filter(i => i.slot === slot);
   openSheet(slot);
   S.logResult = { review: its.map(cleanItem), replaceIds: its.map(i => i.id), name: '', save: false, feedback: null };
   render();
@@ -1179,6 +1198,17 @@ function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.lo
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
 let toastTimer;
 function showToast(text, undo){ S.toast = text; S.toastUndo = undo || null; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; S.toastUndo = null; render(); }, undo ? 5000 : 2600); }
+
+// Show another day on Today; its food log loads from the device, then the account.
+async function gotoDay(k){
+  const today = dkey(); if (k > today) k = today;
+  S.day = k === today ? null : k; S.openMeal = null;
+  if (!S.logs[k]) S.logs[k] = Store.local('log-' + k) || { items:[] };
+  render(); window.scrollTo(0, 0);
+  const v = await Store.remote('log-' + k);
+  if (v && vday() === k) { S.logs[k] = v; render(); }
+}
+function shiftDay(n){ const d = fromKey(vday()); d.setDate(d.getDate() + n); gotoDay(dkey(d)); }
 
 // === services/planner.js ===
 // Week plan, shopping list, prep schedule and recipes
@@ -1304,15 +1334,16 @@ function statusBanner(){
 // === views/today.js ===
 // Today: calorie ring, macros, focus tips, food logging, streak
 function vToday(){
-  const t = targets(), log = S.logs[dkey()] || {items:[]}, eaten = sumItems(log.items);
+  const day = vday(), isToday = day === dkey(), t = targets(), log = S.logs[day] || {items:[]}, eaten = sumItems(log.items);
   const kcalT = t?.kcal || 0, left = kcalT - eaten.kcal, pct = kcalT ? Math.min(eaten.kcal / kcalT, 1) : 0;
   const C = 2 * Math.PI * 78;
   const now = new Date();
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head"><div><div class="label">${now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?'}</h1></div>
-  ${streakPill()}</div>
+  <div class="head"><div><div class="label">${isToday ? now.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'}) : 'Looking back'}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'short'})}</h1></div>
+  ${isToday ? '' : '<button class="btn small" data-act="gotoday" data-k="' + dkey() + '">Back to today</button>'}</div>
+  ${weekStrip(day)}
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
@@ -1320,7 +1351,7 @@ function vToday(){
       <div class="ring">
         <svg viewBox="0 0 176 176"><circle cx="88" cy="88" r="78" fill="none" stroke="var(--hero-track)" stroke-width="16"/>
         <circle cx="88" cy="88" r="78" fill="none" stroke="var(--accent)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .6s ease"/></svg>
-        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? 'kcal left' : 'kcal above target'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
+        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? (isToday ? 'kcal left' : 'kcal under target') : 'kcal above target'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
       </div>
       <div class="macros">
         ${bar('Protein', eaten.protein, t?.protein, 'var(--pink)')}
@@ -1330,7 +1361,7 @@ function vToday(){
         <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
       </div>
     </section>
-  ${focusCard()}
+  ${isToday ? focusCard() : ''}
   ${mealsSection(t)}
   ${S.sheet ? logSheet() : ''}
 `;
@@ -1348,7 +1379,7 @@ const MEAL_COLOR = { Breakfast:'var(--paprika)', Lunch:'var(--accent)', Snack:'v
 const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${MEAL_ICON[s]}</svg></span>`;
 
 function mealsSection(t){
-  const items = S.logs[dkey()]?.items || [];
+  const items = S.logs[vday()]?.items || [];
   return `<section class="card meals" aria-label="Meals">
     <h2>Meals</h2>
     ${SLOTS.map(s => {
@@ -1427,10 +1458,10 @@ function logSheet(){
   return `<div class="scrim${enter}" data-act="closesheet"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Add food to ${slot}">
     <div class="grip" aria-hidden="true"></div>
-    ${r?.review && !r.replaceIds ? `<div class="sheet-head">${mealIcon(slot)}<div class="title-edit"><span class="label">${slot}</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></div>
+    ${r?.review && !r.replaceIds ? `<div class="sheet-head">${mealIcon(slot)}<div class="title-edit"><span class="label">${slot}${vday() !== dkey() ? ' · ' + fromKey(vday()).toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'}) : ''}</span><input type="text" id="mealName" value="${esc(r.name || '')}" placeholder="Name this meal" aria-label="Meal name"></div>
       <button class="bookmark" data-act="togglesave" aria-pressed="${!!r.save}" aria-label="${r.save ? 'Saved to My meals. Tap to not save' : 'Save to My meals'}" title="${r.save ? 'Saved to My meals' : 'Save to My meals'}"><svg viewBox="0 0 24 24" fill="${r.save ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg></button>
       <button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`
-    : `<div class="sheet-head">${mealIcon(slot)}<h2>${r?.replaceIds ? `Edit ${slot}` : `Add to ${slot}`}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`}
+    : `<div class="sheet-head">${mealIcon(slot)}<h2>${r?.replaceIds ? `Edit ${slot}` : `Add to ${slot}`}${vday() !== dkey() ? `<small class="sheet-date">${fromKey(vday()).toLocaleDateString(undefined,{weekday:'short', day:'numeric', month:'short'})}</small>` : ''}</h2><button class="x close" data-act="closesheet" aria-label="Close">×</button></div>`}
     ${S.err.log ? `<div class="notice warn">${esc(S.err.log)}</div>` : ''}
     ${body}
   </div>`;
@@ -1439,7 +1470,7 @@ function logSheet(){
 // One short, timely tip instead of a big static card. Picked on the device from
 // the time of day, the day of the week and what's been eaten: no AI call.
 function smartTip(){
-  const t = targets(), items = S.logs[dkey()]?.items || [], eaten = sumItems(items);
+  const t = targets(), items = S.logs[dkey()]?.items || [], eaten = sumItems(items); // tips are always about today
   const now = new Date(), h = now.getHours(), dow = now.getDay(), weekend = dow === 0 || dow === 6 || (dow === 5 && h >= 16);
   const f = S.profile.focus, dayN = Math.floor(now / 864e5);
   const pick = arr => arr[dayN % arr.length];
@@ -1463,11 +1494,18 @@ function focusCard(){
   </button>`;
 }
 
-function streakPill(){
-  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf());
-  const dots = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d); return `<span class="${days.has(k) ? 'on' : ''} ${k === dkey() ? 'today' : ''}" title="${l}">${l[0]}</span>`; }).join('');
-  const week = DAYS.filter((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return days.has(dkey(d)); }).length;
-  return `<div class="streak" aria-label="${week} of 7 days logged this week"><div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div><div class="week-dots">${dots}</div></div>`;
+// The week of the viewed day: ‹ › to move a day, tap any past day to open it.
+// Green = something logged. Future days can't be opened.
+function weekStrip(day){
+  const mon = fromKey(mondayOf(fromKey(day))), today = dkey(), days = new Set(S.profile.loggedDays || []);
+  const cells = DAYS.map((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return { l, k:dkey(d), n:d.getDate() }; });
+  const logged = cells.filter(c => days.has(c.k)).length;
+  return `<div class="weekstrip" role="group" aria-label="Choose a day">
+    <button class="ws-arrow" data-act="prevday" aria-label="Previous day"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>
+    <div class="ws-days">${cells.map(c => `<button class="ws-day ${days.has(c.k) ? 'on' : ''} ${c.k === today ? 'is-today' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}"><span>${c.l[0]}</span><b>${c.n}</b></button>`).join('')}</div>
+    <button class="ws-arrow" data-act="nextday" aria-label="Next day" ${day >= today ? 'disabled' : ''}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+  </div>
+  <div class="ws-note muted">${logged} of 7 days logged this week</div>`;
 }
 
 // === views/coach.js ===
@@ -1878,6 +1916,9 @@ document.addEventListener('click', e => {
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'gotoday') gotoDay(el.dataset.k);
+  else if (a === 'prevday') shiftDay(-1);
+  else if (a === 'nextday') shiftDay(1);
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
@@ -1899,9 +1940,9 @@ document.addEventListener('click', e => {
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
   else if (a === 'bestguess') { S.logResult = { review:S.logResult.items, feedback:null }; render(); }
   else if (a === 'del') {
-    const L = S.logs[dkey()], idx = L.items.findIndex(i => i.id === el.dataset.id); if (idx < 0) return;
-    const [gone] = L.items.splice(idx, 1); save.log();
-    showToast(`Removed ${gone.name}`, () => { L.items.splice(idx, 0, gone); save.log(); }); render();
+    const day = vday(), L = S.logs[day], idx = L.items.findIndex(i => i.id === el.dataset.id); if (idx < 0) return;
+    const [gone] = L.items.splice(idx, 1); save.log(day);
+    showToast(`Removed ${gone.name}`, () => { L.items.splice(idx, 0, gone); save.log(day); }); render();
   }
   else if (a === 'undo') { const u = S.toastUndo; S.toast = null; S.toastUndo = null; if (u) u(); render(); }
   else if (a === 'manual') {
@@ -1918,7 +1959,7 @@ document.addEventListener('click', e => {
   else if (a === 'logmeal') {
     const m = S.plan.days[+el.dataset.i].meals[+el.dataset.j];
     const slot = SLOTS.includes(m.slot) ? m.slot : slotNow();
-    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }]);
+    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }], dkey());
     S.planSheet = null; document.body.classList.remove('sheet-open');
     showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }

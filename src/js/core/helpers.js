@@ -7,6 +7,7 @@ const fromKey = k => { const [y,m,d] = k.split('-').map(Number); return new Date
 const daysBetween = (a, b) => Math.round((fromKey(b) - fromKey(a)) / 864e5);
 const mondayOf = (d = new Date()) => { const x = new Date(d); const w = (x.getDay() + 6) % 7; x.setDate(x.getDate() - w); return dkey(x); };
 const slotNow = () => { const h = new Date().getHours() + new Date().getMinutes()/60; return h < 10.5 ? 'Breakfast' : h < 15 ? 'Lunch' : h < 17.5 ? 'Snack' : 'Dinner'; };
+const vday = () => S.day || dkey(); // the day shown on Today
 const isObj = v => v && typeof v === 'object' && !Array.isArray(v);
 function merge(a, b){ const o = {...(a||{})}; for (const k in (b||{})) { const v = b[k]; if (v === null || v === undefined || v === '') continue; o[k] = isObj(v) && isObj(o[k]) ? merge(o[k], v) : v; } return o; }
 function md(s){

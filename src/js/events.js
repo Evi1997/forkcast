@@ -73,6 +73,9 @@ document.addEventListener('click', e => {
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'gotoday') gotoDay(el.dataset.k);
+  else if (a === 'prevday') shiftDay(-1);
+  else if (a === 'nextday') shiftDay(1);
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
@@ -94,9 +97,9 @@ document.addEventListener('click', e => {
   else if (a === 'clarify') analyseFood(S.logResult.text, el.dataset.o);
   else if (a === 'bestguess') { S.logResult = { review:S.logResult.items, feedback:null }; render(); }
   else if (a === 'del') {
-    const L = S.logs[dkey()], idx = L.items.findIndex(i => i.id === el.dataset.id); if (idx < 0) return;
-    const [gone] = L.items.splice(idx, 1); save.log();
-    showToast(`Removed ${gone.name}`, () => { L.items.splice(idx, 0, gone); save.log(); }); render();
+    const day = vday(), L = S.logs[day], idx = L.items.findIndex(i => i.id === el.dataset.id); if (idx < 0) return;
+    const [gone] = L.items.splice(idx, 1); save.log(day);
+    showToast(`Removed ${gone.name}`, () => { L.items.splice(idx, 0, gone); save.log(day); }); render();
   }
   else if (a === 'undo') { const u = S.toastUndo; S.toast = null; S.toastUndo = null; if (u) u(); render(); }
   else if (a === 'manual') {
@@ -113,7 +116,7 @@ document.addEventListener('click', e => {
   else if (a === 'logmeal') {
     const m = S.plan.days[+el.dataset.i].meals[+el.dataset.j];
     const slot = SLOTS.includes(m.slot) ? m.slot : slotNow();
-    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }]);
+    addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }], dkey());
     S.planSheet = null; document.body.classList.remove('sheet-open');
     showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }
