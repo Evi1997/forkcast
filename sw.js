@@ -16,7 +16,8 @@ self.addEventListener('fetch', e => {
   // The app's own files skip the browser's 10-minute HTTP cache (GitHub Pages
   // sends max-age=600), so a new version appears as soon as it's published.
   const own = url.origin === location.origin;
-  e.respondWith(fetch(own ? new Request(e.request, { cache:'no-cache' }) : e.request).then(res => {
+  // (A navigation request can't be copied with new options, so build a fresh one from its URL.)
+  e.respondWith(fetch(own ? new Request(url.href, { cache:'no-cache', credentials:'same-origin' }) : e.request).then(res => {
     if (res.ok && (url.origin === location.origin || url.hostname.includes('jsdelivr') || url.hostname.includes('gstatic') || url.hostname.includes('googleapis'))) {
       const copy = res.clone(); caches.open(CACHE).then(c => c.put(e.request, copy));
     }
