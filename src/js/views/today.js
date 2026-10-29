@@ -10,7 +10,7 @@ function vToday(){
   <div class="head"><div><div class="label">${fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long'}) + '\'s food'}</h1></div>
   ${streakPill(day)}</div>
   ${statusBanner()}
-  ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
+  ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
     <section class="card hero fuel" aria-label="Calories and macros">
       <div class="ring">

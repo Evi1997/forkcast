@@ -614,6 +614,33 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .sheet-date{display:block;font-size:.78rem;font-weight:600;color:var(--muted);font-family:var(--body);letter-spacing:0}
 .streak .label{white-space:nowrap}
 @media (max-width:420px){.streak{gap:8px;padding:10px 10px 10px 14px}.week-dots{gap:4px}.week-dots button{width:25px;height:25px}.wk-arrow{width:18px}}
+
+/* Onboarding: full screen, one short step at a time */
+body.onboarding .rail{display:none}
+body.onboarding .app{grid-template-columns:minmax(0,1fr)}
+body.onboarding main{padding-bottom:24px}
+.onboard{max-width:560px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.ob-top{display:flex;align-items:center;gap:10px}
+.ob-progress{flex:1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.ob-progress span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.ob-head{display:flex;flex-direction:column;gap:6px}
+.ob-head h1{font-size:clamp(1.7rem,6vw,2.2rem)}
+.ob-head .ai-avatar{margin-bottom:6px}
+.ob-body{display:flex;flex-direction:column;gap:18px}
+.ob-q{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ob-q legend{font-weight:700;font-size:.92rem;margin-bottom:8px;padding:0}
+.ob-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ob-chips .chip{padding:10px 14px;font-size:.92rem}
+.ob-chips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fields.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.unit-input.sm input{font-size:1.05rem;padding:10px 8px 10px 12px}
+.unit-input.sm span{font-size:.85rem}
+.ob-actions{display:flex;flex-direction:column;gap:6px;position:sticky;bottom:0;padding:12px 0 calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%)}
+.ob-targets .tiles{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:6px}
+.ob-targets .tile{box-shadow:none;background:var(--surface-2);padding:12px}
+.ob-targets .tile b{font-size:1.3rem}
+@media (max-width:420px){.ob-targets .tiles{grid-template-columns:1fr 1fr}}
+.ob-notes{line-height:1.55}.ob-notes ul{margin:6px 0;padding-left:20px}
 </style>
 </head>
 <body>
@@ -662,6 +689,14 @@ HOW YOU WORK
 - If the person tells you what they ate, add it to log_items with honest estimates and update them on what's left today.
 - Tone: calm, warm, practical, precise, encouraging without being patronising. Short paragraphs, plain words. Reply in the language the person writes in.`;
 
+// Short brief for everyday chat after onboarding (faster: less to read each time).
+const COACH_FOLLOWUP = `You are the dietitian inside "Forkcast": evidence-based, warm, practical, concise. The person's full profile, targets and today's food are in APP STATE; don't re-ask what's there.
+- Answer in max ~90 words, plain words, in the person's language; end with one short question.
+- Keep foods they enjoy; 80/20 flexibility; never call foods good/bad/clean/cheat; never criticise what they ate.
+- Use their weak-point focus when relevant. For check-ins, look at trends; if adherence was low, adjust the plan before cutting calories.
+- If they say what they ate, put it in log_items with honest estimates.
+- SAFETY: no starvation, crash diets or very-low-calorie advice; medical issues -> suggest their doctor and set medical_flag.`;
+
 const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
 {"reply": string (max ~140 words; **bold** and "- " bullet lines allowed; must end with one question),
  "quick_replies": array of up to 4 short tap-able answers to your question (strings, may be empty),
@@ -687,9 +722,29 @@ Rules: build around foods the person enjoys and already eats; never include thei
 // Prompt builders. Each takes plain data and returns the input sent to the AI,
 // so changing what the AI does never means touching the UI code.
 const PROMPTS = {
+  // One review after the onboarding form: the person's answers in, the
+  // dietitian's welcome note, weak-point plan and safety notes out.
+  onboardingReview(profile, targets){
+    return `You are the dietitian inside "Forkcast". A new person just completed the intake form below. Review it like the end of a first consultation.
+${COACH_RULES.split('HOW YOU WORK')[0].trim()}
+SAFETY: never encourage starvation, crash diets or very-low-calorie diets; no calorie deficit for anyone under 18; for pregnancy, diabetes, kidney/liver disease, eating disorders or unexplained weight loss, say changes should be agreed with their doctor and set medical_flag; no high-protein targets with kidney disease.
+
+INTAKE (JSON): ${JSON.stringify(profile)}
+TARGETS ALREADY CALCULATED ON THE DEVICE (Mifflin-St Jeor, estimates): ${JSON.stringify(targets)}
+
+Reply with ONLY one JSON object:
+{"summary": "warm welcome in the person's language, max 110 words: what you understood (goal, routine, weak point), one line on why the targets fit, the 1-2 most useful first steps, and end with ONE question. **bold** and '- ' bullets allowed",
+ "quick_replies": up to 3 short answers to your question,
+ "focus": {"weak_point": short name, "why": one sentence, "tips": 3-4 short concrete tips for exactly their situation},
+ "targets": null, or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} ONLY if the calculated targets are unsafe or clearly wrong for this person (e.g. health condition, minor),
+ "medical_flag": null or one line when something needs medical review}`;
+  },
+
   // Dietitian chat: standing instructions + app snapshot, then the conversation.
-  coach(state, history){
-    return [{ role:'user', content: COACH_RULES + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
+  // Once onboarding is done the brief is much shorter: no consultation script.
+  coach(state, history, onboarded){
+    const rules = onboarded ? COACH_FOLLOWUP : COACH_RULES;
+    return [{ role:'user', content: rules + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
   },
 
   // Food diary estimate from text and/or a photo.
@@ -879,6 +934,7 @@ async function syncRemote(){
     }
   });
   S.synced = true;
+  if (!S.profile.onboarded && !S.ob) { startOnboarding(); return; } // new users start with the quick setup
   render();
 }
 
@@ -985,7 +1041,7 @@ function appState(){
     recent_weighins: S.progress.weighins.slice(-8),
     weak_point_focus: S.profile.focus || null,
     last_checkins: S.progress.checkins.slice(-2),
-    current_plan: S.plan?.days ? S.plan.days.map(d => `${d.day}: ` + d.meals.map(m => m.name).join(' / ')).join('\n') : 'none yet'
+    todays_plan: S.plan?.days?.[(new Date().getDay() + 6) % 7]?.meals.map(m => `${m.slot}: ${m.name}`).join(' / ') || 'none'
   };
 }
 
@@ -1047,9 +1103,10 @@ async function sendChat(text){
   S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
   const history = S.chat.turns.slice(S.chat.start || 0).slice(-20).map(t => ({ role:t.role, content:t.content }));
-  const input = PROMPTS.coach(appState(), history);
+  const input = PROMPTS.coach(appState(), history, S.profile.onboarded);
   try {
-    const r = await S.sample.json(input, { cache:false });
+    // Everyday chat uses the fast model; the first consultation keeps the stronger one.
+    const r = await S.sample.json(input, { cache:false, modelTier: S.profile.onboarded ? 'quick' : 'default' });
     const reply = String(r?.reply || '').trim() || 'Could you tell me a bit more?';
     if (isObj(r.profile_patch)) S.profile.data = merge(S.profile.data, r.profile_patch);
     if (isObj(r.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
@@ -1293,6 +1350,48 @@ async function loadDayPhotos(di){
   if (changed) { save.plan(); if (S.view === 'plan') render(); }
 }
 
+// === services/onboarding.js ===
+// Onboarding flow: open, move between steps, save, finish, and the one AI review.
+function startOnboarding(edit){
+  S.ob = { step:0, data: JSON.parse(JSON.stringify(S.profile.data || {})), edit: !!edit };
+  S.obDone = false; window.scrollTo(0, 0); render();
+}
+function obSave(){ S.profile.data = JSON.parse(JSON.stringify(S.ob.data)); save.profile(); }
+function obNext(skip){
+  const st = OB_STEPS[S.ob.step];
+  if (st.required && obMissing().length) { S.ob.tried = true; render(); return; }
+  obSave();
+  if (S.ob.step < OB_STEPS.length - 1) { S.ob.step++; S.ob.tried = false; window.scrollTo(0, 0); render(); return; }
+  finishOnboarding();
+}
+function obBack(){ if (S.ob.step > 0) { obSave(); S.ob.step--; window.scrollTo(0, 0); render(); } }
+
+async function finishOnboarding(){
+  obSave();
+  if (!S.profile.onboarded) { S.profile.onboarded = true; S.profile.onboardedAt = dkey(); }
+  S.profile.targets = null;            // use the fresh on-device estimate until the review says otherwise
+  S.obDone = true; S.ob.review = null; save.profile(); window.scrollTo(0, 0); render();
+  if (!S.sampleOK) { S.ob.review = { error:'Sign in to get your dietitian\'s notes.' }; render(); return; }
+  const t = targets();
+  try {
+    const r = await S.sample.json(PROMPTS.onboardingReview(S.profile.data, t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber }), { modelTier:'default' });
+    if (isObj(r?.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
+    if (isObj(r?.focus) && r.focus.weak_point) S.profile.focus = { weak_point:String(r.focus.weak_point), why:String(r.focus.why || ''), tips:(Array.isArray(r.focus.tips) ? r.focus.tips : []).slice(0,5).map(String), at:dkey() };
+    if (r?.medical_flag) S.profile.flags = [...new Set([...(S.profile.flags || []), String(r.medical_flag)])].slice(-5);
+    const summary = String(r?.summary || '').trim();
+    if (S.ob) S.ob.review = { summary, flag: r?.medical_flag || null };
+    // The review also opens today's conversation in the Dietitian tab.
+    if (summary) {
+      S.chat.start = S.chat.turns.length;
+      S.chat.turns.push({ role:'assistant', content:summary, quick:(Array.isArray(r.quick_replies) ? r.quick_replies : []).slice(0,4).map(String), flag:r?.medical_flag || null, at:Date.now() });
+      save.chat();
+    }
+    save.profile();
+  } catch (e) { hardFail(e); if (S.ob) S.ob.review = { error: errText(e) }; }
+  render();
+}
+function closeOnboarding(){ S.ob = null; S.obDone = false; S.view = 'today'; window.scrollTo(0, 0); render(); }
+
 // === views/shell.js ===
 // Top-level render: sign-in gate, nav tabs, current view, shared banners
 function render(){
@@ -1300,6 +1399,8 @@ function render(){
   document.body.classList.toggle('signed-out', !authed);
   if (S.view !== 'coach' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); }
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
+  document.body.classList.toggle('onboarding', !!S.ob);
+  if (S.ob) { $('#tabs').innerHTML = ''; $('#view').innerHTML = S.obDone ? vObDone() : vOnboarding(); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
   if (S.view === 'coach' && !S.busy.chat) maybeNewSession();
@@ -1338,7 +1439,7 @@ function vToday(){
   <div class="head"><div><div class="label">${fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long'}) + '\'s food'}</h1></div>
   ${streakPill(day)}</div>
   ${statusBanner()}
-  ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Start with a first consultation.</b> Your dietitian will ask about your body, health, routine and tastes before setting any targets.</span><button class="btn primary small" data-act="nav" data-v="coach">${S.chat.turns.length ? 'Continue consultation' : 'Begin'}</button></div>` : ''}
+  ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
     <section class="card hero fuel" aria-label="Calories and macros">
       <div class="ring">
@@ -1560,6 +1661,7 @@ function aboutYou(done){
       </section>
       ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
       <section class="stack" style="padding:0 4px">
+        <button class="btn small" data-act="editob">Edit my answers</button>
         <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
       </section>`;
@@ -1833,6 +1935,122 @@ function restoreAuthDraft(){
   if (p && d.pass) p.value = d.pass;
 }
 
+// === views/onboarding.js ===
+// Onboarding: eight short steps, mostly taps, no AI until the very end.
+// Answers are written straight into the profile (same keys the dietitian uses)
+// and saved after every step, so leaving halfway loses nothing.
+
+const OB_STEPS = [
+  { key:'basics', title:'About you', sub:'Used to estimate your daily needs.', required:true, body: () => `
+    ${obChips('basics.sex', 'Sex (for the energy formula)', [['female','Female'],['male','Male']])}
+    <div class="fields three">
+      ${obNum('basics.age', 'Age', 'years')}
+      ${obNum('basics.height_cm', 'Height', 'cm')}
+      ${obNum('basics.weight_kg', 'Weight', 'kg', 0.1)}
+    </div>
+    ${obChips('basics.goal', 'Main goal', [['fat loss','Lose fat'],['muscle gain','Build muscle'],['recomposition','Both: tone up'],['maintenance','Maintain'],['healthier eating','Eat healthier'],['performance','Sports performance'],['digestive comfort','Better digestion']])}
+    ${obNum('basics.goal_weight_kg', 'Goal weight (optional)', 'kg', 0.1)}
+    ${obChips('basics.activity', 'Daily activity', [['sedentary','Mostly sitting'],['light','Light: some walking'],['moderate','Moderate: active most days'],['very','Very active'],['extra','Physical job + training']])}` },
+  { key:'health', title:'Health', sub:'So advice stays safe. Pick all that apply.', body: () => `
+    ${obMulti('health.conditions', 'Conditions', ['None','Pregnant or breastfeeding','Diabetes','Kidney disease','Liver disease','Heart condition','IBS / digestive issues','Thyroid condition','Eating disorder (past or present)','Recent unexplained weight loss'])}
+    ${obMulti('health.allergies', 'Allergies or intolerances', ['None','Nuts','Peanuts','Gluten','Lactose','Eggs','Shellfish','Fish','Soy'])}
+    ${obText('health.medications', 'Medications that affect appetite, blood sugar or weight (optional)', 'e.g. none, metformin…')}` },
+  { key:'lifestyle', title:'Your routine', sub:'Helps fit meals around your day.', body: () => `
+    ${obChips('lifestyle.job', 'Work', [['desk job','Desk / remote'],['on my feet','On my feet'],['physical job','Physical work'],['student','Student'],['not working','Not working']])}
+    ${obChips('lifestyle.training', 'Exercise per week', [['none','None'],['1-2 sessions','1–2'],['3-4 sessions','3–4'],['5+ sessions','5+']])}
+    ${obMulti('lifestyle.training_type', 'Type of exercise', ['Gym / weights','Running','Walking','Yoga / pilates','Team sport','Cycling','Swimming'])}
+    ${obChips('lifestyle.sleep', 'Sleep', [['under 6 h','Under 6 h'],['6-7 h','6–7 h'],['7-8 h','7–8 h'],['8+ h','8 h+']])}
+    ${obChips('lifestyle.stress', 'Stress', [['low','Low'],['medium','Medium'],['high','High']])}` },
+  { key:'current_diet', title:'How you eat now', sub:'Your plan builds on what you already do.', body: () => `
+    ${obChips('current_diet.breakfast', 'Breakfast', [['every day','Every day'],['sometimes','Sometimes'],['skip it','Usually skip']])}
+    ${obChips('current_diet.takeout', 'Takeaway or eating out', [['rarely','Rarely'],['1-2 times a week','1–2× a week'],['3+ times a week','3+× a week']])}
+    ${obChips('current_diet.alcohol', 'Alcohol', [['none','None'],['occasionally','Occasionally'],['weekends','Weekends'],['most days','Most days']])}
+    ${obText('current_diet.typical_day', 'A normal day of eating (optional)', 'e.g. coffee, toast, chicken salad at lunch, pasta for dinner…', true)}` },
+  { key:'obstacles', title:'What gets in the way?', sub:'Your dietitian will focus on this with you.', body: () => `
+    ${obMulti('obstacles.weak_point', 'Pick what feels true', ['Weekends','Evening snacking','Eating out','Stress eating','Sweets & desserts','Alcohol','Big portions','Skipping meals then overeating','Not enough protein','No time to cook'])}
+    ${obText('obstacles.triggers', 'Anything else? (optional)', 'e.g. Sunday brunches always get out of hand')}` },
+  { key:'preferences', title:'Food you love', sub:'No “diet food” you don\'t enjoy.', body: () => `
+    ${obChips('preferences.pattern', 'Eating style', [['omnivore','Everything'],['pescatarian','Pescatarian'],['vegetarian','Vegetarian'],['vegan','Vegan'],['halal','Halal'],['kosher','Kosher'],['gluten-free','Gluten-free']])}
+    ${obMulti('preferences.cuisines', 'Favourite cuisines', ['Mediterranean','Greek','Italian','Spanish','Asian','Mexican','Middle Eastern','Indian'])}
+    ${obText('preferences.likes', 'Foods you love', 'e.g. salmon, eggs, rice, berries, dark chocolate')}
+    ${obText('preferences.dislikes', 'Foods you never want', 'e.g. tofu, mushrooms')}` },
+  { key:'cooking', title:'Cooking', sub:'So the plan fits your kitchen and time.', body: () => `
+    ${obChips('cooking.prep_style', 'How do you like to cook?', [['A: cook fresh most days','Fresh most days'],['B: meal prep twice a week','Prep 2× a week'],['C: meal prep once a week','Prep once a week'],['D: very little cooking','As little as possible']])}
+    ${obChips('cooking.max_weekday_minutes', 'Max cooking time on weekdays', [['15','15 min'],['30','30 min'],['45','45 min'],['60','1 hour']])}
+    ${obMulti('cooking.appliances', 'Appliances', ['Oven','Air fryer','Microwave','Rice cooker','Slow cooker','Blender'])}
+    ${obChips('cooking.people', 'Cooking for', [['1','Just me'],['2','2 people'],['3-4','3–4'],['5+','5+']])}
+    ${obChips('cooking.leftovers_ok', 'Leftovers and repeats', [['yes','Fine by me'],['some','A little'],['no','I want variety']])}` },
+  { key:'shopping', title:'Shopping', sub:'Your list uses products from your store.', body: () => `
+    <div class="fields two">${obText('shopping.country', 'Country', 'e.g. Spain')}${obText('shopping.city', 'City (optional)', 'e.g. Barcelona')}</div>
+    ${obText('shopping.supermarkets', 'Supermarket', 'e.g. Mercadona')}
+    ${obChips('shopping.budget', 'Weekly food budget', [['low','Tight'],['medium','Moderate'],['high','Flexible']])}
+    ${obChips('shopping.priority', 'What matters most?', [['cheapest','Price'],['convenience','Convenience'],['organic','Organic'],['balance','A balance']])}` }
+];
+
+// --- field helpers (value lives at a "section.key" path in S.ob.data) ---
+const obGet = path => { const [a, b] = path.split('.'); return S.ob.data[a]?.[b]; };
+function obSet(path, v){ const [a, b] = path.split('.'); S.ob.data[a] = { ...(S.ob.data[a] || {}), [b]: v }; }
+function obChips(path, label, opts){
+  const cur = String(obGet(path) ?? '');
+  return `<fieldset class="ob-q"><legend>${label}</legend><div class="ob-chips">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
+}
+function obMulti(path, label, opts){
+  const cur = String(obGet(path) || '').split(', ').filter(Boolean);
+  return `<fieldset class="ob-q"><legend>${label}</legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div></fieldset>`;
+}
+function obNum(path, label, unit, step = 1){
+  const id = 'ob-' + path.replace('.', '-'), v = obGet(path);
+  return `<div class="field"><label for="${id}">${label}</label><div class="unit-input sm"><input type="number" id="${id}" data-field="${path}" inputmode="${step < 1 ? 'decimal' : 'numeric'}" step="${step}" value="${v ?? ''}"><span>${unit}</span></div></div>`;
+}
+function obText(path, label, ph, area){
+  const id = 'ob-' + path.replace('.', '-'), v = esc(obGet(path) ?? '');
+  return `<div class="field"><label for="${id}">${label}</label>${area ? `<textarea id="${id}" data-field="${path}" rows="2" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}">`}</div>`;
+}
+
+function obMissing(){
+  const b = S.ob.data.basics || {};
+  return [['sex','sex'],['age','age'],['height_cm','height'],['weight_kg','weight'],['goal','goal'],['activity','activity']].filter(([k]) => !b[k]).map(([, l]) => l);
+}
+
+function vOnboarding(){
+  const i = S.ob.step, st = OB_STEPS[i], last = i === OB_STEPS.length - 1;
+  const missing = st.required && S.ob.tried ? obMissing() : [];
+  return `<div class="onboard">
+    <header class="ob-top">
+      ${i > 0 ? `<button class="ws-arrow" data-act="obback" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>` : '<span style="width:36px"></span>'}
+      <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
+      <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
+    </header>
+    <div class="ob-head"><h1>${st.title}</h1><p class="muted">${st.sub}</p></div>
+    <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
+    ${missing.length ? `<div class="notice warn">Please add your ${missing.join(', ')} to continue.</div>` : ''}
+    <div class="ob-actions">
+      <button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button>
+      ${!st.required ? `<button class="btn ghost" data-act="obskip">${last ? 'Skip and finish' : 'Skip this step'}</button>` : ''}
+    </div>
+  </div>`;
+}
+
+// After "Finish": targets straight away (calculated on the phone), then the
+// dietitian's personal review arrives from one AI call.
+function vObDone(){
+  const t = targets(), r = S.ob.review;
+  return `<div class="onboard">
+    <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>You're all set</h1><p class="muted">Here are your starting targets. They're estimates; we'll fine-tune them from your weight trend.</p></div>
+    ${t ? `<section class="card ob-targets">
+      <div class="review-total"><span class="big num">${t.kcal.toLocaleString()}</span><span class="muted">kcal a day</span></div>
+      <div class="tiles">${[['Protein', t.protein, 'var(--pink)'], ['Carbs', t.carbs, 'var(--amber)'], ['Fat', t.fat, 'var(--blue)'], ['Fiber', t.fiber, 'var(--accent)']].map(([l, v, c]) => `<div class="tile"><span class="label">${l}</span><b class="num" style="color:${c}">${v}<small> g</small></b></div>`).join('')}</div>
+    </section>` : ''}
+    <section class="card stack">
+      <div class="row" style="gap:10px"><span class="ai-dot" aria-hidden="true">${STAR}</span><h3>Your dietitian's notes</h3></div>
+      ${r?.error ? `<p class="muted">${esc(r.error)} You can ask anything in the Dietitian tab.</p>`
+        : r ? `<div class="ob-notes">${md(r.summary || '')}</div>${r.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(r.flag)}</div>` : ''}`
+        : `<p class="muted"><span class="spinner"></span> Reading your answers… you can already start using the app.</p>`}
+    </section>
+    <div class="ob-actions"><button class="btn primary big-btn" data-act="obclose">Start using Forkcast</button></div>
+  </div>`;
+}
+
 // === events.js ===
 // All user interactions, wired by data-act attributes
 document.addEventListener('input', e => {
@@ -1841,6 +2059,7 @@ document.addEventListener('input', e => {
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
+  if (e.target.dataset.field && S.ob) { const v = e.target.value; obSet(e.target.dataset.field, e.target.type === 'number' ? (v === '' ? '' : Number(v)) : v); }
   if (e.target.dataset.edit && S.logResult?.review) {
     // Live edit of a reviewed item; totals update without redrawing the form.
     const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
@@ -1861,6 +2080,7 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'obForm') { e.preventDefault(); obNext(); return; }
   if (e.target.id === 'moreForm') { e.preventDefault(); addToReview($('#moreText').value); return; }
   if (e.target.id === 'addItemForm') {
     e.preventDefault();
@@ -1894,7 +2114,7 @@ document.addEventListener('keydown', e => {
   }
 });
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-act]'); if (!el || el.dataset.act === 'check') return;
+  const el = e.target.closest('[data-act],[data-ob],[data-obm]'); if (!el || el.dataset.act === 'check') return;
   const a = el.dataset.act;
   const go = v => { S.view = v; render(); window.scrollTo(0, 0); };
   if (a === 'nav') { go(el.dataset.v); try { localStorage.setItem(LS + 'view', el.dataset.v); } catch {} }
@@ -1909,6 +2129,19 @@ document.addEventListener('click', e => {
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'startob') startOnboarding();
+  else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
+  else if (a === 'obnext') obNext();
+  else if (a === 'obskip') { if (S.ob.step < OB_STEPS.length - 1) { obSave(); S.ob.step++; window.scrollTo(0, 0); render(); } else finishOnboarding(); }
+  else if (a === 'obback') obBack();
+  else if (a === 'obclose') closeOnboarding();
+  else if (el.dataset.ob) { obSet(el.dataset.ob, el.dataset.v); render(); }
+  else if (el.dataset.obm) {
+    // Multi-choice: "None" clears the others, picking anything clears "None".
+    const path = el.dataset.obm, v = el.dataset.v; let cur = String(obGet(path) || '').split(', ').filter(Boolean);
+    cur = cur.includes(v) ? cur.filter(x => x !== v) : v === 'None' ? ['None'] : [...cur.filter(x => x !== 'None'), v];
+    obSet(path, cur.join(', ')); render();
+  }
   else if (a === 'gotoday') gotoDay(el.dataset.k);
   else if (a === 'prevweek') shiftDay(-7);
   else if (a === 'nextweek') shiftDay(7);

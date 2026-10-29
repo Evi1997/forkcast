@@ -59,5 +59,6 @@ async function syncRemote(){
     }
   });
   S.synced = true;
+  if (!S.profile.onboarded && !S.ob) { startOnboarding(); return; } // new users start with the quick setup
   render();
 }

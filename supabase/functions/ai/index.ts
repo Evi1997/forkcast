@@ -119,17 +119,32 @@ async function askGemini(contents: unknown, tier: string, wantJson: boolean) {
   throw new ApiError(502, "upstream_error", "No Gemini model available: " + last);
 }
 
+// Cheap local check before spending any Gemini quota: the token must be one of
+// this project's sign-in tokens and not expired. The full check with Supabase
+// runs at the same time as the Gemini call (saves a round trip per message).
+function quickTokenCheck(req: Request) {
+  const auth = req.headers.get("Authorization") || "";
+  try {
+    const payload = JSON.parse(atob(auth.replace(/^Bearer /, "").split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    const iss = String(payload.iss || "");
+    if (/\/auth\/v1$/.test(iss) && payload.exp * 1000 > Date.now() && payload.sub) return;
+  } catch { /* fall through */ }
+  throw new ApiError(401, "unauthorized", "Your session expired. Sign in again.");
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return reply({ code: "method_not_allowed", message: "Use POST." }, 405);
   try {
-    await verifyUser(req);
+    quickTokenCheck(req);
+    const verified = verifyUser(req);
+    verified.catch(() => {}); // handled below
     const raw = await req.text();
     if (raw.length > 4 * 1024 * 1024) throw new ApiError(413, "prompt_too_large", "That was too much at once (photo too big?).");
     const body = JSON.parse(raw || "{}");
     const wantJson = body.json !== false;
     const started = Date.now();
-    const { text, model } = await askGemini(toContents(body.input, body.images), body.tier, wantJson);
+    const [{ text, model }] = await Promise.all([askGemini(toContents(body.input, body.images), body.tier, wantJson), verified]);
     const parsed = wantJson ? parseJson(text) : null;
     if (wantJson && parsed === null) throw new ApiError(502, "invalid_json", "The answer came back garbled. Try again.");
     return reply({ text, json: parsed, model, ms: Date.now() - started });

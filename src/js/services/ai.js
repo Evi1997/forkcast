@@ -63,6 +63,6 @@ function appState(){
     recent_weighins: S.progress.weighins.slice(-8),
     weak_point_focus: S.profile.focus || null,
     last_checkins: S.progress.checkins.slice(-2),
-    current_plan: S.plan?.days ? S.plan.days.map(d => `${d.day}: ` + d.meals.map(m => m.name).join(' / ')).join('\n') : 'none yet'
+    todays_plan: S.plan?.days?.[(new Date().getDay() + 6) % 7]?.meals.map(m => `${m.slot}: ${m.name}`).join(' / ') || 'none'
   };
 }

@@ -4,6 +4,8 @@ function render(){
   document.body.classList.toggle('signed-out', !authed);
   if (S.view !== 'coach' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); }
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
+  document.body.classList.toggle('onboarding', !!S.ob);
+  if (S.ob) { $('#tabs').innerHTML = ''; $('#view').innerHTML = S.obDone ? vObDone() : vOnboarding(); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
   if (S.view === 'coach' && !S.busy.chat) maybeNewSession();

@@ -483,3 +483,30 @@ input[type=date]::-webkit-date-and-time-value{text-align:left}
 .sheet-date{display:block;font-size:.78rem;font-weight:600;color:var(--muted);font-family:var(--body);letter-spacing:0}
 .streak .label{white-space:nowrap}
 @media (max-width:420px){.streak{gap:8px;padding:10px 10px 10px 14px}.week-dots{gap:4px}.week-dots button{width:25px;height:25px}.wk-arrow{width:18px}}
+
+/* Onboarding: full screen, one short step at a time */
+body.onboarding .rail{display:none}
+body.onboarding .app{grid-template-columns:minmax(0,1fr)}
+body.onboarding main{padding-bottom:24px}
+.onboard{max-width:560px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.ob-top{display:flex;align-items:center;gap:10px}
+.ob-progress{flex:1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.ob-progress span{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.ob-head{display:flex;flex-direction:column;gap:6px}
+.ob-head h1{font-size:clamp(1.7rem,6vw,2.2rem)}
+.ob-head .ai-avatar{margin-bottom:6px}
+.ob-body{display:flex;flex-direction:column;gap:18px}
+.ob-q{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ob-q legend{font-weight:700;font-size:.92rem;margin-bottom:8px;padding:0}
+.ob-chips{display:flex;flex-wrap:wrap;gap:8px}
+.ob-chips .chip{padding:10px 14px;font-size:.92rem}
+.ob-chips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fields.three{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.unit-input.sm input{font-size:1.05rem;padding:10px 8px 10px 12px}
+.unit-input.sm span{font-size:.85rem}
+.ob-actions{display:flex;flex-direction:column;gap:6px;position:sticky;bottom:0;padding:12px 0 calc(8px + env(safe-area-inset-bottom,0px));background:linear-gradient(transparent,var(--bg) 30%)}
+.ob-targets .tiles{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:6px}
+.ob-targets .tile{box-shadow:none;background:var(--surface-2);padding:12px}
+.ob-targets .tile b{font-size:1.3rem}
+@media (max-width:420px){.ob-targets .tiles{grid-template-columns:1fr 1fr}}
+.ob-notes{line-height:1.55}.ob-notes ul{margin:6px 0;padding-left:20px}

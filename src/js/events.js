@@ -5,6 +5,7 @@ document.addEventListener('input', e => {
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
+  if (e.target.dataset.field && S.ob) { const v = e.target.value; obSet(e.target.dataset.field, e.target.type === 'number' ? (v === '' ? '' : Number(v)) : v); }
   if (e.target.dataset.edit && S.logResult?.review) {
     // Live edit of a reviewed item; totals update without redrawing the form.
     const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
@@ -25,6 +26,7 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('submit', e => {
+  if (e.target.id === 'obForm') { e.preventDefault(); obNext(); return; }
   if (e.target.id === 'moreForm') { e.preventDefault(); addToReview($('#moreText').value); return; }
   if (e.target.id === 'addItemForm') {
     e.preventDefault();
@@ -58,7 +60,7 @@ document.addEventListener('keydown', e => {
   }
 });
 document.addEventListener('click', e => {
-  const el = e.target.closest('[data-act]'); if (!el || el.dataset.act === 'check') return;
+  const el = e.target.closest('[data-act],[data-ob],[data-obm]'); if (!el || el.dataset.act === 'check') return;
   const a = el.dataset.act;
   const go = v => { S.view = v; render(); window.scrollTo(0, 0); };
   if (a === 'nav') { go(el.dataset.v); try { localStorage.setItem(LS + 'view', el.dataset.v); } catch {} }
@@ -73,6 +75,19 @@ document.addEventListener('click', e => {
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'startob') startOnboarding();
+  else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
+  else if (a === 'obnext') obNext();
+  else if (a === 'obskip') { if (S.ob.step < OB_STEPS.length - 1) { obSave(); S.ob.step++; window.scrollTo(0, 0); render(); } else finishOnboarding(); }
+  else if (a === 'obback') obBack();
+  else if (a === 'obclose') closeOnboarding();
+  else if (el.dataset.ob) { obSet(el.dataset.ob, el.dataset.v); render(); }
+  else if (el.dataset.obm) {
+    // Multi-choice: "None" clears the others, picking anything clears "None".
+    const path = el.dataset.obm, v = el.dataset.v; let cur = String(obGet(path) || '').split(', ').filter(Boolean);
+    cur = cur.includes(v) ? cur.filter(x => x !== v) : v === 'None' ? ['None'] : [...cur.filter(x => x !== 'None'), v];
+    obSet(path, cur.join(', ')); render();
+  }
   else if (a === 'gotoday') gotoDay(el.dataset.k);
   else if (a === 'prevweek') shiftDay(-7);
   else if (a === 'nextweek') shiftDay(7);

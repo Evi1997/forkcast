@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Forkcast: join src/ into one index.html, served by Netlify.
+"""Build Forkcast: join src/ into one index.html, served by GitHub Pages.
 
 Usage:  python3 build.py
 No dependencies. Edit files in src/, never index.html directly.
@@ -25,6 +25,7 @@ SCRIPTS = [
     "services/coach.js",
     "services/food.js",
     "services/planner.js",
+    "services/onboarding.js",
     "views/shell.js",
     "views/today.js",
     "views/coach.js",
@@ -32,6 +33,7 @@ SCRIPTS = [
     "views/shop.js",
     "views/progress.js",
     "views/auth.js",
+    "views/onboarding.js",
     "events.js",
     "main.js",
 ]

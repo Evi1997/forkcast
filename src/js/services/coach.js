@@ -8,9 +8,10 @@ async function sendChat(text){
   S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
   const history = S.chat.turns.slice(S.chat.start || 0).slice(-20).map(t => ({ role:t.role, content:t.content }));
-  const input = PROMPTS.coach(appState(), history);
+  const input = PROMPTS.coach(appState(), history, S.profile.onboarded);
   try {
-    const r = await S.sample.json(input, { cache:false });
+    // Everyday chat uses the fast model; the first consultation keeps the stronger one.
+    const r = await S.sample.json(input, { cache:false, modelTier: S.profile.onboarded ? 'quick' : 'default' });
     const reply = String(r?.reply || '').trim() || 'Could you tell me a bit more?';
     if (isObj(r.profile_patch)) S.profile.data = merge(S.profile.data, r.profile_patch);
     if (isObj(r.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
