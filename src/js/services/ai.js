@@ -48,6 +48,23 @@ const AI = {
     if (!res.ok || body.code) throw { code: body.code || 'upstream_error', message: body.message };
     console.info(`AI answered with ${body.model} in ${body.ms} ms`);
     return body.json;
+  },
+  // Streamed answer: onText(fullTextSoFar) is called as words arrive.
+  async stream(input, opts = {}){
+    if (!navigator.onLine) throw { code:'offline' };
+    const token = await Auth.token();
+    if (!token) throw { code:'unauthorized' };
+    const c = window.FORKCAST_CONFIG || {};
+    let res;
+    try {
+      res = await fetch(c.aiUrl || c.supabaseUrl + '/functions/v1/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token, apikey:c.supabaseAnonKey },
+        body: JSON.stringify({ input, tier: opts.modelTier === 'quick' ? 'quick' : 'default', stream:true }) });
+    } catch { throw { code:'offline' }; }
+    if (!res.ok) { const b = await res.json().catch(() => ({})); throw { code: b.code || 'upstream_error', message: b.message }; }
+    const reader = res.body.getReader(), dec = new TextDecoder(); let text = '';
+    for (;;) { const { done, value } = await reader.read(); if (done) break; text += dec.decode(value, { stream:true }); opts.onText?.(text); }
+    if (!text.trim()) throw { code:'empty_completion' };
+    return text;
   }
 };
 

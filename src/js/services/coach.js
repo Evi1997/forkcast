@@ -3,23 +3,23 @@ async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
   if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
-  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING, at:Date.now() });
+  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:greeting(), at:Date.now() });
   S.chat.turns.push({ role:'user', content:text, at:Date.now() });
   S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
   const history = S.chat.turns.slice(S.chat.start || 0).slice(-20).map(t => ({ role:t.role, content:t.content }));
-  const input = PROMPTS.coach(appState(), history, S.profile.onboarded);
+  const input = PROMPTS.coach(appState(), history, S.profile.onboarded, coachPersona());
   try {
-    // Everyday chat uses the fast model; the first consultation keeps the stronger one.
-    const r = await S.sample.json(input, { cache:false, modelTier: S.profile.onboarded ? 'quick' : 'default' });
-    const reply = String(r?.reply || '').trim() || 'Could you tell me a bit more?';
+    // Everyday chat uses the fast model; the reply streams in word by word.
+    S.chat.live = '';
+    const full = await S.sample.stream(input, { modelTier: S.profile.onboarded ? 'quick' : 'default', onText: t => showLive(t) });
+    const [replyPart, dataPart = ''] = full.split('@@DATA@@');
+    const reply = replyPart.trim() || 'Could you tell me a bit more?';
+    const r = looseJson(dataPart) || {};
     if (isObj(r.profile_patch)) S.profile.data = merge(S.profile.data, r.profile_patch);
     if (isObj(r.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
-    if (r.onboarding_complete && !S.profile.onboarded) { S.profile.onboarded = true; S.profile.onboardedAt = dkey(); }
     if (isObj(r.focus) && r.focus.weak_point) S.profile.focus = { weak_point:String(r.focus.weak_point), why:String(r.focus.why || ''), tips:(Array.isArray(r.focus.tips) ? r.focus.tips : []).slice(0,5).map(String), at:dkey() };
     if (r.medical_flag) S.profile.flags = [...new Set([...(S.profile.flags || []), String(r.medical_flag)])].slice(-5);
-    const q = reply.split(/(?<=[.!?])\s+/).reverse().find(s => s.includes('?'));
-    S.profile.nextQuestion = q ? q.replace(/\*\*/g,'') : null;
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
     if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()})), dkey()); logged = r.log_items.length; }
@@ -28,6 +28,7 @@ async function sendChat(text){
   } catch (e) {
     hardFail(e); S.err.chat = errText(e);
   }
+  S.chat.live = null;
   S.busy.chat = false; render(); scrollChat();
 }
 function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
@@ -57,4 +58,20 @@ function maybeNewSession(force){
   turns.push({ role:'assistant', content:`${hi}! ${line}`, quick, at:Date.now(), fresh:true });
   S.chat.history = false;
   save.chat();
+}
+
+// Paint the reply as it streams, without redrawing the whole screen.
+function showLive(full){
+  const visible = full.split('@@DATA@@')[0].replace(/@+[DAT]*@*$/, '').trim();
+  if (!visible) return;
+  if (S.chat.live === '' || !document.getElementById('liveMsg')) { S.chat.live = visible; render(); }
+  S.chat.live = visible;
+  const el = document.getElementById('liveMsg'); if (el) el.innerHTML = md(visible);
+  scrollChat();
+}
+// Tolerant JSON read for the data block after the reply.
+function looseJson(t){
+  t = String(t || ''); const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b <= a) return null;
+  try { return JSON.parse(t.slice(a, b + 1)); } catch { return null; }
 }

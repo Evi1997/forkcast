@@ -672,6 +672,17 @@ const SECTIONS = [
   ['current_diet','Current eating'],['obstacles','Weak points'],['preferences','Food preferences'],['cooking','Cooking & prep'],['shopping','Shopping & budget']
 ];
 
+// Your dietitian's name and style, chosen in onboarding or About you.
+const COACH_NAMES = ['Mila','Theo','Nora','Leo','Ava','Sam'];
+const COACH_TONES = [
+  ['warm','Warm & encouraging','warm, kind and encouraging'],
+  ['direct','Straight to the point','brief, direct and practical; no small talk'],
+  ['fun','Friendly & fun','friendly and upbeat with a little light humour, still precise']
+];
+const coachName = () => String(S.profile.data.coach?.name || 'Mila').trim().slice(0, 20) || 'Mila';
+const coachTone = () => COACH_TONES.find(t => t[0] === S.profile.data.coach?.tone) || COACH_TONES[0];
+const coachPersona = () => `Your name is ${coachName()}. Your style: ${coachTone()[2]}. Never sign your messages.`;
+
 // === core/prompts.js ===
 // Everything Forkcast says to the AI lives here: the dietitian rules and the
 // prompts for food logging, week plans, shopping lists and recipes.
@@ -697,6 +708,17 @@ const COACH_FOLLOWUP = `You are the dietitian inside "Forkcast": evidence-based,
 - If they say what they ate, put it in log_items with honest estimates.
 - SAFETY: no starvation, crash diets or very-low-calorie advice; medical issues -> suggest their doctor and set medical_flag.`;
 
+// Streamed chat: the reply comes first as plain text (shown while it's written),
+// then the app data after a marker line.
+const COACH_STREAM_FORMAT = `First write your reply to the person: plain text, max ~90 words, **bold** and "- " bullets allowed, ending with one short question.
+Then, on a new line, write exactly @@DATA@@ followed by ONE JSON object (no other text after it):
+{"quick_replies": up to 4 short tap-able answers to your question,
+ "profile_patch": only new or changed facts, using sections basics{age,sex,height_cm,weight_kg,goal_weight_kg,waist_cm,goal,activity}, health{conditions,allergies,medications,notes}, lifestyle{job,training,sleep,stress,schedule}, current_diet{typical_day,alcohol,takeout,weekends}, obstacles{weak_point,triggers}, preferences{likes,dislikes,pattern,cuisines}, cooking{level,appliances,max_weekday_minutes,people,prep_style}, shopping{country,city,supermarkets,budget,priority}; {} if nothing new,
+ "targets": null or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} only when you deliberately change targets,
+ "log_items": [] or [{"name":s,"amount":s,"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n,"slot":"Breakfast"|"Lunch"|"Snack"|"Dinner"}],
+ "focus": null or {"weak_point":s,"why":s,"tips":[3-4 short tips]},
+ "medical_flag": null or one line}`;
+
 const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
 {"reply": string (max ~140 words; **bold** and "- " bullet lines allowed; must end with one question),
  "quick_replies": array of up to 4 short tap-able answers to your question (strings, may be empty),
@@ -712,7 +734,7 @@ const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
  "onboarding_complete": true once all eight consultation areas are covered, else false,
  "medical_flag": null or a one-line note when something NEEDS MEDICAL REVIEW}`;
 
-const GREETING = `Hi, I'm your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
+const greeting = () => `Hi, I'm ${coachName()}, your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
 
 Let's start simple: **how old are you, and what's your height and current weight?**`;
 
@@ -725,7 +747,7 @@ const PROMPTS = {
   // One review after the onboarding form: the person's answers in, the
   // dietitian's welcome note, weak-point plan and safety notes out.
   onboardingReview(profile, targets){
-    return `You are the dietitian inside "Forkcast". A new person just completed the intake form below. Review it like the end of a first consultation.
+    return `You are the dietitian inside "Forkcast". ${coachPersona()} A new person just completed the intake form below. Review it like the end of a first consultation.
 ${COACH_RULES.split('HOW YOU WORK')[0].trim()}
 SAFETY: never encourage starvation, crash diets or very-low-calorie diets; no calorie deficit for anyone under 18; for pregnancy, diabetes, kidney/liver disease, eating disorders or unexplained weight loss, say changes should be agreed with their doctor and set medical_flag; no high-protein targets with kidney disease.
 
@@ -742,9 +764,9 @@ Reply with ONLY one JSON object:
 
   // Dietitian chat: standing instructions + app snapshot, then the conversation.
   // Once onboarding is done the brief is much shorter: no consultation script.
-  coach(state, history, onboarded){
-    const rules = onboarded ? COACH_FOLLOWUP : COACH_RULES;
-    return [{ role:'user', content: rules + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
+  coach(state, history, onboarded, persona){
+    const rules = (persona ? persona + '\n' : '') + (onboarded ? COACH_FOLLOWUP : COACH_RULES);
+    return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
   },
 
   // Food diary estimate from text and/or a photo.
@@ -1026,6 +1048,23 @@ const AI = {
     if (!res.ok || body.code) throw { code: body.code || 'upstream_error', message: body.message };
     console.info(`AI answered with ${body.model} in ${body.ms} ms`);
     return body.json;
+  },
+  // Streamed answer: onText(fullTextSoFar) is called as words arrive.
+  async stream(input, opts = {}){
+    if (!navigator.onLine) throw { code:'offline' };
+    const token = await Auth.token();
+    if (!token) throw { code:'unauthorized' };
+    const c = window.FORKCAST_CONFIG || {};
+    let res;
+    try {
+      res = await fetch(c.aiUrl || c.supabaseUrl + '/functions/v1/ai', { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token, apikey:c.supabaseAnonKey },
+        body: JSON.stringify({ input, tier: opts.modelTier === 'quick' ? 'quick' : 'default', stream:true }) });
+    } catch { throw { code:'offline' }; }
+    if (!res.ok) { const b = await res.json().catch(() => ({})); throw { code: b.code || 'upstream_error', message: b.message }; }
+    const reader = res.body.getReader(), dec = new TextDecoder(); let text = '';
+    for (;;) { const { done, value } = await reader.read(); if (done) break; text += dec.decode(value, { stream:true }); opts.onText?.(text); }
+    if (!text.trim()) throw { code:'empty_completion' };
+    return text;
   }
 };
 
@@ -1098,23 +1137,23 @@ async function sendChat(text){
   text = text.trim();
   if (!text || S.busy.chat) return;
   if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
-  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:GREETING, at:Date.now() });
+  if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:greeting(), at:Date.now() });
   S.chat.turns.push({ role:'user', content:text, at:Date.now() });
   S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
   const history = S.chat.turns.slice(S.chat.start || 0).slice(-20).map(t => ({ role:t.role, content:t.content }));
-  const input = PROMPTS.coach(appState(), history, S.profile.onboarded);
+  const input = PROMPTS.coach(appState(), history, S.profile.onboarded, coachPersona());
   try {
-    // Everyday chat uses the fast model; the first consultation keeps the stronger one.
-    const r = await S.sample.json(input, { cache:false, modelTier: S.profile.onboarded ? 'quick' : 'default' });
-    const reply = String(r?.reply || '').trim() || 'Could you tell me a bit more?';
+    // Everyday chat uses the fast model; the reply streams in word by word.
+    S.chat.live = '';
+    const full = await S.sample.stream(input, { modelTier: S.profile.onboarded ? 'quick' : 'default', onText: t => showLive(t) });
+    const [replyPart, dataPart = ''] = full.split('@@DATA@@');
+    const reply = replyPart.trim() || 'Could you tell me a bit more?';
+    const r = looseJson(dataPart) || {};
     if (isObj(r.profile_patch)) S.profile.data = merge(S.profile.data, r.profile_patch);
     if (isObj(r.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
-    if (r.onboarding_complete && !S.profile.onboarded) { S.profile.onboarded = true; S.profile.onboardedAt = dkey(); }
     if (isObj(r.focus) && r.focus.weak_point) S.profile.focus = { weak_point:String(r.focus.weak_point), why:String(r.focus.why || ''), tips:(Array.isArray(r.focus.tips) ? r.focus.tips : []).slice(0,5).map(String), at:dkey() };
     if (r.medical_flag) S.profile.flags = [...new Set([...(S.profile.flags || []), String(r.medical_flag)])].slice(-5);
-    const q = reply.split(/(?<=[.!?])\s+/).reverse().find(s => s.includes('?'));
-    S.profile.nextQuestion = q ? q.replace(/\*\*/g,'') : null;
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
     if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()})), dkey()); logged = r.log_items.length; }
@@ -1123,6 +1162,7 @@ async function sendChat(text){
   } catch (e) {
     hardFail(e); S.err.chat = errText(e);
   }
+  S.chat.live = null;
   S.busy.chat = false; render(); scrollChat();
 }
 function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
@@ -1152,6 +1192,22 @@ function maybeNewSession(force){
   turns.push({ role:'assistant', content:`${hi}! ${line}`, quick, at:Date.now(), fresh:true });
   S.chat.history = false;
   save.chat();
+}
+
+// Paint the reply as it streams, without redrawing the whole screen.
+function showLive(full){
+  const visible = full.split('@@DATA@@')[0].replace(/@+[DAT]*@*$/, '').trim();
+  if (!visible) return;
+  if (S.chat.live === '' || !document.getElementById('liveMsg')) { S.chat.live = visible; render(); }
+  S.chat.live = visible;
+  const el = document.getElementById('liveMsg'); if (el) el.innerHTML = md(visible);
+  scrollChat();
+}
+// Tolerant JSON read for the data block after the reply.
+function looseJson(t){
+  t = String(t || ''); const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b <= a) return null;
+  try { return JSON.parse(t.slice(a, b + 1)); } catch { return null; }
 }
 
 // === services/food.js ===
@@ -1609,7 +1665,7 @@ const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2.5c.4 0
 const SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>';
 
 function vCoach(){
-  const all = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
+  const all = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:greeting() }];
   const start = S.chat.history ? 0 : Math.min(S.chat.start || 0, all.length - 1);
   const turns = all.slice(start), last = all[all.length - 1];
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
@@ -1621,7 +1677,7 @@ function vCoach(){
     <section class="card chat" aria-label="Conversation with your dietitian">
       <header class="chat-head">
         <span class="ai-avatar" aria-hidden="true">${STAR}</span>
-        <div class="chat-title"><b>Your dietitian</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
+        <div class="chat-title"><b>${esc(coachName())}</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
         <button class="iconbtn2" data-act="newchat" aria-label="New conversation" title="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
         <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
       </header>
@@ -1631,7 +1687,7 @@ function vCoach(){
         ${start > 0 ? `<button class="earlier" data-act="history">Show earlier messages</button>` : ''}
         ${turns.map(m => m.role === 'user' ? `<div class="msg me">${esc(m.content)}</div>` :
           aiRow(`${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's meals</div>` : ''}`)).join('')}
-        ${S.busy.chat ? aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`) : ''}
+        ${S.busy.chat ? (S.chat.live ? `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai" id="liveMsg">${md(S.chat.live)}</div></div>` : aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`)) : ''}
       </div>
       ${!S.busy.chat && last.role === 'assistant' && last.quick?.length ? `<div class="quick">${last.quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
       ${S.err.chat ? `<div class="notice warn chat-err">${esc(S.err.chat)}</div>` : ''}
@@ -1661,6 +1717,10 @@ function aboutYou(done){
       </section>
       ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
       <section class="stack" style="padding:0 4px">
+        <section class="card stack"><h3>Your dietitian</h3>
+          <div class="field"><label for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
+          <div class="ob-chips">${COACH_TONES.map(([v, l]) => `<button class="chip" data-act="coachtone" data-v="${v}" aria-pressed="${coachTone()[0] === v}">${l}</button>`).join('')}</div>
+        </section>
         <button class="btn small" data-act="editob">Edit my answers</button>
         <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
@@ -1941,6 +2001,10 @@ function restoreAuthDraft(){
 // and saved after every step, so leaving halfway loses nothing.
 
 const OB_STEPS = [
+  { key:'coach', title:'Meet your dietitian', sub:'Pick a name and a style. You can change both later.', body: () => `
+    ${obChips('coach.name', 'Name', COACH_NAMES.map(n => [n, n]))}
+    ${obText('coach.name', 'Or type your own', 'e.g. Sofia')}
+    ${obChips('coach.tone', 'How should they talk to you?', COACH_TONES.map(([v, l]) => [v, l]))}` },
   { key:'basics', title:'About you', sub:'Used to estimate your daily needs.', required:true, body: () => `
     ${obChips('basics.sex', 'Sex (for the energy formula)', [['female','Female'],['male','Male']])}
     <div class="fields three">
@@ -2042,7 +2106,7 @@ function vObDone(){
       <div class="tiles">${[['Protein', t.protein, 'var(--pink)'], ['Carbs', t.carbs, 'var(--amber)'], ['Fat', t.fat, 'var(--blue)'], ['Fiber', t.fiber, 'var(--accent)']].map(([l, v, c]) => `<div class="tile"><span class="label">${l}</span><b class="num" style="color:${c}">${v}<small> g</small></b></div>`).join('')}</div>
     </section>` : ''}
     <section class="card stack">
-      <div class="row" style="gap:10px"><span class="ai-dot" aria-hidden="true">${STAR}</span><h3>Your dietitian's notes</h3></div>
+      <div class="row" style="gap:10px"><span class="ai-dot" aria-hidden="true">${STAR}</span><h3>${esc(coachName())}'s notes</h3></div>
       ${r?.error ? `<p class="muted">${esc(r.error)} You can ask anything in the Dietitian tab.</p>`
         : r ? `<div class="ob-notes">${md(r.summary || '')}</div>${r.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(r.flag)}</div>` : ''}`
         : `<p class="muted"><span class="spinner"></span> Reading your answers… you can already start using the app.</p>`}
@@ -2059,6 +2123,7 @@ document.addEventListener('input', e => {
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
+  if (id === 'coachName') { S.profile.data.coach = { ...(S.profile.data.coach || {}), name: e.target.value.slice(0, 20) }; clearTimeout(window._cn); window._cn = setTimeout(() => { save.profile(); const t = $('.chat-title b'); if (t) t.textContent = coachName(); }, 500); }
   if (e.target.dataset.field && S.ob) { const v = e.target.value; obSet(e.target.dataset.field, e.target.type === 'number' ? (v === '' ? '' : Number(v)) : v); }
   if (e.target.dataset.edit && S.logResult?.review) {
     // Live edit of a reviewed item; totals update without redrawing the form.
@@ -2129,6 +2194,7 @@ document.addEventListener('click', e => {
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'coachtone') { S.profile.data.coach = { ...(S.profile.data.coach || {}), tone: el.dataset.v }; save.profile(); render(); }
   else if (a === 'startob') startOnboarding();
   else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
   else if (a === 'obnext') obNext();

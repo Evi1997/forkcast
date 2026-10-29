@@ -167,6 +167,16 @@ class handler(BaseHTTPRequestHandler):
             verify_user(self.headers.get("Authorization"))
             req = json.loads(self.rfile.read(length) or b"{}")
             contents = to_contents(req.get("input"), req.get("images"))
+            if req.get("stream"):
+                # Local twin: no real streaming, just the whole text at once.
+                text, _ = ask_gemini(contents, req.get("tier"), False)
+                data = text.encode()
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self.send_header("Content-Length", str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+                return
             want_json = req.get("json", True)
             started = time.time()
             text, model = ask_gemini(contents, req.get("tier"), want_json)

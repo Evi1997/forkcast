@@ -3,6 +3,10 @@
 // and saved after every step, so leaving halfway loses nothing.
 
 const OB_STEPS = [
+  { key:'coach', title:'Meet your dietitian', sub:'Pick a name and a style. You can change both later.', body: () => `
+    ${obChips('coach.name', 'Name', COACH_NAMES.map(n => [n, n]))}
+    ${obText('coach.name', 'Or type your own', 'e.g. Sofia')}
+    ${obChips('coach.tone', 'How should they talk to you?', COACH_TONES.map(([v, l]) => [v, l]))}` },
   { key:'basics', title:'About you', sub:'Used to estimate your daily needs.', required:true, body: () => `
     ${obChips('basics.sex', 'Sex (for the energy formula)', [['female','Female'],['male','Male']])}
     <div class="fields three">
@@ -104,7 +108,7 @@ function vObDone(){
       <div class="tiles">${[['Protein', t.protein, 'var(--pink)'], ['Carbs', t.carbs, 'var(--amber)'], ['Fat', t.fat, 'var(--blue)'], ['Fiber', t.fiber, 'var(--accent)']].map(([l, v, c]) => `<div class="tile"><span class="label">${l}</span><b class="num" style="color:${c}">${v}<small> g</small></b></div>`).join('')}</div>
     </section>` : ''}
     <section class="card stack">
-      <div class="row" style="gap:10px"><span class="ai-dot" aria-hidden="true">${STAR}</span><h3>Your dietitian's notes</h3></div>
+      <div class="row" style="gap:10px"><span class="ai-dot" aria-hidden="true">${STAR}</span><h3>${esc(coachName())}'s notes</h3></div>
       ${r?.error ? `<p class="muted">${esc(r.error)} You can ask anything in the Dietitian tab.</p>`
         : r ? `<div class="ob-notes">${md(r.summary || '')}</div>${r.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(r.flag)}</div>` : ''}`
         : `<p class="muted"><span class="spinner"></span> Reading your answers… you can already start using the app.</p>`}

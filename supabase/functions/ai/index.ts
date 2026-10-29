@@ -6,8 +6,10 @@
 // Checks the caller is signed in, forwards the prompt (and any photo) to
 // Google Gemini, and returns the answer. The Gemini key never leaves Supabase.
 //
-// Request:  {"input": string | [{role: "user"|"assistant", content}], "images": [{mime, data}], "tier": "quick"|"default", "json": true}
+// Request:  {"input": string | [{role: "user"|"assistant", content}], "images": [{mime, data}], "tier": "quick"|"default", "json": true, "stream": false}
 // Response: {"text", "json", "model", "ms"}  or  {"code", "message"}
+// With "stream": true the answer comes back as plain text, piece by piece, as
+// Gemini writes it (chat replies show up within about a second).
 
 const GEMINI_URL = (model: string) => `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 const env = (k: string) => Deno.env.get(k) || "";
@@ -119,6 +121,64 @@ async function askGemini(contents: unknown, tier: string, wantJson: boolean) {
   throw new ApiError(502, "upstream_error", "No Gemini model available: " + last);
 }
 
+// Streaming: open Gemini's SSE stream with the same model fallback, then pass
+// the text through as it arrives. Fallback only happens before the first word.
+async function openStream(contents: unknown, tier: string) {
+  const key = env("GEMINI_API_KEY");
+  if (!key) throw new ApiError(500, "not_configured", "Server is missing GEMINI_API_KEY.");
+  const config: Record<string, unknown> = { temperature: 0.7, thinkingConfig: { thinkingLevel: THINKING[tier] || "low" } };
+  let last = "", busy = false, limited = false;
+  for (const model of modelsFor(tier)) {
+    const call = async (cfg: Record<string, unknown>) => {
+      const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 20000); // time to first byte
+      try {
+        return await fetch(GEMINI_URL(model).replace(":generateContent", ":streamGenerateContent") + "?alt=sse", {
+          method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+          body: JSON.stringify({ contents, generationConfig: cfg }), signal: ctl.signal,
+        });
+      } finally { clearTimeout(t); }
+    };
+    let res: Response, detail = "";
+    try { res = await call(config); } catch { last = `${model} timed out`; continue; }
+    if (res.status === 400) {
+      detail = (await res.text()).slice(0, 300);
+      if (/thinking/i.test(detail)) {
+        const { thinkingConfig: _, ...rest } = config;
+        try { res = await call(rest); detail = ""; } catch { last = `${model} timed out`; continue; }
+      }
+    }
+    if (res.ok && res.body) return res.body;
+    detail = detail || (await res.text()).slice(0, 300);
+    if ([500, 502, 503, 504].includes(res.status) || /overloaded|unavailable|high demand/i.test(detail)) { busy = true; last = `${model} busy`; continue; }
+    if (res.status === 429) { limited = true; last = `${model} rate limited`; continue; }
+    if ((res.status === 400 || res.status === 404) && /not found|not supported/i.test(detail)) { last = detail; continue; }
+    throw new ApiError(502, "upstream_error", `Gemini error ${res.status}: ${detail}`);
+  }
+  if (limited) throw new ApiError(429, "rate_limited", "The free AI limit is used up for now. Try again in a minute, or tomorrow if it's the daily limit.");
+  if (busy) throw new ApiError(503, "overloaded", "Gemini is very busy right now. Try again in a minute.");
+  throw new ApiError(502, "upstream_error", "No Gemini model available: " + last);
+}
+
+// Turn Gemini's SSE events into a plain stream of answer text.
+function sseToText(body: ReadableStream<Uint8Array>) {
+  const dec = new TextDecoder(), enc = new TextEncoder();
+  let buf = "";
+  return body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, out) {
+      buf += dec.decode(chunk, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop() || "";
+      for (const line of lines) {
+        if (!line.startsWith("data:")) continue;
+        try {
+          const d = JSON.parse(line.slice(5));
+          const text = (d.candidates?.[0]?.content?.parts || []).filter((p: { thought?: boolean }) => !p.thought).map((p: { text?: string }) => p.text || "").join("");
+          if (text) out.enqueue(enc.encode(text));
+        } catch { /* partial or keep-alive line */ }
+      }
+    },
+  }));
+}
+
 // Cheap local check before spending any Gemini quota: the token must be one of
 // this project's sign-in tokens and not expired. The full check with Supabase
 // runs at the same time as the Gemini call (saves a round trip per message).
@@ -142,6 +202,10 @@ Deno.serve(async (req) => {
     const raw = await req.text();
     if (raw.length > 4 * 1024 * 1024) throw new ApiError(413, "prompt_too_large", "That was too much at once (photo too big?).");
     const body = JSON.parse(raw || "{}");
+    if (body.stream) {
+      const [stream] = await Promise.all([openStream(toContents(body.input, body.images), body.tier), verified]);
+      return new Response(sseToText(stream), { headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" } });
+    }
     const wantJson = body.json !== false;
     const started = Date.now();
     const [{ text, model }] = await Promise.all([askGemini(toContents(body.input, body.images), body.tier, wantJson), verified]);

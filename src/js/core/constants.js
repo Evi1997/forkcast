@@ -13,3 +13,14 @@ const SECTIONS = [
   ['basics','Body & goal'],['health','Health screening'],['lifestyle','Lifestyle'],
   ['current_diet','Current eating'],['obstacles','Weak points'],['preferences','Food preferences'],['cooking','Cooking & prep'],['shopping','Shopping & budget']
 ];
+
+// Your dietitian's name and style, chosen in onboarding or About you.
+const COACH_NAMES = ['Mila','Theo','Nora','Leo','Ava','Sam'];
+const COACH_TONES = [
+  ['warm','Warm & encouraging','warm, kind and encouraging'],
+  ['direct','Straight to the point','brief, direct and practical; no small talk'],
+  ['fun','Friendly & fun','friendly and upbeat with a little light humour, still precise']
+];
+const coachName = () => String(S.profile.data.coach?.name || 'Mila').trim().slice(0, 20) || 'Mila';
+const coachTone = () => COACH_TONES.find(t => t[0] === S.profile.data.coach?.tone) || COACH_TONES[0];
+const coachPersona = () => `Your name is ${coachName()}. Your style: ${coachTone()[2]}. Never sign your messages.`;

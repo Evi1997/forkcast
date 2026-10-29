@@ -22,6 +22,17 @@ const COACH_FOLLOWUP = `You are the dietitian inside "Forkcast": evidence-based,
 - If they say what they ate, put it in log_items with honest estimates.
 - SAFETY: no starvation, crash diets or very-low-calorie advice; medical issues -> suggest their doctor and set medical_flag.`;
 
+// Streamed chat: the reply comes first as plain text (shown while it's written),
+// then the app data after a marker line.
+const COACH_STREAM_FORMAT = `First write your reply to the person: plain text, max ~90 words, **bold** and "- " bullets allowed, ending with one short question.
+Then, on a new line, write exactly @@DATA@@ followed by ONE JSON object (no other text after it):
+{"quick_replies": up to 4 short tap-able answers to your question,
+ "profile_patch": only new or changed facts, using sections basics{age,sex,height_cm,weight_kg,goal_weight_kg,waist_cm,goal,activity}, health{conditions,allergies,medications,notes}, lifestyle{job,training,sleep,stress,schedule}, current_diet{typical_day,alcohol,takeout,weekends}, obstacles{weak_point,triggers}, preferences{likes,dislikes,pattern,cuisines}, cooking{level,appliances,max_weekday_minutes,people,prep_style}, shopping{country,city,supermarkets,budget,priority}; {} if nothing new,
+ "targets": null or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} only when you deliberately change targets,
+ "log_items": [] or [{"name":s,"amount":s,"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n,"slot":"Breakfast"|"Lunch"|"Snack"|"Dinner"}],
+ "focus": null or {"weak_point":s,"why":s,"tips":[3-4 short tips]},
+ "medical_flag": null or one line}`;
+
 const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
 {"reply": string (max ~140 words; **bold** and "- " bullet lines allowed; must end with one question),
  "quick_replies": array of up to 4 short tap-able answers to your question (strings, may be empty),
@@ -37,7 +48,7 @@ const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
  "onboarding_complete": true once all eight consultation areas are covered, else false,
  "medical_flag": null or a one-line note when something NEEDS MEDICAL REVIEW}`;
 
-const GREETING = `Hi, I'm your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
+const greeting = () => `Hi, I'm ${coachName()}, your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
 
 Let's start simple: **how old are you, and what's your height and current weight?**`;
 
@@ -50,7 +61,7 @@ const PROMPTS = {
   // One review after the onboarding form: the person's answers in, the
   // dietitian's welcome note, weak-point plan and safety notes out.
   onboardingReview(profile, targets){
-    return `You are the dietitian inside "Forkcast". A new person just completed the intake form below. Review it like the end of a first consultation.
+    return `You are the dietitian inside "Forkcast". ${coachPersona()} A new person just completed the intake form below. Review it like the end of a first consultation.
 ${COACH_RULES.split('HOW YOU WORK')[0].trim()}
 SAFETY: never encourage starvation, crash diets or very-low-calorie diets; no calorie deficit for anyone under 18; for pregnancy, diabetes, kidney/liver disease, eating disorders or unexplained weight loss, say changes should be agreed with their doctor and set medical_flag; no high-protein targets with kidney disease.
 
@@ -67,9 +78,9 @@ Reply with ONLY one JSON object:
 
   // Dietitian chat: standing instructions + app snapshot, then the conversation.
   // Once onboarding is done the brief is much shorter: no consultation script.
-  coach(state, history, onboarded){
-    const rules = onboarded ? COACH_FOLLOWUP : COACH_RULES;
-    return [{ role:'user', content: rules + '\n\n' + COACH_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
+  coach(state, history, onboarded, persona){
+    const rules = (persona ? persona + '\n' : '') + (onboarded ? COACH_FOLLOWUP : COACH_RULES);
+    return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
   },
 
   // Food diary estimate from text and/or a photo.

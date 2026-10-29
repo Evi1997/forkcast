@@ -5,6 +5,7 @@ document.addEventListener('input', e => {
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
+  if (id === 'coachName') { S.profile.data.coach = { ...(S.profile.data.coach || {}), name: e.target.value.slice(0, 20) }; clearTimeout(window._cn); window._cn = setTimeout(() => { save.profile(); const t = $('.chat-title b'); if (t) t.textContent = coachName(); }, 500); }
   if (e.target.dataset.field && S.ob) { const v = e.target.value; obSet(e.target.dataset.field, e.target.type === 'number' ? (v === '' ? '' : Number(v)) : v); }
   if (e.target.dataset.edit && S.logResult?.review) {
     // Live edit of a reviewed item; totals update without redrawing the form.
@@ -75,6 +76,7 @@ document.addEventListener('click', e => {
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'coachtone') { S.profile.data.coach = { ...(S.profile.data.coach || {}), tone: el.dataset.v }; save.profile(); render(); }
   else if (a === 'startob') startOnboarding();
   else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
   else if (a === 'obnext') obNext();

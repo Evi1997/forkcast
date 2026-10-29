@@ -4,7 +4,7 @@ const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2.5c.4 0
 const SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>';
 
 function vCoach(){
-  const all = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:GREETING }];
+  const all = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:greeting() }];
   const start = S.chat.history ? 0 : Math.min(S.chat.start || 0, all.length - 1);
   const turns = all.slice(start), last = all[all.length - 1];
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
@@ -16,7 +16,7 @@ function vCoach(){
     <section class="card chat" aria-label="Conversation with your dietitian">
       <header class="chat-head">
         <span class="ai-avatar" aria-hidden="true">${STAR}</span>
-        <div class="chat-title"><b>Your dietitian</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
+        <div class="chat-title"><b>${esc(coachName())}</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
         <button class="iconbtn2" data-act="newchat" aria-label="New conversation" title="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
         <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
       </header>
@@ -26,7 +26,7 @@ function vCoach(){
         ${start > 0 ? `<button class="earlier" data-act="history">Show earlier messages</button>` : ''}
         ${turns.map(m => m.role === 'user' ? `<div class="msg me">${esc(m.content)}</div>` :
           aiRow(`${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's meals</div>` : ''}`)).join('')}
-        ${S.busy.chat ? aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`) : ''}
+        ${S.busy.chat ? (S.chat.live ? `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai" id="liveMsg">${md(S.chat.live)}</div></div>` : aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`)) : ''}
       </div>
       ${!S.busy.chat && last.role === 'assistant' && last.quick?.length ? `<div class="quick">${last.quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
       ${S.err.chat ? `<div class="notice warn chat-err">${esc(S.err.chat)}</div>` : ''}
@@ -56,6 +56,10 @@ function aboutYou(done){
       </section>
       ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
       <section class="stack" style="padding:0 4px">
+        <section class="card stack"><h3>Your dietitian</h3>
+          <div class="field"><label for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
+          <div class="ob-chips">${COACH_TONES.map(([v, l]) => `<button class="chip" data-act="coachtone" data-v="${v}" aria-pressed="${coachTone()[0] === v}">${l}</button>`).join('')}</div>
+        </section>
         <button class="btn small" data-act="editob">Edit my answers</button>
         <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
