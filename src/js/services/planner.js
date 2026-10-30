@@ -30,7 +30,8 @@ const STORES_BY_COUNTRY = {
   italy:['Esselunga','Coop','Conad','Lidl','Carrefour']
 };
 function storeOptions(){
-  const own = String(S.profile.data.shopping?.supermarkets || '').split(/,|\/| and /).map(s => s.trim()).filter(Boolean);
+  const sh = S.profile.data.shopping || {};
+  const own = [...String(sh.supermarkets || '').split(/,|\/| and /), ...String(sh.supermarkets_other || '').split(/,|\/| and /)].map(s => s.trim()).filter(s => s && s !== 'Other');
   const country = String(S.profile.data.shopping?.country || '').toLowerCase().trim();
   const local = STORES_BY_COUNTRY[country] || ['Lidl','Aldi','Carrefour'];
   const list = [...own, ...local, ...(S.plan?.store ? [S.plan.store] : [])];

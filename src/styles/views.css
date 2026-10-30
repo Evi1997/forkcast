@@ -521,3 +521,7 @@ body.onboarding main{padding-bottom:24px}
 .ob-prev{flex:none;padding:0 18px;border-radius:16px;font-size:1rem}
 /* While the keyboard is open, the Back/Continue bar stops floating so it can't cover the answers */
 body.kb-open .ob-actions{position:static;background:none;padding-top:4px}
+.ob-q legend .opt-tag{font-weight:500;color:var(--muted)}
+.ob-q legend .hint{font-weight:500;color:var(--muted);font-size:.82rem}
+.field label .opt-tag{font-weight:500}
+.other-input{margin-top:4px}

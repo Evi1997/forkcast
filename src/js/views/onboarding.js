@@ -9,80 +9,105 @@ const OB_STEPS = [
     ${obChips('coach.tone', 'How should they talk to you?', COACH_TONES.map(([v, l]) => [v, l]))}` },
   // Goal first: nothing is calculated until we know what you actually want.
   { key:'basics', title:'What\'s your main goal?', sub:'With food and training. This decides your whole plan.', need:['basics.goal'], body: () => `
-    ${obChips('basics.goal', 'Pick one', [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle (e.g. glutes, legs, shoulders)'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']], true)}
+    ${obChips('basics.goal', 'Pick one', [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']], true)}
     ${obGet('basics.goal') === 'toned' ? obChips('basics.toned_focus', '“Toned” can mean different things. What matters most?', [['muscle','Building muscle'],['fat','Losing some body fat'],['both','Both / not sure']]) : ''}
+    ${['muscle gain','toned'].includes(obGet('basics.goal')) ? obMulti('basics.muscle_areas', 'Which areas?', ['Glutes','Legs','Shoulders','Arms','Back','Core','Whole body']) : ''}
     ${obGet('basics.goal') === 'other' ? obText('basics.goal_other', 'Tell us your goal', 'e.g. more energy for a marathon') : ''}` },
-  { key:'basics', title:'About you', sub:'Used to estimate your energy needs.', need:['basics.sex','basics.age','basics.height_cm','basics.weight_kg','basics.activity'], body: () => `
+  { key:'basics', title:'About you', sub:'Used to estimate your energy needs.', need:['basics.sex','basics.age','basics.height_cm','basics.weight_kg'], body: () => `
     ${obChips('basics.sex', 'Sex (for the energy formula)', [['female','Female'],['male','Male']])}
     <div class="fields three">
       ${obNum('basics.age', 'Age', 'years')}
       ${obNum('basics.height_cm', 'Height', 'cm')}
       ${obNum('basics.weight_kg', 'Weight', 'kg', 0.1)}
     </div>
-    ${obChips('basics.activity', 'Daily activity (outside workouts)', [['sedentary','Mostly sitting'],['light','Light: some walking'],['moderate','Moderate: on my feet a lot'],['very','Very active'],['extra','Physical job + training']])}
-    ${obChips('basics.trend', 'Your weight lately', [['losing','Going down'],['stable','Stable'],['gaining','Going up'],['unsure','Not sure']])}
-    ${['fat loss','toned'].includes(obGet('basics.goal')) ? obNum('basics.goal_weight_kg', 'Goal weight (optional)', 'kg', 0.1) : ''}
-    <div class="fields two">${obNum('basics.body_fat_pct', 'Body fat (optional)', '%', 0.1)}${obChips('basics.body_fat_method', 'Measured with', [['scan','InBody / scale'],['dexa','DEXA'],['guess','Estimate']])}</div>` },
+    ${obChips('basics.trend', 'Your weight in the last 3 months', [['losing','Lost 2+ kg'],['stable','Stable (±1 kg)'],['gaining','Gained 2+ kg'],['unsure','Not sure']], true)}
+    ${['fat loss','toned'].includes(obGet('basics.goal')) ? obNum('basics.goal_weight_kg', 'Goal weight', 'kg', 0.1) : ''}
+    <div class="fields two">${obNum('basics.body_fat_pct', 'Body fat', '%', 0.1)}${obChips('basics.body_fat_method', 'Measured with', [['scan','InBody / smart scale'],['dexa','DEXA'],['guess','Estimate']])}</div>` },
   { key:'health', title:'Health', sub:'So advice stays safe. Pick all that apply.', body: () => `
-    ${obMulti('health.conditions', 'Conditions', ['None','Pregnant or breastfeeding','Diabetes','Kidney disease','Liver disease','Heart condition','IBS / digestive issues','Thyroid condition','Eating disorder (past or present)','Recent unexplained weight loss'])}
-    ${obGet('basics.sex') === 'female' ? obChips('health.cycle', 'Your period (helps spot low energy)', [['regular','Regular'],['irregular','Irregular'],['missed periods','Missed for 3+ months'],['n/a','Not applicable / skip']]) : ''}
-    ${obMulti('health.allergies', 'Allergies or intolerances', ['None','Nuts','Peanuts','Gluten','Lactose','Eggs','Shellfish','Fish','Soy'])}
-    ${obText('health.medications', 'Medications that affect appetite, blood sugar or weight (optional)', 'e.g. none, metformin…')}` },
-  { key:'lifestyle', title:'Your routine', sub:'Helps fit meals around your day.', body: () => `
-    ${obChips('lifestyle.job', 'Work', [['desk job','Desk / remote'],['on my feet','On my feet'],['physical job','Physical work'],['student','Student'],['not working','Not working']])}
-    ${obChips('lifestyle.training', 'Exercise per week', [['none','None'],['1-2 sessions','1–2'],['3-4 sessions','3–4'],['5+ sessions','5+']])}
-    ${obMulti('lifestyle.training_type', 'Type of exercise', ['Gym / weights','Running','Walking','Yoga / pilates','Team sport','Cycling','Swimming'])}
+    ${obMulti('health.conditions', 'Conditions', ['None','Pregnant','Breastfeeding','Diabetes','PCOS','Thyroid condition','High blood pressure','High cholesterol','Heart condition','Kidney disease','Liver disease','Anaemia','IBS / digestive issues','Eating disorder (past or present)','Recent unexplained weight loss','Other'])}
+    ${obGet('basics.sex') === 'female' ? obChips('health.cycle', 'Your period (helps spot low energy)', [['regular','Regular'],['irregular','Irregular'],['missed periods','Missed for 3+ months'],['hormonal contraception','On hormonal contraception'],['n/a','Not applicable / skip']]) : ''}
+    ${obMulti('health.allergies', 'Allergies or intolerances', ['None','Nuts','Peanuts','Gluten','Lactose','Eggs','Shellfish','Fish','Soy','Other'])}
+    ${obText('health.medications', 'Medications that affect appetite, blood sugar or weight', 'e.g. none, metformin…')}` },
+  { key:'lifestyle', title:'Your routine', sub:'This sets how much energy you burn, so it matters.', need:['lifestyle.job','lifestyle.training'], body: () => `
+    ${obChips('lifestyle.job', 'Work', [['desk job','Desk / remote'],['on my feet','On my feet (shop, teaching…)'],['physical job','Physical work'],['student','Student'],['not working','Not working']])}
     ${obChips('lifestyle.steps', 'Daily steps', [['under 5k','Under 5,000'],['5-8k','5–8,000'],['8-12k','8–12,000'],['12k+','12,000+'],['unknown','Don\'t know']])}
+    ${obChips('lifestyle.training', 'Workouts per week', [['none','None'],['1-2 sessions','1–2'],['3-4 sessions','3–4'],['5+ sessions','5+']])}
+    ${obGet('lifestyle.training') && obGet('lifestyle.training') !== 'none' ? `
+      ${obMulti('lifestyle.training_type', 'Type of exercise', ['Gym / weights','Running','Walking','Yoga / pilates','Team sport','Cycling','Swimming','Other'])}
+      ${obChips('lifestyle.intensity', 'How hard are your workouts?', [['light','Light'],['moderate','Moderate'],['hard','Hard']])}
+      ${obMulti('lifestyle.train_time', 'When do you usually train?', ['Morning','Midday','Evening'])}` : ''}
     ${obChips('lifestyle.energy', 'Energy and recovery lately', [['good','Good'],['ok','OK'],['often tired','Often tired'],['slow recovery','Slow to recover from training']])}
     ${obChips('lifestyle.sleep', 'Sleep', [['under 6 h','Under 6 h'],['6-7 h','6–7 h'],['7-8 h','7–8 h'],['8+ h','8 h+']])}
     ${obChips('lifestyle.stress', 'Stress', [['low','Low'],['medium','Medium'],['high','High']])}` },
   { key:'current_diet', title:'How you eat now', sub:'Your plan builds on what you already do.', body: () => `
+    ${obChips('current_diet.meals', 'Meals per day', [['2','2'],['3','3'],['3 + snacks','3 + snacks'],['grazing','I graze all day']])}
     ${obChips('current_diet.breakfast', 'Breakfast', [['every day','Every day'],['sometimes','Sometimes'],['skip it','Usually skip']])}
     ${obChips('current_diet.takeout', 'Takeaway or eating out', [['rarely','Rarely'],['1-2 times a week','1–2× a week'],['3+ times a week','3+× a week']])}
     ${obChips('current_diet.alcohol', 'Alcohol', [['none','None'],['occasionally','Occasionally'],['weekends','Weekends'],['most days','Most days']])}
-    ${obText('current_diet.typical_day', 'A normal day of eating (optional)', 'e.g. coffee, toast, chicken salad at lunch, pasta for dinner…', true)}` },
+    ${obMulti('current_diet.drinks', 'Drinks', ['Mostly water','Coffee with milk','Black coffee / tea','Sugary drinks','Juice','Diet / zero drinks'])}
+    ${obText('current_diet.typical_day', 'A normal day of eating', 'e.g. coffee, toast, chicken salad at lunch, pasta for dinner…', true)}` },
   { key:'obstacles', title:'What gets in the way?', sub:'Your dietitian will focus on this with you.', body: () => `
-    ${obMulti('obstacles.weak_point', 'Pick what feels true', ['Weekends','Evening snacking','Eating out','Stress eating','Sweets & desserts','Alcohol','Big portions','Skipping meals then overeating','Not enough protein','No time to cook'])}
-    ${obText('obstacles.triggers', 'Anything else? (optional)', 'e.g. Sunday brunches always get out of hand')}` },
+    ${obMulti('obstacles.weak_point', 'Pick what feels true', ['Weekends','Evening snacking','Hunger between meals','Eating out','Stress eating','Sweets & desserts','Alcohol','Big portions','Skipping meals then overeating','Not enough protein','No time to cook','Travel','Cravings before my period','Other'])}
+    ${(() => { const picks = String(obGet('obstacles.weak_point') || '').split(', ').filter(x => x && x !== 'Other'); return picks.length > 1 ? obChips('obstacles.biggest', 'Which is the biggest one?', picks.map(p => [p, p])) : ''; })()}` },
   { key:'preferences', title:'Food you love', sub:'No “diet food” you don\'t enjoy.', body: () => `
-    ${obChips('preferences.pattern', 'Eating style', [['omnivore','Everything'],['pescatarian','Pescatarian'],['vegetarian','Vegetarian'],['vegan','Vegan'],['halal','Halal'],['kosher','Kosher'],['gluten-free','Gluten-free']])}
-    ${obMulti('preferences.cuisines', 'Favourite cuisines', ['Mediterranean','Greek','Italian','Spanish','Asian','Mexican','Middle Eastern','Indian'])}
-    ${obText('preferences.likes', 'Foods you love', 'e.g. salmon, eggs, rice, berries, dark chocolate')}
-    ${obText('preferences.dislikes', 'Foods you never want', 'e.g. tofu, mushrooms')}` },
+    ${obMulti('preferences.pattern', 'Eating style', ['Everything','Pescatarian','Vegetarian','Vegan','Halal','Kosher','Gluten-free','Lactose-free'])}
+    ${obMulti('preferences.proteins', 'Proteins you like', ['Chicken','Turkey','Fish','Seafood','Eggs','Beef','Pork','Tofu / tempeh','Beans & lentils','Greek yogurt / skyr','Cottage cheese'])}
+    ${obMulti('preferences.cuisines', 'Favourite cuisines', ['Mediterranean','Middle Eastern & North African','East Asian','Southeast Asian','South Asian / Indian','Latin American','North American','Northern & Central European'])}
+    ${obText('preferences.likes', 'Other foods you love', 'e.g. rice, berries, dark chocolate')}
+    ${obText('preferences.dislikes', 'Foods you never want', 'e.g. mushrooms, coriander')}` },
   { key:'cooking', title:'Cooking', sub:'So the plan fits your kitchen and time.', body: () => `
+    ${obChips('cooking.level', 'Cooking skill', [['beginner','Beginner'],['comfortable','Comfortable'],['love cooking','I love cooking']])}
     ${obChips('cooking.prep_style', 'How do you like to cook?', [['A: cook fresh most days','Fresh most days'],['B: meal prep twice a week','Prep 2× a week'],['C: meal prep once a week','Prep once a week'],['D: very little cooking','As little as possible']])}
     ${obChips('cooking.max_weekday_minutes', 'Max cooking time on weekdays', [['15','15 min'],['30','30 min'],['45','45 min'],['60','1 hour']])}
-    ${obMulti('cooking.appliances', 'Appliances', ['Oven','Air fryer','Microwave','Rice cooker','Slow cooker','Blender'])}
+    ${obMulti('cooking.appliances', 'Appliances', ['Hob / stove','Oven','Air fryer','Microwave','Rice cooker','Slow cooker','Blender'])}
     ${obChips('cooking.people', 'Cooking for', [['1','Just me'],['2','2 people'],['3-4','3–4'],['5+','5+']])}
     ${obChips('cooking.leftovers_ok', 'Leftovers and repeats', [['yes','Fine by me'],['some','A little'],['no','I want variety']])}` },
-  { key:'shopping', title:'Shopping', sub:'Your list uses products from your store.', body: () => `
-    <div class="fields two">${obText('shopping.country', 'Country', 'e.g. Spain')}${obText('shopping.city', 'City (optional)', 'e.g. Barcelona')}</div>
-    ${obText('shopping.supermarkets', 'Supermarket', 'e.g. Mercadona')}
-    ${obChips('shopping.budget', 'Weekly food budget', [['low','Tight'],['medium','Moderate'],['high','Flexible']])}
-    ${obChips('shopping.priority', 'What matters most?', [['cheapest','Price'],['convenience','Convenience'],['organic','Organic'],['balance','A balance']])}` }
+  { key:'shopping', title:'Shopping', sub:'Your list uses products from your store.', body: () => { const cur = currencyFor(obGet('shopping.country')); return `
+    <div class="fields two">${obText('shopping.country', 'Country', 'e.g. Spain')}${obText('shopping.city', 'City', 'e.g. Barcelona')}</div>
+    ${obMulti('shopping.supermarkets', 'Where do you shop?', [...storesFor(obGet('shopping.country')), 'Other'])}
+    ${obChips('shopping.budget', 'Weekly food budget (per person)', [[`under ${cur}50`, `Under ${cur}50`], [`${cur}50-80`, `${cur}50–80`], [`${cur}80-120`, `${cur}80–120`], [`${cur}120+`, `${cur}120+`]])}
+    ${obMulti('shopping.priority', 'What matters most?', ['Price','Convenience','Organic','Quality','Less waste'])}`; } }
 ];
+
+// Supermarket chips for the country typed in the step above, and its currency.
+function storesFor(country){
+  const c = String(country || '').toLowerCase().trim();
+  return STORES_BY_COUNTRY[c] || ['Lidl','Aldi','Carrefour'];
+}
+function currencyFor(country){
+  const c = String(country || '').toLowerCase();
+  return /united kingdom|^uk$|england|scotland|wales/.test(c) ? '£' : /united states|^usa?$|america|canada|australia/.test(c) ? '$' : /switzerland/.test(c) ? 'CHF ' : '€';
+}
 
 // --- field helpers (value lives at a "section.key" path in S.ob.data) ---
 const obGet = path => { const [a, b] = path.split('.'); return S.ob.data[a]?.[b]; };
 function obSet(path, v){ const [a, b] = path.split('.'); S.ob.data[a] = { ...(S.ob.data[a] || {}), [b]: v }; }
+// Anything the targets don't strictly need is marked "(optional)" automatically.
+function obNeeded(path){
+  const need = OB_STEPS[S.ob.step]?.need || [];
+  return need.includes(path) || (path === 'basics.toned_focus' && obGet('basics.goal') === 'toned');
+}
+const obLabel = (path, label) => obNeeded(path) ? label : `${label} <span class="opt-tag">(optional)</span>`;
 function obChips(path, label, opts, stacked){
   const cur = String(obGet(path) ?? '');
-  return `<fieldset class="ob-q"><legend>${label}</legend><div class="ob-chips${stacked ? ' stacked' : ''}">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
+  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}</legend><div class="ob-chips${stacked ? ' stacked' : ''}">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
 }
+// Multi-select; picking "Other" opens a text box for it.
 function obMulti(path, label, opts){
   const cur = String(obGet(path) || '').split(', ').filter(Boolean);
-  return `<fieldset class="ob-q"><legend>${label}</legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div></fieldset>`;
+  return `<fieldset class="ob-q"><legend>${obLabel(path, label)} <span class="hint">· pick all that apply</span></legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
+    ${cur.includes('Other') ? `<input type="text" class="other-input" id="ob-${path.replace('.', '-')}-other" data-field="${path}_other" value="${esc(obGet(path + '_other') ?? '')}" placeholder="Type it here" aria-label="${esc(label)}: other">` : ''}</fieldset>`;
 }
 function obNum(path, label, unit, step = 1){
   const id = 'ob-' + path.replace('.', '-'), v = obGet(path);
-  return `<div class="field"><label for="${id}">${label}</label><div class="unit-input sm"><input type="number" id="${id}" data-field="${path}" enterkeyhint="next" inputmode="${step < 1 ? 'decimal' : 'numeric'}" step="${step}" value="${v ?? ''}"><span>${unit}</span></div></div>`;
+  return `<div class="field"><label for="${id}">${obLabel(path, label)}</label><div class="unit-input sm"><input type="number" id="${id}" data-field="${path}" enterkeyhint="next" inputmode="${step < 1 ? 'decimal' : 'numeric'}" step="${step}" value="${v ?? ''}"><span>${unit}</span></div></div>`;
 }
 function obText(path, label, ph, area){
-  const id = 'ob-' + path.replace('.', '-'), v = esc(obGet(path) ?? '');
-  return `<div class="field"><label for="${id}">${label}</label>${area ? `<textarea id="${id}" data-field="${path}" rows="2" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}">`}</div>`;
+  const id = 'ob-' + path.replace('.', '-') + (label.startsWith('Or type') ? '-own' : ''), v = esc(obGet(path) ?? '');
+  return `<div class="field"><label for="${id}">${obLabel(path, label)}</label>${area ? `<textarea id="${id}" data-field="${path}" rows="2" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}" enterkeyhint="next">`}</div>`;
 }
 
-const OB_LABELS = { 'basics.goal':'your goal', 'basics.toned_focus':'what “toned” means for you', 'basics.sex':'sex', 'basics.age':'age', 'basics.height_cm':'height', 'basics.weight_kg':'weight', 'basics.activity':'daily activity' };
+const OB_LABELS = { 'basics.goal':'your goal', 'basics.toned_focus':'what “toned” means for you', 'basics.sex':'sex', 'basics.age':'age', 'basics.height_cm':'height', 'basics.weight_kg':'weight', 'lifestyle.job':'work', 'lifestyle.training':'workouts per week' };
 function obMissing(){
   const st = OB_STEPS[S.ob.step], need = [...(st.need || [])];
   if (need.includes('basics.goal') && obGet('basics.goal') === 'toned') need.push('basics.toned_focus');

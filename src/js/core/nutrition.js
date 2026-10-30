@@ -24,12 +24,23 @@ function chooseStrategy(d, bmi){
   if (goal.includes('gain')) return { key: redFlags ? 'maintenance' : 'surplus', why:'muscle grows best with enough energy' };
   return { key:'maintenance', why:'your goal doesn\'t need a deficit' };
 }
+// Activity multiplier from the routine answers: work + steps + workouts × intensity.
+// Falls back to the older single "activity" answer, then to light activity.
+function activityFactor(d){
+  const l = d.lifestyle || {}, b = d.basics || {};
+  if (!l.job && !l.training) return ACT[b.activity] || 1.375;
+  const job = /physical/.test(l.job) ? 1.55 : /feet/.test(l.job) ? 1.4 : 1.2;
+  const steps = { '5-8k':0.05, '8-12k':0.1, '12k+':0.15 }[l.steps] || 0;
+  const sessions = { '1-2 sessions':0.075, '3-4 sessions':0.15, '5+ sessions':0.225 }[l.training] || 0;
+  const hard = { light:0.7, moderate:1, hard:1.3 }[l.intensity] || 1;
+  return Math.min(1.95, Math.max(1.2, job + (job > 1.2 ? steps / 2 : steps) + sessions * hard));
+}
 function calcTargets(d){
   const b = d.basics || {};
   const age = +b.age, h = +b.height_cm, w = +b.weight_kg;
   if (!age || !h || !w || !b.sex) return null;
   const bmr = 10*w + 6.25*h - 5*age + (String(b.sex).startsWith('m') ? 5 : -161);
-  const tdee = bmr * (ACT[b.activity] || 1.375), bmi = w / ((h/100) ** 2);
+  const tdee = bmr * activityFactor(d), bmi = w / ((h/100) ** 2);
   const strat = chooseStrategy(d, bmi), goal = String(b.goal || '');
   let kcal = tdee;
   if (strat.key === 'deficit') kcal = Math.max(tdee - 500, tdee * 0.85, bmr * 1.1);
