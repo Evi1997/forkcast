@@ -24,7 +24,7 @@ function obFix(){
   S.obDone = false; S.ob.q = Math.max(0, k); S.ob.dir = 'back'; obAnimate(); window.scrollTo(0, 0); render(); obFocus();
 }
 // Typing questions: put the cursor in the first box straight away.
-function obFocus(){ setTimeout(() => { const f = document.querySelector('.ob-qbody input[type=number], .ob-qbody input[type=text], .ob-qbody textarea'); if (f && !document.querySelector('.ob-answers')) f.focus(); }, 60); }
+function obFocus(){ setTimeout(() => { const sc = obVisible()[S.ob?.q], first = sc && obParts(sc)[0]; if (!first || !['numbers','texts','text','textarea'].includes(first.type)) return; document.querySelector('.ob-qbody input, .ob-qbody textarea')?.focus(); }, 60); }
 
 async function finishOnboarding(){
   obSave();

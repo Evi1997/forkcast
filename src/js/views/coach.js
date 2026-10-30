@@ -9,13 +9,13 @@ function vCoach(){
   const turns = all.slice(start), last = all[all.length - 1];
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
   const status = S.profile.onboarded ? 'Follow-up' : `Consultation · ${done}/${SECTIONS.length}`;
-  const aiRow = (inner) => `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai">${inner}</div></div>`;
+  const aiRow = (inner) => `<div class="msg-row"><span class="ai-dot mascot" aria-hidden="true">${MASCOT}</span><div class="msg ai">${inner}</div></div>`;
   const enter = S.aboutOpen === 'enter' ? ' enter' : '';
   return `
   <div class="coach">
     <section class="card chat" aria-label="Conversation with your dietitian">
       <header class="chat-head">
-        <span class="ai-avatar" aria-hidden="true">${STAR}</span>
+        <span class="ai-avatar mascot" aria-hidden="true">${MASCOT}</span>
         <div class="chat-title"><b>${esc(coachName())}</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
         <button class="newchat-btn" data-act="newchat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
         <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
@@ -26,7 +26,7 @@ function vCoach(){
         ${start > 0 ? `<button class="earlier" data-act="history">Show earlier messages</button>` : ''}
         ${turns.map(m => m.role === 'user' ? `<div class="msg me">${esc(m.content)}</div>` :
           aiRow(`${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's meals</div>` : ''}`)).join('')}
-        ${S.busy.chat ? (S.chat.live ? `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai" id="liveMsg">${md(S.chat.live)}</div></div>` : aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`)) : ''}
+        ${S.busy.chat ? (S.chat.live ? `<div class="msg-row"><span class="ai-dot mascot" aria-hidden="true">${MASCOT}</span><div class="msg ai" id="liveMsg">${md(S.chat.live)}</div></div>` : aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`)) : ''}
       </div>
       ${!S.busy.chat && last.role === 'assistant' && !last.quick?.length && !last.fresh && all.length > 2 ? `<div class="wrapup"><button class="btn ghost small" data-act="newchat">Start a new chat</button></div>` : ''}
       ${!S.busy.chat && last.role === 'assistant' && last.quick?.length ? `<div class="quick">${last.quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}

@@ -679,7 +679,7 @@ body.onboarding[data-sec="cooking"]{--sec:var(--amber)}
 body.onboarding[data-sec="shopping"]{--sec:var(--accent)}
 body.onboarding{background:color-mix(in srgb,var(--sec) 16%,var(--bg));transition:background .4s}
 body.onboarding::before{background:color-mix(in srgb,var(--sec) 16%,var(--bg))}
-body.onboarding .ob-top{background:transparent}
+body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));transition:background .4s}
 .lesson .ob-back{background:color-mix(in srgb,var(--surface) 70%,transparent)}
 .lesson .ob-bar{background:color-mix(in srgb,var(--surface) 70%,transparent)}
 .lesson .ob-bar span{background:var(--sec)}
@@ -704,3 +704,35 @@ body.onboarding .ob-top{background:transparent}
 .ob-go{width:100%;padding:17px;border-radius:18px;font-size:1.02rem;font-weight:800;background:var(--ink);color:var(--bg);box-shadow:none;border:0}
 .ob-go.waiting{background:color-mix(in srgb,var(--ink) 30%,var(--surface));color:var(--surface)}
 @media (prefers-reduced-motion:reduce){.ob-card.from-right,.ob-card.from-left{animation:none}}
+
+/* Onboarding v4: mascot, counter, sticky question, Skip + Next */
+.ob-count{font-size:.85rem;font-weight:800;color:var(--ink);opacity:.7;min-width:40px;text-align:right}
+.ob-hero{width:96px;height:96px;margin:4px auto 0;animation:bob 2.6s ease-in-out infinite}
+.ob-hero svg,.mascot-sm svg{width:100%;height:100%;display:block}
+.ob-hero.sm{width:72px;height:72px;margin:0 0 6px}
+@keyframes bob{50%{transform:translateY(-5px)}}
+.mascot-sm{width:46px;height:46px;flex:none}
+.ob-say .mascot-sm{width:52px;height:52px}
+.lesson .ob-say{justify-content:flex-start}
+.lesson .ob-hero + .ob-say{justify-content:center}
+.lesson .ob-hero + .ob-say .bubble{border-radius:18px;text-align:center}
+.ob-card-head{position:sticky;top:calc(env(safe-area-inset-top,0px) + 58px);z-index:2;background:var(--surface);margin:-22px -20px 0;padding:22px 20px 10px;border-radius:28px 28px 0 0}
+.ob-part{display:flex;flex-direction:column;gap:10px}
+.ob-part + .ob-part{padding-top:14px;border-top:1px solid var(--line)}
+.part-label{font-weight:700;font-size:.95rem}
+.part-label span{font-weight:500;color:var(--muted);font-size:.82rem}
+.ob-fields.cols-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.ob-fields.cols-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ob-fields.cols-3 .unit-input input{font-size:1.1rem;padding:12px 6px 12px 12px}
+.ob-fields.cols-3 .unit-input span{font-size:.78rem}
+.lesson .ob-chips .chip[aria-checked="true"]{background:var(--sec);border-color:var(--sec);color:#fff}
+.lesson .ob-actions{display:flex;flex-direction:row;align-items:stretch;gap:10px}
+.onboard.lesson{overflow-x:clip}
+.ob-skip-btn{flex:0 0 auto;width:auto;padding:17px 22px;border-radius:18px;font-weight:800;background:var(--surface);color:var(--ink);border:0;box-shadow:none}
+.lesson .ob-go{flex:1;width:auto;min-width:0}
+.ai-avatar.mascot,.ai-dot.mascot{background:none!important;box-shadow:none!important;padding:0}
+.ai-avatar.mascot svg,.ai-dot.mascot svg{width:100%;height:100%}
+.chat-head .ai-avatar.mascot{width:46px;height:46px}
+.ai-dot.mascot{width:30px;height:30px}
+@media (max-width:360px){.ob-fields.cols-3{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.ob-hero{animation:none}}

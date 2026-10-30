@@ -51,7 +51,7 @@ function prepPlan(){
 // "Shall I create your shopping list?" card, used when there's a plan but no list.
 function askForList(){
   return `<section class="card stack ask-list">
-    <div class="asker"><span class="ai-avatar" aria-hidden="true">${STAR}</span><div class="bubble">Your week is planned. Shall I create your shopping list?</div></div>
+    <div class="asker"><span class="ai-avatar mascot" aria-hidden="true">${MASCOT}</span><div class="bubble">Your week is planned. Shall I create your shopping list?</div></div>
     <div><div class="label" style="margin-bottom:8px">Where are you shopping?</div>${storeChips(S.shopStore || S.plan?.store || storeOptions()[0])}</div>
     <button class="btn primary big-btn" data-act="genshop">Create my shopping list</button>
   </section>`;
