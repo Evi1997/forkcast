@@ -551,3 +551,10 @@ body.kb-open .ob-actions{position:static;background:none;padding-top:4px}
 .tipline .tip-ic svg{width:18px;height:18px}
 .tipline .tip-txt b{font-size:.88rem}
 .tipline .tip-txt span{font-size:.82rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Onboarding: bottom bar pinned to the screen edge like a native app */
+.ob-skip{border:0;background:none;color:var(--muted);font-weight:700;cursor:pointer;padding:8px 0 8px 6px;min-height:44px;flex:none}
+.onboard textarea.grow{min-height:88px;resize:none;overflow:hidden;line-height:1.45}
+.onboard{padding-bottom:96px}
+.ob-actions{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:600px;padding:12px max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,var(--bg) 22%)}
+body.kb-open .ob-actions{display:none}

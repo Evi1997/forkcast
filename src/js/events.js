@@ -6,6 +6,7 @@ document.addEventListener('input', e => {
   if (id === 'askText') S.draft.ask = e.target.value;
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
   if (id === 'coachName') { S.profile.data.coach = { ...(S.profile.data.coach || {}), name: e.target.value.slice(0, 20) }; clearTimeout(window._cn); window._cn = setTimeout(() => { save.profile(); const t = $('.chat-title b'); if (t) t.textContent = coachName(); }, 500); }
+  if (e.target.classList?.contains('grow')) growBox(e.target);
   if (e.target.dataset.field && S.ob) { const v = e.target.value; obSet(e.target.dataset.field, e.target.type === 'number' ? (v === '' ? '' : Number(v)) : v); }
   if (e.target.dataset.edit && S.logResult?.review) {
     // Live edit of a reviewed item; totals update without redrawing the form.
@@ -213,3 +214,6 @@ window.visualViewport?.addEventListener('resize', () => {
   if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
 });
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
+
+// Text boxes that grow with their content (no clipped lines).
+function growBox(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }

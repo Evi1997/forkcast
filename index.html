@@ -682,6 +682,13 @@ body.kb-open .ob-actions{position:static;background:none;padding-top:4px}
 .tipline .tip-ic svg{width:18px;height:18px}
 .tipline .tip-txt b{font-size:.88rem}
 .tipline .tip-txt span{font-size:.82rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* Onboarding: bottom bar pinned to the screen edge like a native app */
+.ob-skip{border:0;background:none;color:var(--muted);font-weight:700;cursor:pointer;padding:8px 0 8px 6px;min-height:44px;flex:none}
+.onboard textarea.grow{min-height:88px;resize:none;overflow:hidden;line-height:1.45}
+.onboard{padding-bottom:96px}
+.ob-actions{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:600px;padding:12px max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,var(--bg) 22%)}
+body.kb-open .ob-actions{display:none}
 </style>
 </head>
 <body>
@@ -1555,7 +1562,7 @@ function render(){
   if (S.view !== 'coach' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); }
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
   document.body.classList.toggle('onboarding', !!S.ob);
-  if (S.ob) { $('#tabs').innerHTML = ''; $('#view').innerHTML = S.obDone ? vObDone() : vOnboarding(); return; }
+  if (S.ob) { $('#tabs').innerHTML = ''; $('#view').innerHTML = S.obDone ? vObDone() : vOnboarding(); document.querySelectorAll('textarea.grow').forEach(growBox); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
   if (S.view === 'coach' && !S.busy.chat) maybeNewSession();
@@ -2203,7 +2210,7 @@ function obNum(path, label, unit, step = 1){
 }
 function obText(path, label, ph, area){
   const id = 'ob-' + path.replace('.', '-') + (label.startsWith('Or type') ? '-own' : ''), v = esc(obGet(path) ?? '');
-  return `<div class="field"><label for="${id}">${obLabel(path, label)}</label>${area ? `<textarea id="${id}" data-field="${path}" rows="2" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}" enterkeyhint="next">`}</div>`;
+  return `<div class="field"><label for="${id}">${obLabel(path, label)}</label>${area ? `<textarea id="${id}" class="grow" data-field="${path}" rows="3" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}" enterkeyhint="next">`}</div>`;
 }
 
 const OB_LABELS = { 'basics.goal':'your goal', 'basics.toned_focus':'what “toned” means for you', 'basics.sex':'sex', 'basics.age':'age', 'basics.height_cm':'height', 'basics.weight_kg':'weight', 'lifestyle.job':'work', 'lifestyle.training':'workouts per week' };
@@ -2221,6 +2228,7 @@ function vOnboarding(){
       ${i > 0 ? `<button class="ob-back" data-act="obback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Back</button>` : ''}
       <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
       <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
+      ${!st.need ? `<button class="ob-skip" data-act="obskip">${last ? 'Skip & finish' : 'Skip'}</button>` : ''}
     </header>
     <div class="ob-head"><h1>${st.title}</h1><p class="muted">${st.sub}</p></div>
     <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
@@ -2230,7 +2238,6 @@ function vOnboarding(){
         ${i > 0 ? `<button class="btn ob-prev" data-act="obback" aria-label="Back to the previous step">‹ Back</button>` : ''}
         <button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button>
       </div>
-      ${!st.need ? `<button class="btn ghost" data-act="obskip">${last ? 'Skip and finish' : 'Skip this step'}</button>` : ''}
     </div>
   </div>`;
 }
@@ -2272,6 +2279,7 @@ document.addEventListener('input', e => {
   if (id === 'askText') S.draft.ask = e.target.value;
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
   if (id === 'coachName') { S.profile.data.coach = { ...(S.profile.data.coach || {}), name: e.target.value.slice(0, 20) }; clearTimeout(window._cn); window._cn = setTimeout(() => { save.profile(); const t = $('.chat-title b'); if (t) t.textContent = coachName(); }, 500); }
+  if (e.target.classList?.contains('grow')) growBox(e.target);
   if (e.target.dataset.field && S.ob) { const v = e.target.value; obSet(e.target.dataset.field, e.target.type === 'number' ? (v === '' ? '' : Number(v)) : v); }
   if (e.target.dataset.edit && S.logResult?.review) {
     // Live edit of a reviewed item; totals update without redrawing the form.
@@ -2479,6 +2487,9 @@ window.visualViewport?.addEventListener('resize', () => {
   if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
 });
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
+
+// Text boxes that grow with their content (no clipped lines).
+function growBox(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
 
 // === main.js ===
 // Boot: connect sign-in, restore the last tab, register the offline worker

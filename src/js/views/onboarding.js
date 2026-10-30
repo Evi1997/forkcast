@@ -104,7 +104,7 @@ function obNum(path, label, unit, step = 1){
 }
 function obText(path, label, ph, area){
   const id = 'ob-' + path.replace('.', '-') + (label.startsWith('Or type') ? '-own' : ''), v = esc(obGet(path) ?? '');
-  return `<div class="field"><label for="${id}">${obLabel(path, label)}</label>${area ? `<textarea id="${id}" data-field="${path}" rows="2" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}" enterkeyhint="next">`}</div>`;
+  return `<div class="field"><label for="${id}">${obLabel(path, label)}</label>${area ? `<textarea id="${id}" class="grow" data-field="${path}" rows="3" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}" enterkeyhint="next">`}</div>`;
 }
 
 const OB_LABELS = { 'basics.goal':'your goal', 'basics.toned_focus':'what “toned” means for you', 'basics.sex':'sex', 'basics.age':'age', 'basics.height_cm':'height', 'basics.weight_kg':'weight', 'lifestyle.job':'work', 'lifestyle.training':'workouts per week' };
@@ -122,6 +122,7 @@ function vOnboarding(){
       ${i > 0 ? `<button class="ob-back" data-act="obback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Back</button>` : ''}
       <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
       <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
+      ${!st.need ? `<button class="ob-skip" data-act="obskip">${last ? 'Skip & finish' : 'Skip'}</button>` : ''}
     </header>
     <div class="ob-head"><h1>${st.title}</h1><p class="muted">${st.sub}</p></div>
     <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
@@ -131,7 +132,6 @@ function vOnboarding(){
         ${i > 0 ? `<button class="btn ob-prev" data-act="obback" aria-label="Back to the previous step">‹ Back</button>` : ''}
         <button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button>
       </div>
-      ${!st.need ? `<button class="btn ghost" data-act="obskip">${last ? 'Skip and finish' : 'Skip this step'}</button>` : ''}
     </div>
   </div>`;
 }
