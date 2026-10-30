@@ -4,6 +4,7 @@
 - `api/ai.py` is a Python twin of the Supabase function used only by `dev.py`; keep both in step.
 - `netlify.toml` and `netlify/` remain only until the old Netlify project is deleted; then remove them.
 - Source is in `src/`; `index.html` is generated. After any change run `python3 build.py`, never edit `index.html` directly.
+- Goal-first: never assume weight loss. Targets come from `chooseStrategy`/`calcTargets` in `src/js/core/nutrition.js` (deficit only for an established, appropriate fat-loss goal; toned = recomposition at maintenance; muscle = small surplus; protein 1.4–2.0 g/kg); the AI rules are `GOAL_FIRST` in prompts.js, mirroring the skill.
 - AI behaviour lives in `src/js/core/prompts.js`; the server calls Gemini with JSON output. The dietitian spec is `skill/ai-dietitian/SKILL.md`.
 - Scripts are classic (no import/export) sharing globals; add new files to the `SCRIPTS` list in `build.py`.
 - Data model: table `user_docs(user_id, key, data jsonb)` with RLS; keys `profile`, `chat`, `plan`, `progress`, `log-YYYY-MM-DD`.

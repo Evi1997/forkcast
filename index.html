@@ -641,6 +641,11 @@ body.onboarding main{padding-bottom:24px}
 .ob-targets .tile b{font-size:1.3rem}
 @media (max-width:420px){.ob-targets .tiles{grid-template-columns:1fr 1fr}}
 .ob-notes{line-height:1.55}.ob-notes ul{margin:6px 0;padding-left:20px}
+.ob-chips.stacked{flex-direction:column;align-items:stretch}.ob-chips.stacked .chip{text-align:left;border-radius:14px;padding:12px 14px}
+.strategy{display:flex;flex-direction:column;gap:6px;background:var(--accent-soft);box-shadow:none}
+.strategy h2{font-size:1.4rem}
+.strategy .facts{margin-top:6px;font-size:.88rem}
+.ob-back{width:36px;height:36px;border:0;background:var(--surface-2);border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}.ob-back svg{width:20px;height:20px}
 </style>
 </head>
 <body>
@@ -700,13 +705,25 @@ HOW YOU WORK
 - If the person tells you what they ate, add it to log_items with honest estimates and update them on what's left today.
 - Tone: calm, warm, practical, precise, encouraging without being patronising. Short paragraphs, plain words. Reply in the language the person writes in.`;
 
+// Goal-first rules (skill/ai-dietitian, "Goal-first nutrition assessment").
+const GOAL_FIRST = `GOAL FIRST (takes precedence over any weight-loss assumption):
+- Never assume weight loss. If the goal is unknown, ask before prescribing a deficit. "Toned" is not permission for a deficit: ask if they mainly want muscle, less fat, or both.
+- Strategies: fat loss -> modest deficit only when appropriate (consider leanness, health, menstrual health, training, recovery); toned/definition -> recomposition, usually maintenance calories with resistance training; muscle gain -> maintenance or a modest surplus with enough protein and carbs; maintenance/health -> no deficit.
+- Lean, active people wanting definition: don't recommend eating less; build muscle. Warning signs of low energy availability (missed/irregular periods, persistent fatigue, poor recovery, injuries, heavy restriction) -> no deficit, suggest professional assessment.
+- Protein ~1.4-2.0 g/kg for active adults; more is not always better. Enough carbs and fat for training and health.
+- Mifflin-St Jeor TDEE is an estimate, not an exact need; don't add smartwatch calories to food. BMI or InBody body-fat % alone don't decide anything (bioimpedance varies with hydration).
+- IBS or digestive issues are not a reason to cut calories; avoid unnecessary elimination diets.
+- Judge a strategy over 2-4 weeks (trend, performance, recovery, hunger, energy, digestion, cycle). Never change calories much from one weigh-in; if it's working, keep it.
+- The aim is not to make everyone thinner: it's their own goal, safely and sustainably.`;
+
 // Short brief for everyday chat after onboarding (faster: less to read each time).
 const COACH_FOLLOWUP = `You are the dietitian inside "Forkcast": evidence-based, warm, practical, concise. The person's full profile, targets and today's food are in APP STATE; don't re-ask what's there.
 - Answer in max ~90 words, plain words, in the person's language; end with one short question.
 - Keep foods they enjoy; 80/20 flexibility; never call foods good/bad/clean/cheat; never criticise what they ate.
 - Use their weak-point focus when relevant. For check-ins, look at trends; if adherence was low, adjust the plan before cutting calories.
 - If they say what they ate, put it in log_items with honest estimates.
-- SAFETY: no starvation, crash diets or very-low-calorie advice; medical issues -> suggest their doctor and set medical_flag.`;
+- SAFETY: no starvation, crash diets or very-low-calorie advice; medical issues -> suggest their doctor and set medical_flag.
+${GOAL_FIRST}`;
 
 // Streamed chat: the reply comes first as plain text (shown while it's written),
 // then the app data after a marker line.
@@ -749,23 +766,31 @@ const PROMPTS = {
   onboardingReview(profile, targets){
     return `You are the dietitian inside "Forkcast". ${coachPersona()} A new person just completed the intake form below. Review it like the end of a first consultation.
 ${COACH_RULES.split('HOW YOU WORK')[0].trim()}
-SAFETY: never encourage starvation, crash diets or very-low-calorie diets; no calorie deficit for anyone under 18; for pregnancy, diabetes, kidney/liver disease, eating disorders or unexplained weight loss, say changes should be agreed with their doctor and set medical_flag; no high-protein targets with kidney disease.
+${GOAL_FIRST}
 
 INTAKE (JSON): ${JSON.stringify(profile)}
-TARGETS ALREADY CALCULATED ON THE DEVICE (Mifflin-St Jeor, estimates): ${JSON.stringify(targets)}
+STARTING TARGETS CALCULATED ON THE DEVICE (Mifflin-St Jeor estimates, strategy already chosen goal-first): ${JSON.stringify(targets)}
 
 Reply with ONLY one JSON object:
-{"summary": "warm welcome in the person's language, max 110 words: what you understood (goal, routine, weak point), one line on why the targets fit, the 1-2 most useful first steps, and end with ONE question. **bold** and '- ' bullets allowed",
+{"assessment": {
+   "goal": "their actual goal in a few words",
+   "context": "one sentence: relevant body-composition and health context (no BMI judgements in isolation)",
+   "maintenance_kcal": n (estimate),
+   "strategy": "deficit" | "maintenance" | "recomposition" | "surplus",
+   "reasoning": "one or two sentences: why this strategy fits; if a deficit is NOT appropriate, say why",
+   "training": "one sentence on training and recovery",
+   "monitoring": "one sentence: what to watch over the next 2-4 weeks"},
+ "targets": null, or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} ONLY if the device targets don't fit this person,
+ "summary": "warm welcome in the person's language, max 90 words: what you understood, the 1-2 most useful first steps, and ONE question at the end. **bold** and '- ' bullets allowed",
  "quick_replies": up to 3 short answers to your question,
- "focus": {"weak_point": short name, "why": one sentence, "tips": 3-4 short concrete tips for exactly their situation},
- "targets": null, or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} ONLY if the calculated targets are unsafe or clearly wrong for this person (e.g. health condition, minor),
+ "focus": {"weak_point": short name, "why": one sentence, "tips": 3-4 short concrete tips},
  "medical_flag": null or one line when something needs medical review}`;
   },
 
   // Dietitian chat: standing instructions + app snapshot, then the conversation.
   // Once onboarding is done the brief is much shorter: no consultation script.
   coach(state, history, onboarded, persona){
-    const rules = (persona ? persona + '\n' : '') + (onboarded ? COACH_FOLLOWUP : COACH_RULES);
+    const rules = (persona ? persona + '\n' : '') + (onboarded ? COACH_FOLLOWUP : COACH_RULES + '\n' + GOAL_FIRST);
     return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
   },
 
@@ -963,25 +988,49 @@ async function syncRemote(){
 // === core/nutrition.js ===
 // Nutrition maths: Mifflin-St Jeor targets, consultation progress, streaks
 const ACT = { sedentary:1.2, light:1.375, moderate:1.55, very:1.725, extra:1.9 };
+// Goal-first targets (see skill/ai-dietitian, "Goal-first nutrition assessment"):
+// a deficit only when fat loss is the clear goal and it's appropriate; "toned"
+// means recomposition at maintenance unless the person chose fat loss.
+const STRATEGY = {
+  deficit:        { label:'Fat loss',        short:'a modest deficit' },
+  recomposition:  { label:'Recomposition',   short:'maintenance calories with strength training' },
+  surplus:        { label:'Muscle gain',     short:'a small surplus' },
+  maintenance:    { label:'Maintenance',     short:'maintenance calories' }
+};
+function chooseStrategy(d, bmi){
+  const b = d.basics || {}, goal = String(b.goal || ''), toned = String(b.toned_focus || '');
+  const h = JSON.stringify(d.health || {}) + JSON.stringify(d.wellbeing || {});
+  const redFlags = /eating disorder|missed periods|irregular|pregnan|breastfeed|unexplained weight loss/i.test(h);
+  const bf = +b.body_fat_pct, female = !String(b.sex).startsWith('m');
+  const lean = bmi < (female ? 20 : 20.5) || (bf && bf < (female ? 20 : 12));
+  const wantsLoss = goal.includes('loss') || (goal === 'toned' && toned === 'fat');
+  if (wantsLoss) {
+    if (+b.age < 18 || redFlags || lean) return { key:'maintenance', why: +b.age < 18 ? 'under 18: no calorie deficit' : redFlags ? 'a health answer needs review before any deficit' : 'you\'re already lean, so a deficit isn\'t advised' };
+    return { key:'deficit', why:'fat loss is your goal' };
+  }
+  if (goal === 'toned' || goal.includes('recomp')) return { key:'recomposition', why:'definition comes mostly from building muscle, not eating less' };
+  if (goal.includes('gain')) return { key: redFlags ? 'maintenance' : 'surplus', why:'muscle grows best with enough energy' };
+  return { key:'maintenance', why:'your goal doesn\'t need a deficit' };
+}
 function calcTargets(d){
   const b = d.basics || {};
   const age = +b.age, h = +b.height_cm, w = +b.weight_kg;
   if (!age || !h || !w || !b.sex) return null;
   const bmr = 10*w + 6.25*h - 5*age + (String(b.sex).startsWith('m') ? 5 : -161);
-  const tdee = bmr * (ACT[b.activity] || 1.375);
-  const goal = String(b.goal || 'maintenance');
+  const tdee = bmr * (ACT[b.activity] || 1.375), bmi = w / ((h/100) ** 2);
+  const strat = chooseStrategy(d, bmi), goal = String(b.goal || '');
   let kcal = tdee;
-  if (goal.includes('loss') && age >= 18) kcal = Math.max(tdee - 500, tdee * 0.82, bmr);
-  else if (goal.includes('gain')) kcal = tdee + 250;
-  else if (goal.includes('recomp')) kcal = tdee - 200;
+  if (strat.key === 'deficit') kcal = Math.max(tdee - 500, tdee * 0.85, bmr * 1.1);
+  if (strat.key === 'surplus') kcal = tdee + Math.min(300, Math.max(150, tdee * 0.08));
   const kidney = /kidney|renal|ckd/i.test(JSON.stringify(d.health || {}));
-  const perKg = kidney ? 0.8 : goal.includes('loss') || goal.includes('gain') ? 1.8 : goal.includes('recomp') ? 2.0 : goal.includes('perform') ? 1.6 : 1.3;
-  const refW = b.goal_weight_kg && goal.includes('loss') && w/((h/100)**2) > 30 ? +b.goal_weight_kg : w;
+  // Protein within ~1.4–2.0 g/kg for active adults; lower with kidney disease.
+  const perKg = kidney ? 0.8 : ['deficit','recomposition','surplus'].includes(strat.key) ? 1.8 : goal.includes('perform') ? 1.6 : 1.4;
+  const refW = bmi > 30 ? (+b.goal_weight_kg || 25 * (h/100) ** 2) : w;
   kcal = Math.round(kcal / 10) * 10;
   const protein = Math.round(perKg * refW);
-  const fat = Math.round(kcal * 0.3 / 9);
+  const fat = Math.max(Math.round(kcal * 0.28 / 9), Math.round(0.7 * w));
   const carbs = Math.max(0, Math.round((kcal - protein*4 - fat*9) / 4));
-  return { kcal, protein, carbs, fat, fiber: Math.round(kcal/1000*14), bmr: Math.round(bmr), tdee: Math.round(tdee), kidney };
+  return { kcal, protein, carbs, fat, fiber: Math.round(kcal/1000*14), bmr: Math.round(bmr), tdee: Math.round(tdee), kidney, strategy: strat.key, why: strat.why };
 }
 const targets = () => S.profile.targets || calcTargets(S.profile.data);
 function sectionDone(key){
@@ -1410,12 +1459,13 @@ async function loadDayPhotos(di){
 // Onboarding flow: open, move between steps, save, finish, and the one AI review.
 function startOnboarding(edit){
   S.ob = { step:0, data: JSON.parse(JSON.stringify(S.profile.data || {})), edit: !!edit };
+  const b = S.ob.data.basics; if (b?.goal === 'recomposition') { b.goal = 'toned'; b.toned_focus = b.toned_focus || 'both'; } // older answer
   S.obDone = false; window.scrollTo(0, 0); render();
 }
 function obSave(){ S.profile.data = JSON.parse(JSON.stringify(S.ob.data)); save.profile(); }
 function obNext(skip){
   const st = OB_STEPS[S.ob.step];
-  if (st.required && obMissing().length) { S.ob.tried = true; render(); return; }
+  if (st.need && obMissing().length) { S.ob.tried = true; render(); return; }
   obSave();
   if (S.ob.step < OB_STEPS.length - 1) { S.ob.step++; S.ob.tried = false; window.scrollTo(0, 0); render(); return; }
   finishOnboarding();
@@ -1430,12 +1480,13 @@ async function finishOnboarding(){
   if (!S.sampleOK) { S.ob.review = { error:'Sign in to get your dietitian\'s notes.' }; render(); return; }
   const t = targets();
   try {
-    const r = await S.sample.json(PROMPTS.onboardingReview(S.profile.data, t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber }), { modelTier:'default' });
+    const r = await S.sample.json(PROMPTS.onboardingReview(S.profile.data, t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber, maintenance_kcal:t.tdee, strategy:t.strategy, why:t.why }), { modelTier:'default' });
+    if (isObj(r?.assessment)) S.profile.assessment = { ...r.assessment, at:dkey() };
     if (isObj(r?.targets) && r.targets.kcal) { S.profile.targets = { kcal:r0(r.targets.kcal), protein:r0(r.targets.protein), carbs:r0(r.targets.carbs), fat:r0(r.targets.fat), fiber:r0(r.targets.fiber) }; S.profile.targetsSource = 'coach'; }
     if (isObj(r?.focus) && r.focus.weak_point) S.profile.focus = { weak_point:String(r.focus.weak_point), why:String(r.focus.why || ''), tips:(Array.isArray(r.focus.tips) ? r.focus.tips : []).slice(0,5).map(String), at:dkey() };
     if (r?.medical_flag) S.profile.flags = [...new Set([...(S.profile.flags || []), String(r.medical_flag)])].slice(-5);
     const summary = String(r?.summary || '').trim();
-    if (S.ob) S.ob.review = { summary, flag: r?.medical_flag || null };
+    if (S.ob) S.ob.review = { summary, flag: r?.medical_flag || null, assessment: isObj(r?.assessment) ? r.assessment : null };
     // The review also opens today's conversation in the Dietitian tab.
     if (summary) {
       S.chat.start = S.chat.turns.length;
@@ -2005,24 +2056,33 @@ const OB_STEPS = [
     ${obChips('coach.name', 'Name', COACH_NAMES.map(n => [n, n]))}
     ${obText('coach.name', 'Or type your own', 'e.g. Sofia')}
     ${obChips('coach.tone', 'How should they talk to you?', COACH_TONES.map(([v, l]) => [v, l]))}` },
-  { key:'basics', title:'About you', sub:'Used to estimate your daily needs.', required:true, body: () => `
+  // Goal first: nothing is calculated until we know what you actually want.
+  { key:'basics', title:'What\'s your main goal?', sub:'With food and training. This decides your whole plan.', need:['basics.goal'], body: () => `
+    ${obChips('basics.goal', 'Pick one', [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle (e.g. glutes, legs, shoulders)'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']], true)}
+    ${obGet('basics.goal') === 'toned' ? obChips('basics.toned_focus', '“Toned” can mean different things. What matters most?', [['muscle','Building muscle'],['fat','Losing some body fat'],['both','Both / not sure']]) : ''}
+    ${obGet('basics.goal') === 'other' ? obText('basics.goal_other', 'Tell us your goal', 'e.g. more energy for a marathon') : ''}` },
+  { key:'basics', title:'About you', sub:'Used to estimate your energy needs.', need:['basics.sex','basics.age','basics.height_cm','basics.weight_kg','basics.activity'], body: () => `
     ${obChips('basics.sex', 'Sex (for the energy formula)', [['female','Female'],['male','Male']])}
     <div class="fields three">
       ${obNum('basics.age', 'Age', 'years')}
       ${obNum('basics.height_cm', 'Height', 'cm')}
       ${obNum('basics.weight_kg', 'Weight', 'kg', 0.1)}
     </div>
-    ${obChips('basics.goal', 'Main goal', [['fat loss','Lose fat'],['muscle gain','Build muscle'],['recomposition','Both: tone up'],['maintenance','Maintain'],['healthier eating','Eat healthier'],['performance','Sports performance'],['digestive comfort','Better digestion']])}
-    ${obNum('basics.goal_weight_kg', 'Goal weight (optional)', 'kg', 0.1)}
-    ${obChips('basics.activity', 'Daily activity', [['sedentary','Mostly sitting'],['light','Light: some walking'],['moderate','Moderate: active most days'],['very','Very active'],['extra','Physical job + training']])}` },
+    ${obChips('basics.activity', 'Daily activity (outside workouts)', [['sedentary','Mostly sitting'],['light','Light: some walking'],['moderate','Moderate: on my feet a lot'],['very','Very active'],['extra','Physical job + training']])}
+    ${obChips('basics.trend', 'Your weight lately', [['losing','Going down'],['stable','Stable'],['gaining','Going up'],['unsure','Not sure']])}
+    ${['fat loss','toned'].includes(obGet('basics.goal')) ? obNum('basics.goal_weight_kg', 'Goal weight (optional)', 'kg', 0.1) : ''}
+    <div class="fields two">${obNum('basics.body_fat_pct', 'Body fat (optional)', '%', 0.1)}${obChips('basics.body_fat_method', 'Measured with', [['scan','InBody / scale'],['dexa','DEXA'],['guess','Estimate']])}</div>` },
   { key:'health', title:'Health', sub:'So advice stays safe. Pick all that apply.', body: () => `
     ${obMulti('health.conditions', 'Conditions', ['None','Pregnant or breastfeeding','Diabetes','Kidney disease','Liver disease','Heart condition','IBS / digestive issues','Thyroid condition','Eating disorder (past or present)','Recent unexplained weight loss'])}
+    ${obGet('basics.sex') === 'female' ? obChips('health.cycle', 'Your period (helps spot low energy)', [['regular','Regular'],['irregular','Irregular'],['missed periods','Missed for 3+ months'],['n/a','Not applicable / skip']]) : ''}
     ${obMulti('health.allergies', 'Allergies or intolerances', ['None','Nuts','Peanuts','Gluten','Lactose','Eggs','Shellfish','Fish','Soy'])}
     ${obText('health.medications', 'Medications that affect appetite, blood sugar or weight (optional)', 'e.g. none, metformin…')}` },
   { key:'lifestyle', title:'Your routine', sub:'Helps fit meals around your day.', body: () => `
     ${obChips('lifestyle.job', 'Work', [['desk job','Desk / remote'],['on my feet','On my feet'],['physical job','Physical work'],['student','Student'],['not working','Not working']])}
     ${obChips('lifestyle.training', 'Exercise per week', [['none','None'],['1-2 sessions','1–2'],['3-4 sessions','3–4'],['5+ sessions','5+']])}
     ${obMulti('lifestyle.training_type', 'Type of exercise', ['Gym / weights','Running','Walking','Yoga / pilates','Team sport','Cycling','Swimming'])}
+    ${obChips('lifestyle.steps', 'Daily steps', [['under 5k','Under 5,000'],['5-8k','5–8,000'],['8-12k','8–12,000'],['12k+','12,000+'],['unknown','Don\'t know']])}
+    ${obChips('lifestyle.energy', 'Energy and recovery lately', [['good','Good'],['ok','OK'],['often tired','Often tired'],['slow recovery','Slow to recover from training']])}
     ${obChips('lifestyle.sleep', 'Sleep', [['under 6 h','Under 6 h'],['6-7 h','6–7 h'],['7-8 h','7–8 h'],['8+ h','8 h+']])}
     ${obChips('lifestyle.stress', 'Stress', [['low','Low'],['medium','Medium'],['high','High']])}` },
   { key:'current_diet', title:'How you eat now', sub:'Your plan builds on what you already do.', body: () => `
@@ -2054,9 +2114,9 @@ const OB_STEPS = [
 // --- field helpers (value lives at a "section.key" path in S.ob.data) ---
 const obGet = path => { const [a, b] = path.split('.'); return S.ob.data[a]?.[b]; };
 function obSet(path, v){ const [a, b] = path.split('.'); S.ob.data[a] = { ...(S.ob.data[a] || {}), [b]: v }; }
-function obChips(path, label, opts){
+function obChips(path, label, opts, stacked){
   const cur = String(obGet(path) ?? '');
-  return `<fieldset class="ob-q"><legend>${label}</legend><div class="ob-chips">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
+  return `<fieldset class="ob-q"><legend>${label}</legend><div class="ob-chips${stacked ? ' stacked' : ''}">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
 }
 function obMulti(path, label, opts){
   const cur = String(obGet(path) || '').split(', ').filter(Boolean);
@@ -2071,26 +2131,28 @@ function obText(path, label, ph, area){
   return `<div class="field"><label for="${id}">${label}</label>${area ? `<textarea id="${id}" data-field="${path}" rows="2" placeholder="${esc(ph)}">${v}</textarea>` : `<input type="text" id="${id}" data-field="${path}" placeholder="${esc(ph)}" value="${v}">`}</div>`;
 }
 
+const OB_LABELS = { 'basics.goal':'your goal', 'basics.toned_focus':'what “toned” means for you', 'basics.sex':'sex', 'basics.age':'age', 'basics.height_cm':'height', 'basics.weight_kg':'weight', 'basics.activity':'daily activity' };
 function obMissing(){
-  const b = S.ob.data.basics || {};
-  return [['sex','sex'],['age','age'],['height_cm','height'],['weight_kg','weight'],['goal','goal'],['activity','activity']].filter(([k]) => !b[k]).map(([, l]) => l);
+  const st = OB_STEPS[S.ob.step], need = [...(st.need || [])];
+  if (need.includes('basics.goal') && obGet('basics.goal') === 'toned') need.push('basics.toned_focus');
+  return need.filter(p => !obGet(p)).map(p => OB_LABELS[p] || p);
 }
 
 function vOnboarding(){
   const i = S.ob.step, st = OB_STEPS[i], last = i === OB_STEPS.length - 1;
-  const missing = st.required && S.ob.tried ? obMissing() : [];
+  const missing = st.need && S.ob.tried ? obMissing() : [];
   return `<div class="onboard">
     <header class="ob-top">
-      ${i > 0 ? `<button class="ws-arrow" data-act="obback" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>` : '<span style="width:36px"></span>'}
+      ${i > 0 ? `<button class="ob-back" data-act="obback" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>` : '<span style="width:36px"></span>'}
       <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
       <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
     </header>
     <div class="ob-head"><h1>${st.title}</h1><p class="muted">${st.sub}</p></div>
     <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
-    ${missing.length ? `<div class="notice warn">Please add your ${missing.join(', ')} to continue.</div>` : ''}
+    ${missing.length ? `<div class="notice warn">To continue, please answer: ${missing.join(', ')}.</div>` : ''}
     <div class="ob-actions">
       <button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button>
-      ${!st.required ? `<button class="btn ghost" data-act="obskip">${last ? 'Skip and finish' : 'Skip this step'}</button>` : ''}
+      ${!st.need ? `<button class="btn ghost" data-act="obskip">${last ? 'Skip and finish' : 'Skip this step'}</button>` : ''}
     </div>
   </div>`;
 }
@@ -2100,7 +2162,15 @@ function vOnboarding(){
 function vObDone(){
   const t = targets(), r = S.ob.review;
   return `<div class="onboard">
-    <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>You're all set</h1><p class="muted">Here are your starting targets. They're estimates; we'll fine-tune them from your weight trend.</p></div>
+    <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>You're all set</h1><p class="muted">Your starting plan. Every number is an estimate; we'll check it over the next 2–4 weeks.</p></div>
+    ${t ? (() => { const a = r?.assessment, key = a?.strategy && STRATEGY[a.strategy] ? a.strategy : t.strategy, st = STRATEGY[key] || STRATEGY.maintenance;
+      return `<section class="card strategy">
+        <span class="label">Your strategy</span>
+        <h2>${st.label}</h2>
+        <p>${esc(a?.reasoning || (st.short[0].toUpperCase() + st.short.slice(1) + ', because ' + t.why + '.'))}</p>
+        <dl class="facts"><dt>Maintenance</dt><dd>≈ ${(a?.maintenance_kcal ? r0(a.maintenance_kcal) : t.tdee).toLocaleString()} kcal <span class="muted">(estimate)</span></dd>
+        ${a?.training ? `<dt>Training</dt><dd>${esc(a.training)}</dd>` : ''}${a?.monitoring ? `<dt>We'll watch</dt><dd>${esc(a.monitoring)}</dd>` : ''}</dl>
+      </section>`; })() : ''}
     ${t ? `<section class="card ob-targets">
       <div class="review-total"><span class="big num">${t.kcal.toLocaleString()}</span><span class="muted">kcal a day</span></div>
       <div class="tiles">${[['Protein', t.protein, 'var(--pink)'], ['Carbs', t.carbs, 'var(--amber)'], ['Fat', t.fat, 'var(--blue)'], ['Fiber', t.fiber, 'var(--accent)']].map(([l, v, c]) => `<div class="tile"><span class="label">${l}</span><b class="num" style="color:${c}">${v}<small> g</small></b></div>`).join('')}</div>

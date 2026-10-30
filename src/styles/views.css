@@ -510,3 +510,8 @@ body.onboarding main{padding-bottom:24px}
 .ob-targets .tile b{font-size:1.3rem}
 @media (max-width:420px){.ob-targets .tiles{grid-template-columns:1fr 1fr}}
 .ob-notes{line-height:1.55}.ob-notes ul{margin:6px 0;padding-left:20px}
+.ob-chips.stacked{flex-direction:column;align-items:stretch}.ob-chips.stacked .chip{text-align:left;border-radius:14px;padding:12px 14px}
+.strategy{display:flex;flex-direction:column;gap:6px;background:var(--accent-soft);box-shadow:none}
+.strategy h2{font-size:1.4rem}
+.strategy .facts{margin-top:6px;font-size:.88rem}
+.ob-back{width:36px;height:36px;border:0;background:var(--surface-2);border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}.ob-back svg{width:20px;height:20px}
