@@ -89,12 +89,12 @@ document.addEventListener('click', e => {
   else if (a === 'obnext') obNext();
   else if (a === 'obskip') obNext(true);
   else if (a === 'obfinish') finishOnboarding();
+  else if (a === 'obfix') obFix();
   else if (a === 'obback') obBack();
   else if (a === 'obclose') closeOnboarding();
   else if (el.dataset.ob) {
     // Single-choice answers move straight on (lesson-style); a short pause shows the tick.
-    obSet(el.dataset.ob, el.dataset.v); render();
-    if (el.dataset.auto) { const at = S.ob.q; setTimeout(() => { if (S.ob && S.ob.q === at) obNext(); }, 260); }
+    obSet(el.dataset.ob, el.dataset.v); S.ob.tried = false; render();
   }
   else if (el.dataset.obm) {
     // Multi-choice: "None" clears the others, picking anything clears "None".

@@ -663,3 +663,44 @@ body.onboarding main{padding-top:8px;padding-bottom:0}
   body.on-today .meals{flex:1;display:flex;flex-direction:column;justify-content:space-evenly}
   body.on-today .meal-row{flex:1 1 auto;align-content:center}
 }
+
+/* Onboarding v3: section colour wash (each part of the setup has its own colour),
+   the question on a white card with a stack peeking behind, sliding in */
+body.onboarding{--sec:var(--accent)}
+body.onboarding[data-sec="coach"]{--sec:var(--accent)}
+body.onboarding[data-sec="goal"]{--sec:var(--accent)}
+body.onboarding[data-sec="body"]{--sec:var(--paprika)}
+body.onboarding[data-sec="health"]{--sec:var(--pink)}
+body.onboarding[data-sec="routine"]{--sec:var(--blue)}
+body.onboarding[data-sec="eating"]{--sec:var(--amber)}
+body.onboarding[data-sec="obstacles"]{--sec:var(--violet)}
+body.onboarding[data-sec="food"]{--sec:var(--paprika)}
+body.onboarding[data-sec="cooking"]{--sec:var(--amber)}
+body.onboarding[data-sec="shopping"]{--sec:var(--accent)}
+body.onboarding{background:color-mix(in srgb,var(--sec) 16%,var(--bg));transition:background .4s}
+body.onboarding::before{background:color-mix(in srgb,var(--sec) 16%,var(--bg))}
+body.onboarding .ob-top{background:transparent}
+.lesson .ob-back{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.lesson .ob-bar{background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.lesson .ob-bar span{background:var(--sec)}
+.lesson .ob-skip{color:var(--ink);opacity:.7}
+.lesson .ob-say .ai-avatar{background:var(--surface);color:var(--sec);box-shadow:none}
+.lesson .ob-say .bubble{background:var(--surface)}
+.ob-stack{position:relative;padding-bottom:14px}
+.ob-stack::before,.ob-stack::after{content:"";position:absolute;left:16px;right:16px;bottom:6px;height:40px;border-radius:28px;background:var(--surface);opacity:.55}
+.ob-stack::after{left:32px;right:32px;bottom:0;opacity:.3}
+.ob-card{position:relative;z-index:1;background:var(--surface);border-radius:28px;padding:22px 20px 24px;display:flex;flex-direction:column;gap:14px;box-shadow:0 12px 40px color-mix(in srgb,var(--sec) 18%,transparent),0 2px 6px rgba(16,20,15,.05)}
+.ob-card .ob-sec{color:var(--sec);margin:0}
+.ob-card.from-right{animation:card-in-r .32s cubic-bezier(.2,.8,.2,1) both}
+.ob-card.from-left{animation:card-in-l .32s cubic-bezier(.2,.8,.2,1) both}
+@keyframes card-in-r{from{transform:translateX(40px) rotate(2deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes card-in-l{from{transform:translateX(-40px) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
+.lesson .ob-ans{background:var(--surface-2);border-color:transparent;box-shadow:none}
+.lesson .ob-ans[aria-checked="true"]{background:color-mix(in srgb,var(--sec) 12%,var(--surface));border-color:var(--sec);box-shadow:none}
+.lesson .ob-ans[aria-checked="true"] .radio{border-color:var(--sec);background:radial-gradient(var(--sec) 45%,var(--surface) 50%)}
+.lesson .ob-chips .chip{background:var(--surface-2);border-color:transparent}
+.lesson .ob-chips .chip[aria-pressed="true"]{background:var(--sec);border-color:var(--sec);color:#fff}
+.lesson .ob-actions{background:linear-gradient(transparent,color-mix(in srgb,var(--sec) 16%,var(--bg)) 30%)}
+.ob-go{width:100%;padding:17px;border-radius:18px;font-size:1.02rem;font-weight:800;background:var(--ink);color:var(--bg);box-shadow:none;border:0}
+.ob-go.waiting{background:color-mix(in srgb,var(--ink) 30%,var(--surface));color:var(--surface)}
+@media (prefers-reduced-motion:reduce){.ob-card.from-right,.ob-card.from-left{animation:none}}

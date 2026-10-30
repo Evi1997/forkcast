@@ -10,12 +10,12 @@ const OB_SECTIONS = { coach:'Your dietitian', goal:'Your goal', body:'About you'
 const OB_QUESTIONS = [
   { sec:'coach', path:'coach.name', type:'name', say:'Hi! Before we start: what should I be called?', title:'Pick a name for your dietitian', opts: () => COACH_NAMES.map(n => [n, n]) },
   { sec:'coach', path:'coach.tone', type:'single', say:() => `Nice to meet you, I'm ${coachName()}.`, title:'How should I talk to you?', opts: () => COACH_TONES.map(([v, l]) => [v, l]) },
-  { sec:'goal', path:'basics.goal', type:'single', need:true, say:'Let\'s start with what matters most.', title:'What\'s your main goal with food and training?', opts: () => [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']] },
-  { sec:'goal', path:'basics.toned_focus', type:'single', need:true, when: () => obGet('basics.goal') === 'toned', say:'“Toned” means different things to different people.', title:'What matters most to you?', opts: () => [['muscle','Mainly build muscle'],['fat','Mainly lose body fat'],['both','Both: lose fat and build muscle']] },
+  { sec:'goal', short:'your goal', path:'basics.goal', type:'single', need:true, say:'Let\'s start with what matters most.', title:'What\'s your main goal with food and training?', opts: () => [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']] },
+  { sec:'goal', short:'what “toned” means for you', path:'basics.toned_focus', type:'single', need:true, when: () => obGet('basics.goal') === 'toned', say:'“Toned” means different things to different people.', title:'What matters most to you?', opts: () => [['muscle','Mainly build muscle'],['fat','Mainly lose body fat'],['both','Both: lose fat and build muscle']] },
   { sec:'goal', path:'basics.muscle_areas', type:'multi', when: () => ['muscle gain','toned'].includes(obGet('basics.goal')), say:'Any areas you\'d like to focus on?', title:'Which areas?', opts: () => ['Glutes','Legs','Shoulders','Arms','Back','Core','Whole body'] },
   { sec:'goal', path:'basics.goal_other', type:'text', when: () => obGet('basics.goal') === 'other', say:'Tell me in your own words.', title:'What\'s your goal?', ph:'e.g. more energy for a marathon' },
-  { sec:'body', path:'basics.sex', type:'single', need:true, say:'A few basics, so I can estimate your energy needs.', title:'Sex (for the energy formula)', opts: () => [['female','Female'],['male','Male']] },
-  { sec:'body', path:'basics.age', type:'numbers', need:true, say:'Just the numbers. Nobody else sees them.', title:'Age, height and weight', fields:[['basics.age','Age','years',1],['basics.height_cm','Height','cm',1],['basics.weight_kg','Weight','kg',0.1]] },
+  { sec:'body', short:'sex', path:'basics.sex', type:'single', need:true, say:'A few basics, so I can estimate your energy needs.', title:'Sex (for the energy formula)', opts: () => [['female','Female'],['male','Male']] },
+  { sec:'body', short:'age, height and weight', path:'basics.age', type:'numbers', need:true, say:'Just the numbers. Nobody else sees them.', title:'Age, height and weight', fields:[['basics.age','Age','years',1],['basics.height_cm','Height','cm',1],['basics.weight_kg','Weight','kg',0.1]] },
   { sec:'body', path:'basics.trend', type:'single', say:'This tells me where you\'re starting from.', title:'Your weight in the last 3 months', opts: () => [['losing','Lost 2+ kg'],['stable','Stable (±1 kg)'],['gaining','Gained 2+ kg'],['unsure','Not sure']] },
   { sec:'body', path:'basics.goal_weight_kg', type:'numbers', when: () => ['fat loss','toned'].includes(obGet('basics.goal')), say:'Only if you have one in mind.', title:'Goal weight', fields:[['basics.goal_weight_kg','Goal weight','kg',0.1]] },
   { sec:'body', path:'basics.body_fat_pct', type:'bodyfat', say:'Know your body fat? Great, otherwise skip.', title:'Body fat', fields:[['basics.body_fat_pct','Body fat','%',0.1]], opts: () => [['scan','InBody / smart scale'],['dexa','DEXA'],['guess','Estimate']] },
@@ -23,9 +23,9 @@ const OB_QUESTIONS = [
   { sec:'health', path:'health.cycle', type:'single', when: () => obGet('basics.sex') === 'female', say:'This helps me spot if you\'re not eating enough.', title:'Your period', opts: () => [['regular','Regular'],['irregular','Irregular'],['missed periods','Missed for 3+ months'],['hormonal contraception','On hormonal contraception'],['n/a','Not applicable / prefer not to say']] },
   { sec:'health', path:'health.allergies', type:'multi', none:true, say:'Anything you can\'t eat?', title:'Allergies or intolerances', opts: () => ['None','Nuts','Peanuts','Gluten','Lactose','Eggs','Shellfish','Fish','Soy','Other'] },
   { sec:'health', path:'health.medications', type:'text', say:'Some medicines change appetite or blood sugar.', title:'Medications that affect appetite, blood sugar or weight', ph:'e.g. none, metformin…' },
-  { sec:'routine', path:'lifestyle.job', type:'single', need:true, say:'Let\'s look at your day. This sets how much energy you burn.', title:'What\'s your work like?', opts: () => [['desk job','Desk / remote'],['on my feet','On my feet (shop, teaching…)'],['physical job','Physical work'],['student','Student'],['not working','Not working']] },
+  { sec:'routine', short:'your work', path:'lifestyle.job', type:'single', need:true, say:'Let\'s look at your day. This sets how much energy you burn.', title:'What\'s your work like?', opts: () => [['desk job','Desk / remote'],['on my feet','On my feet (shop, teaching…)'],['physical job','Physical work'],['student','Student'],['not working','Not working']] },
   { sec:'routine', path:'lifestyle.steps', type:'single', say:'Roughly is fine.', title:'Daily steps', opts: () => [['under 5k','Under 5,000'],['5-8k','5–8,000'],['8-12k','8–12,000'],['12k+','12,000+'],['unknown','Don\'t know']] },
-  { sec:'routine', path:'lifestyle.training', type:'single', need:true, say:'And workouts?', title:'Workouts per week', opts: () => [['none','None right now'],['1-2 sessions','1–2'],['3-4 sessions','3–4'],['5+ sessions','5 or more']] },
+  { sec:'routine', short:'workouts per week', path:'lifestyle.training', type:'single', need:true, say:'And workouts?', title:'Workouts per week', opts: () => [['none','None right now'],['1-2 sessions','1–2'],['3-4 sessions','3–4'],['5+ sessions','5 or more']] },
   { sec:'routine', path:'lifestyle.training_type', type:'multi', when:isTrain, say:'Nice! What kind?', title:'Type of exercise', opts: () => ['Gym / weights','Running','Walking','Yoga / pilates','Team sport','Cycling','Swimming','Other'] },
   { sec:'routine', path:'lifestyle.intensity', type:'single', when:isTrain, say:'Be honest, no judging.', title:'How hard are your workouts?', opts: () => [['light','Light'],['moderate','Moderate'],['hard','Hard']] },
   { sec:'routine', path:'lifestyle.train_time', type:'multi', when:isTrain, say:'So I can plan meals around them.', title:'When do you usually train?', opts: () => ['Morning','Midday','Evening'] },
@@ -89,7 +89,7 @@ function vOnboarding(){
   const opts = q.opts ? q.opts() : [];
   let body = '';
   if (q.type === 'single' || q.type === 'name') {
-    body = `<div class="ob-answers" role="radiogroup" aria-label="${esc(q.title)}">${opts.map(([v, l]) => `<button type="button" class="ob-ans" role="radio" aria-checked="${String(cur) === String(v)}" data-ob="${q.path}" data-v="${esc(v)}" data-auto="1"><span>${esc(l)}</span><i class="radio" aria-hidden="true"></i></button>`).join('')}</div>
+    body = `<div class="ob-answers" role="radiogroup" aria-label="${esc(q.title)}">${opts.map(([v, l]) => `<button type="button" class="ob-ans" role="radio" aria-checked="${String(cur) === String(v)}" data-ob="${q.path}" data-v="${esc(v)}"><span>${esc(l)}</span><i class="radio" aria-hidden="true"></i></button>`).join('')}</div>
       ${q.type === 'name' ? `<div class="field"><label for="ob-own-name">Or type your own</label><input type="text" id="ob-own-name" data-field="${q.path}" value="${esc(COACH_NAMES.includes(cur) ? '' : (cur || ''))}" placeholder="e.g. Sofia" enterkeyhint="done" autocomplete="off"></div>` : ''}`;
   } else if (q.type === 'multi') {
     const sel = String(cur || '').split(', ').filter(Boolean);
@@ -105,19 +105,24 @@ function vOnboarding(){
       ? `<textarea id="ob-text" class="grow" data-field="${q.path}" rows="3" placeholder="${esc(q.ph || '')}">${esc(cur ?? '')}</textarea>`
       : `<input type="text" id="ob-text" data-field="${q.path}" value="${esc(cur ?? '')}" placeholder="${esc(q.ph || '')}" enterkeyhint="done" autocomplete="off">`;
   }
-  const needsContinue = q.type !== 'single';
+  const answered = !obMissing({ ...q, need:true });
+  const dir = S.ob.dir === 'back' ? 'from-left' : 'from-right';
   return `<div class="onboard lesson">
     <header class="ob-top">
       ${i > 0 ? `<button class="ob-back" data-act="obback" aria-label="Back">${OB_ARROW}</button>` : '<span class="ob-back-space"></span>'}
       <div class="ob-bar" role="progressbar" aria-valuemin="1" aria-valuemax="${list.length}" aria-valuenow="${i + 1}" aria-label="Question ${i + 1} of ${list.length}"><span style="width:${(i + 1) / list.length * 100}%"></span></div>
-      ${S.ob.edit ? `<button class="ob-skip" data-act="obfinish">Save</button>` : !q.need ? `<button class="ob-skip" data-act="obskip">Skip</button>` : '<span class="ob-back-space"></span>'}
+      ${S.ob.edit ? `<button class="ob-skip" data-act="obfinish">Save</button>` : `<button class="ob-skip" data-act="obskip">Skip</button>`}
     </header>
-    <div class="ob-sec">${OB_SECTIONS[q.sec]}</div>
     ${say ? `<div class="ob-say"><span class="ai-avatar" aria-hidden="true">${STAR}</span><div class="bubble">${esc(say)}</div></div>` : ''}
-    <h1 class="ob-q-title">${esc(q.title)}${q.need ? '' : ' <span class="opt-tag">(optional)</span>'}</h1>
-    <form class="ob-qbody" id="obForm" novalidate>${body}</form>
-    ${S.ob.tried && obMissing(q) ? `<div class="notice warn">Please answer to continue.</div>` : ''}
-    ${needsContinue || last ? `<div class="ob-actions"><button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button></div>` : ''}
+    <div class="ob-stack">
+      <section class="ob-card ${S.ob.anim ? dir : ''}" aria-labelledby="obTitle">
+        <div class="ob-sec">${OB_SECTIONS[q.sec]}</div>
+        <h1 class="ob-q-title" id="obTitle">${esc(q.title)}${q.need ? '' : ' <span class="opt-tag">(optional)</span>'}</h1>
+        <form class="ob-qbody" id="obForm" novalidate>${body}</form>
+        ${S.ob.tried && obMissing(q) ? `<div class="notice warn">Answer this one, or tap Skip.</div>` : ''}
+      </section>
+    </div>
+    <div class="ob-actions"><button class="btn ob-go ${answered || !q.need ? '' : 'waiting'}" data-act="obnext">${last ? 'Finish' : 'Continue'}</button></div>
   </div>`;
 }
 
@@ -126,7 +131,11 @@ function vOnboarding(){
 function vObDone(){
   const t = targets(), r = S.ob.review;
   return `<div class="onboard">
-    <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>You're all set</h1><p class="muted">Your starting plan. Every number is an estimate; we'll check it over the next 2–4 weeks.</p></div>
+    <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>${t ? 'You\'re all set' : 'Almost there'}</h1><p class="muted">${t ? 'Your starting plan. Every number is an estimate; we\'ll check it over the next 2–4 weeks.' : 'Just a few answers left before I can set your targets.'}</p></div>
+    ${!t ? (() => { const miss = OB_QUESTIONS.filter(q => q.need && obVisible().includes(q) && obMissing(q)); return `<section class="card stack strategy">
+      <h2>A few answers are missing</h2>
+      <p>To set your calories and macros I need: ${miss.map(q => esc(q.short || q.title)).join(', ')}.</p>
+      <button class="btn primary" data-act="obfix">Add them now</button></section>`; })() : ''}
     ${t ? (() => {
       // The strategy shown always matches the numbers in use (the same ones Today shows):
       // the dietitian's only if it set its own targets, otherwise the device's.

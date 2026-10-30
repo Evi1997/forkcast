@@ -10,13 +10,19 @@ function obNext(skip){
   if (!S.ob || S.obDone) return;
   const list = obVisible(), q = list[Math.min(S.ob.q, list.length - 1)];
   if (!skip && obMissing(q)) { S.ob.tried = true; render(); return; }
-  if (skip && q.need) return;
   obSave(); document.activeElement?.blur?.();
   const next = obVisible();
-  if (S.ob.q < next.length - 1) { S.ob.q++; S.ob.tried = false; window.scrollTo(0, 0); render(); obFocus(); return; }
+  if (S.ob.q < next.length - 1) { S.ob.q++; S.ob.tried = false; S.ob.dir = 'next'; obAnimate(); window.scrollTo(0, 0); render(); obFocus(); return; }
   finishOnboarding();
 }
-function obBack(){ if (S.ob.q > 0) { obSave(); S.ob.q--; S.ob.tried = false; window.scrollTo(0, 0); render(); } }
+function obBack(){ if (S.ob.q > 0) { obSave(); S.ob.q--; S.ob.tried = false; S.ob.dir = 'back'; obAnimate(); window.scrollTo(0, 0); render(); } }
+// The card slides in only when the question changes, not on every tap.
+function obAnimate(){ S.ob.anim = true; setTimeout(() => { if (S.ob) S.ob.anim = false; }, 400); }
+// From the finish screen: back to the first required answer that's missing.
+function obFix(){
+  const list = obVisible(), k = list.findIndex(q => q.need && obMissing(q));
+  S.obDone = false; S.ob.q = Math.max(0, k); S.ob.dir = 'back'; obAnimate(); window.scrollTo(0, 0); render(); obFocus();
+}
 // Typing questions: put the cursor in the first box straight away.
 function obFocus(){ setTimeout(() => { const f = document.querySelector('.ob-qbody input[type=number], .ob-qbody input[type=text], .ob-qbody textarea'); if (f && !document.querySelector('.ob-answers')) f.focus(); }, 60); }
 
@@ -27,6 +33,7 @@ async function finishOnboarding(){
   S.obDone = true; S.ob.review = null; save.profile(); window.scrollTo(0, 0); render();
   if (!S.sampleOK) { S.ob.review = { error:'Sign in to get your dietitian\'s notes.' }; render(); return; }
   const t = targets();
+  if (!t) { S.ob.review = { error:'Add the missing answers and I\'ll review everything.' }; render(); return; }
   try {
     const r = await S.sample.json(PROMPTS.onboardingReview(S.profile.data, t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber, maintenance_kcal:t.tdee, strategy:t.strategy, why:t.why }), { modelTier:'default' });
     if (isObj(r?.assessment)) S.profile.assessment = { ...r.assessment, at:dkey() };
