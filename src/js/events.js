@@ -27,7 +27,13 @@ document.addEventListener('change', e => {
   }
 });
 document.addEventListener('submit', e => {
-  if (e.target.id === 'obForm') { e.preventDefault(); obNext(); return; }
+  if (e.target.id === 'obForm') {
+    // Return moves to the next box; the step only advances with Continue.
+    e.preventDefault();
+    const fields = [...e.target.querySelectorAll('input,textarea')], i = fields.indexOf(document.activeElement);
+    if (i >= 0 && fields[i + 1]) fields[i + 1].focus(); else document.activeElement?.blur();
+    return;
+  }
   if (e.target.id === 'moreForm') { e.preventDefault(); addToReview($('#moreText').value); return; }
   if (e.target.id === 'addItemForm') {
     e.preventDefault();
@@ -200,5 +206,9 @@ function syncKeyboard(){
   const open = !!vv && window.innerWidth <= 820 && vv.height < window.innerHeight * 0.78;
   document.body.classList.toggle('kb-open', open);
 }
-window.visualViewport?.addEventListener('resize', syncKeyboard);
+window.visualViewport?.addEventListener('resize', () => {
+  syncKeyboard();
+  const f = document.activeElement;
+  if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
+});
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));

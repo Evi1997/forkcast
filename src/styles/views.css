@@ -514,4 +514,10 @@ body.onboarding main{padding-bottom:24px}
 .strategy{display:flex;flex-direction:column;gap:6px;background:var(--accent-soft);box-shadow:none}
 .strategy h2{font-size:1.4rem}
 .strategy .facts{margin-top:6px;font-size:.88rem}
-.ob-back{width:36px;height:36px;border:0;background:var(--surface-2);border-radius:12px;display:grid;place-items:center;color:var(--ink);cursor:pointer;flex:none}.ob-back svg{width:20px;height:20px}
+.ob-back{display:inline-flex;align-items:center;gap:2px;border:0;background:none;padding:8px 6px 8px 0;font-weight:700;color:var(--ink);cursor:pointer;flex:none;min-height:44px}.ob-back svg{width:20px;height:20px}
+
+.ob-nav{display:flex;gap:10px}
+.ob-nav .big-btn{flex:1}
+.ob-prev{flex:none;padding:0 18px;border-radius:16px;font-size:1rem}
+/* While the keyboard is open, the Back/Continue bar stops floating so it can't cover the answers */
+body.kb-open .ob-actions{position:static;background:none;padding-top:4px}

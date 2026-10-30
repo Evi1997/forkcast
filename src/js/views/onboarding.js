@@ -75,7 +75,7 @@ function obMulti(path, label, opts){
 }
 function obNum(path, label, unit, step = 1){
   const id = 'ob-' + path.replace('.', '-'), v = obGet(path);
-  return `<div class="field"><label for="${id}">${label}</label><div class="unit-input sm"><input type="number" id="${id}" data-field="${path}" inputmode="${step < 1 ? 'decimal' : 'numeric'}" step="${step}" value="${v ?? ''}"><span>${unit}</span></div></div>`;
+  return `<div class="field"><label for="${id}">${label}</label><div class="unit-input sm"><input type="number" id="${id}" data-field="${path}" enterkeyhint="next" inputmode="${step < 1 ? 'decimal' : 'numeric'}" step="${step}" value="${v ?? ''}"><span>${unit}</span></div></div>`;
 }
 function obText(path, label, ph, area){
   const id = 'ob-' + path.replace('.', '-'), v = esc(obGet(path) ?? '');
@@ -94,7 +94,7 @@ function vOnboarding(){
   const missing = st.need && S.ob.tried ? obMissing() : [];
   return `<div class="onboard">
     <header class="ob-top">
-      ${i > 0 ? `<button class="ob-back" data-act="obback" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>` : '<span style="width:36px"></span>'}
+      ${i > 0 ? `<button class="ob-back" data-act="obback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Back</button>` : ''}
       <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
       <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
     </header>
@@ -102,7 +102,10 @@ function vOnboarding(){
     <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
     ${missing.length ? `<div class="notice warn">To continue, please answer: ${missing.join(', ')}.</div>` : ''}
     <div class="ob-actions">
-      <button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button>
+      <div class="ob-nav">
+        ${i > 0 ? `<button class="btn ob-prev" data-act="obback" aria-label="Back to the previous step">‹ Back</button>` : ''}
+        <button class="btn primary big-btn" data-act="obnext">${last ? 'Finish' : 'Continue'}</button>
+      </div>
       ${!st.need ? `<button class="btn ghost" data-act="obskip">${last ? 'Skip and finish' : 'Skip this step'}</button>` : ''}
     </div>
   </div>`;
