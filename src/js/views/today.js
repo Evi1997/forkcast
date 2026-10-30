@@ -26,7 +26,6 @@ function vToday(){
       </div>
     </section>
   ${mealsSection(t)}
-  ${isToday ? focusCard() : ''}
   ${S.sheet ? logSheet() : ''}
 `;
 }
