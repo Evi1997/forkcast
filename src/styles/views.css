@@ -595,3 +595,36 @@ body.kb-open .ob-actions{display:none}
 .newchat-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;background:var(--surface-2);color:var(--ink);font-weight:700;font-size:.85rem;padding:9px 12px;cursor:pointer;flex:none;min-height:40px}
 .newchat-btn svg{width:16px;height:16px}
 .wrapup{display:flex;justify-content:center;padding:0 16px 8px}
+
+/* Solid strip behind the iPhone status bar so content never scrolls under the clock */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:60;pointer-events:none}
+
+/* Onboarding: question heading inside its card; header (Back / progress / Skip) stays visible */
+.q-head{display:flex;flex-direction:column;gap:2px;font-size:1.02rem;font-weight:700;margin-bottom:12px}
+.q-head .hint{font-size:.8rem;font-weight:500;color:var(--muted)}
+.q-head .opt-tag{font-size:.8rem;font-weight:500;color:var(--muted)}
+.ob-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);margin:-8px -4px 0;padding:8px 4px}
+body.onboarding main{padding-top:8px;padding-bottom:0}
+.onboard{padding-bottom:calc(84px + max(12px,env(safe-area-inset-bottom,0px)))}
+
+/* Today: one compact header row (title + days logged), so the meals fit on screen */
+.today-head{align-items:center;gap:10px}
+.today-head h1{font-size:clamp(1.7rem,6vw,2.1rem)}
+@media (max-width:820px){.view{gap:16px}}
+/* Shorter phones (iPhone SE/mini): tighter meal rows */
+@media (max-width:820px) and (max-height:760px){
+  .balance{padding:14px 16px;gap:12px}
+  .bal-num{font-size:2.2rem}
+  .meal-row{padding:4px 0}
+  .meal-main .meal-ic{width:40px;height:40px;border-radius:13px}
+  .addbtn{width:40px;height:40px}
+}
+.meals{padding-top:10px;padding-bottom:10px}
+@media (max-width:820px) and (max-height:700px){
+  .view{gap:12px}
+  main{padding-top:12px}
+  .streak{padding:8px 10px 8px 12px}
+  .mac-row{gap:8px}
+  .meal-row{padding:2px 0}
+  .meal-main{padding:4px 0}
+}

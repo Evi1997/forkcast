@@ -7,7 +7,7 @@ function vToday(){
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head"><div><div class="label">${fromKey(day).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}</div><h1>${isToday ? (eaten.kcal ? 'Today\'s fuel' : 'What\'s on the plate today?') : fromKey(day).toLocaleDateString(undefined,{weekday:'long'}) + '\'s food'}</h1></div>
+  <div class="head today-head"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>
   ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
@@ -45,7 +45,6 @@ const mealIcon = s => `<span class="meal-ic" style="--c:${MEAL_COLOR[s]}"><svg v
 function mealsSection(t){
   const items = S.logs[vday()]?.items || [];
   return `<section class="card meals" aria-label="Meals">
-    <h2>Meals</h2>
     ${SLOTS.map(s => {
       const its = items.filter(i => i.slot === s), k = sumItems(its).kcal, open = S.openMeal === s;
       const sub = its.length ? `${k} kcal · ${its.length} item${its.length > 1 ? 's' : ''}` : t ? `Suggested ~${Math.round(t.kcal * MEAL_SHARE[s] / 10) * 10} kcal` : 'Nothing yet';

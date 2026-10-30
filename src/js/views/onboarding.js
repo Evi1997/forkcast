@@ -104,13 +104,15 @@ const obLabel = (path, label) => `<span class="q-title">${label}${obNeeded(path)
 function obChips(path, label, opts, stacked){
   const cur = String(obGet(path) ?? '');
   stacked = stacked || opts.some(([, l]) => l.length > 20);
-  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}</legend><div class="ob-chips${stacked ? ' stacked' : ''}" role="radiogroup">${opts.map(([v, l]) => `<button type="button" class="chip" role="radio" data-ob="${path}" data-v="${esc(v)}" aria-checked="${cur === String(v)}" aria-pressed="${cur === String(v)}">${esc(l)}${stacked ? '<i class="radio" aria-hidden="true"></i>' : ''}</button>`).join('')}</div></fieldset>`;
+  const hid = 'q-' + path.replace('.', '-');
+  return `<div class="ob-q" role="group" aria-labelledby="${hid}"><div class="q-head" id="${hid}">${obLabel(path, label)}</div><div class="ob-chips${stacked ? ' stacked' : ''}" role="radiogroup" aria-labelledby="${hid}">${opts.map(([v, l]) => `<button type="button" class="chip" role="radio" data-ob="${path}" data-v="${esc(v)}" aria-checked="${cur === String(v)}" aria-pressed="${cur === String(v)}">${esc(l)}${stacked ? '<i class="radio" aria-hidden="true"></i>' : ''}</button>`).join('')}</div></div>`;
 }
 // Multi-select; picking "Other" opens a text box for it.
 function obMulti(path, label, opts){
   const cur = String(obGet(path) || '').split(', ').filter(Boolean);
-  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}<span class="hint">Pick all that apply</span></legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
-    ${cur.includes('Other') ? `<input type="text" class="other-input" id="ob-${path.replace('.', '-')}-other" data-field="${path}_other" value="${esc(obGet(path + '_other') ?? '')}" placeholder="Type it here" aria-label="${esc(label)}: other">` : ''}</fieldset>`;
+  const hid = 'q-' + path.replace('.', '-');
+  return `<div class="ob-q" role="group" aria-labelledby="${hid}"><div class="q-head" id="${hid}">${obLabel(path, label)}<span class="hint">Pick all that apply</span></div><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
+    ${cur.includes('Other') ? `<input type="text" class="other-input" id="ob-${path.replace('.', '-')}-other" data-field="${path}_other" value="${esc(obGet(path + '_other') ?? '')}" placeholder="Type it here" aria-label="${esc(label)}: other">` : ''}</div>`;
 }
 function obNum(path, label, unit, step = 1){
   const id = 'ob-' + path.replace('.', '-'), v = obGet(path);
