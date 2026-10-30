@@ -32,7 +32,7 @@ document.addEventListener('submit', e => {
     // Return moves to the next box; the step only advances with Continue.
     e.preventDefault();
     const fields = [...e.target.querySelectorAll('input,textarea')], i = fields.indexOf(document.activeElement);
-    if (i >= 0 && fields[i + 1]) fields[i + 1].focus(); else document.activeElement?.blur();
+    if (i >= 0 && fields[i + 1]) fields[i + 1].focus(); else obNext();
     return;
   }
   if (e.target.id === 'moreForm') { e.preventDefault(); addToReview($('#moreText').value); return; }
@@ -87,10 +87,15 @@ document.addEventListener('click', e => {
   else if (a === 'startob') startOnboarding();
   else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
   else if (a === 'obnext') obNext();
-  else if (a === 'obskip') { if (S.ob.step < OB_STEPS.length - 1) { obSave(); S.ob.step++; window.scrollTo(0, 0); render(); } else finishOnboarding(); }
+  else if (a === 'obskip') obNext(true);
+  else if (a === 'obfinish') finishOnboarding();
   else if (a === 'obback') obBack();
   else if (a === 'obclose') closeOnboarding();
-  else if (el.dataset.ob) { obSet(el.dataset.ob, el.dataset.v); render(); }
+  else if (el.dataset.ob) {
+    // Single-choice answers move straight on (lesson-style); a short pause shows the tick.
+    obSet(el.dataset.ob, el.dataset.v); render();
+    if (el.dataset.auto) { const at = S.ob.q; setTimeout(() => { if (S.ob && S.ob.q === at) obNext(); }, 260); }
+  }
   else if (el.dataset.obm) {
     // Multi-choice: "None" clears the others, picking anything clears "None".
     const path = el.dataset.obm, v = el.dataset.v; let cur = String(obGet(path) || '').split(', ').filter(Boolean);

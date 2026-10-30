@@ -1,18 +1,24 @@
 // Onboarding flow: open, move between steps, save, finish, and the one AI review.
 function startOnboarding(edit){
-  S.ob = { step:0, data: JSON.parse(JSON.stringify(S.profile.data || {})), edit: !!edit };
+  S.ob = { q:0, data: JSON.parse(JSON.stringify(S.profile.data || {})), edit: !!edit };
   const b = S.ob.data.basics; if (b?.goal === 'recomposition') { b.goal = 'toned'; b.toned_focus = b.toned_focus || 'both'; } // older answer
   S.obDone = false; window.scrollTo(0, 0); render();
 }
 function obSave(){ S.profile.data = JSON.parse(JSON.stringify(S.ob.data)); save.profile(); }
+// Next question (skipping ones that don't apply); the last one finishes.
 function obNext(skip){
-  const st = OB_STEPS[S.ob.step];
-  if (st.need && obMissing().length) { S.ob.tried = true; render(); return; }
-  obSave();
-  if (S.ob.step < OB_STEPS.length - 1) { S.ob.step++; S.ob.tried = false; window.scrollTo(0, 0); render(); return; }
+  if (!S.ob || S.obDone) return;
+  const list = obVisible(), q = list[Math.min(S.ob.q, list.length - 1)];
+  if (!skip && obMissing(q)) { S.ob.tried = true; render(); return; }
+  if (skip && q.need) return;
+  obSave(); document.activeElement?.blur?.();
+  const next = obVisible();
+  if (S.ob.q < next.length - 1) { S.ob.q++; S.ob.tried = false; window.scrollTo(0, 0); render(); obFocus(); return; }
   finishOnboarding();
 }
-function obBack(){ if (S.ob.step > 0) { obSave(); S.ob.step--; window.scrollTo(0, 0); render(); } }
+function obBack(){ if (S.ob.q > 0) { obSave(); S.ob.q--; S.ob.tried = false; window.scrollTo(0, 0); render(); } }
+// Typing questions: put the cursor in the first box straight away.
+function obFocus(){ setTimeout(() => { const f = document.querySelector('.ob-qbody input[type=number], .ob-qbody input[type=text], .ob-qbody textarea'); if (f && !document.querySelector('.ob-answers')) f.focus(); }, 60); }
 
 async function finishOnboarding(){
   obSave();

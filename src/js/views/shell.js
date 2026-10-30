@@ -17,6 +17,7 @@ function render(){
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
   document.body.classList.toggle('on-coach', S.view === 'coach');
+  document.body.classList.toggle('on-today', S.view === 'today');
   if (S.view === 'plan') keepDayInView();
   if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view !== 'shop' && S.storeSheet) { S.storeSheet = null; document.body.classList.remove('sheet-open'); }
