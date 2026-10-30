@@ -689,6 +689,43 @@ body.kb-open .ob-actions{position:static;background:none;padding-top:4px}
 .onboard{padding-bottom:96px}
 .ob-actions{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:600px;padding:12px max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,var(--bg) 22%)}
 body.kb-open .ob-actions{display:none}
+
+/* Onboarding v2: clear topic header, one card per question, calmer spacing */
+.onboard{gap:22px}
+.ob-top{min-height:44px}
+.ob-segs{flex:1;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+.ob-segs i{height:5px;border-radius:99px;background:var(--surface-2)}
+.ob-segs i.done{background:var(--accent)}
+.ob-segs i.now{background:color-mix(in srgb,var(--accent) 45%,var(--surface-2))}
+.ob-topic{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:6px 2px 4px}
+.ob-ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);margin-bottom:10px}
+.ob-ic svg{width:26px;height:26px}
+.ob-step{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.ob-topic h1{font-size:clamp(1.8rem,7vw,2.3rem);line-height:1.1}
+.ob-topic p{font-size:1rem;max-width:40ch}
+.ob-body{gap:14px}
+.ob-body > .ob-q,.ob-body > .field,.ob-body > .fields{background:var(--surface);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+.ob-body > .fields{gap:12px}
+.ob-q{gap:12px}
+.ob-q legend{display:flex;flex-direction:column;gap:2px;font-size:1.02rem;font-weight:700;margin-bottom:12px;float:left;width:100%}
+.ob-q legend + *{clear:both}
+.ob-q legend .hint{font-size:.8rem;font-weight:500;color:var(--muted)}
+.ob-q legend .opt-tag,.field label .opt-tag{font-size:.8rem;font-weight:500;color:var(--muted)}
+.ob-body .field > label{font-size:1.02rem;font-weight:700;color:var(--ink);margin-bottom:10px}
+.ob-body .fields .field > label{font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.ob-chips{gap:10px}
+.ob-chips .chip{padding:11px 16px;font-size:.95rem;font-weight:600;border-color:var(--line);background:var(--surface)}
+.ob-chips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* Long single-choice answers: full-width rows with a radio mark */
+.ob-chips.stacked{gap:8px}
+.ob-chips.stacked .chip{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:16px;padding:14px 16px;background:var(--surface-2);border-color:transparent;color:var(--ink);text-align:left}
+.ob-chips.stacked .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:none;background:var(--surface)}
+.chip[aria-pressed="true"] .radio{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,var(--surface) 50%)}
+.ob-body textarea,.ob-body input[type=text]{background:var(--surface-2)}
+.newchat-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;background:var(--surface-2);color:var(--ink);font-weight:700;font-size:.85rem;padding:9px 12px;cursor:pointer;flex:none;min-height:40px}
+.newchat-btn svg{width:16px;height:16px}
+.wrapup{display:flex;justify-content:center;padding:0 16px 8px}
 </style>
 </head>
 <body>
@@ -740,7 +777,7 @@ HOW YOU WORK
 - Never give a generic diet before understanding the person. Run the first consultation conversationally, 1-3 questions per message, roughly in this order: basics (age, sex, height, weight, goal weight, main goal, daily activity) -> health screening (pregnancy/breastfeeding, diabetes, kidney, liver, heart, GI, thyroid, allergies, intolerances, medications affecting appetite/blood sugar/weight, eating-disorder history or concerns, recent unexplained weight loss) -> lifestyle (job, steps, training type/frequency, sleep, stress, schedule, meal times, travel) -> current eating (ask "What did a normal day of eating look like for you recently?", drinks, coffee, alcohol, takeout, weekends) -> weak points (ALWAYS ask what they see as their weak point or why they think they aren't losing weight / reaching their goal, e.g. weekends, evening snacking, eating out, stress, alcohol; then dig in: when it happens, triggers, what a typical occasion looks like) -> food preferences (ask SEPARATELY what they genuinely enjoy and what they never want; dietary pattern; cuisines) -> cooking & meal prep (skill, appliances, max weekday minutes, leftovers OK, repeats OK, people cooked for; offer A cook fresh / B prep twice a week / C prep once a week / D very low cooking) -> shopping (country, city, supermarket, weekly budget, priority: cheapest/convenience/organic/premium/balance).
 - WEAK POINT FOCUS: once you know the person's weak point, make it a focus area. Give 3-5 specific, practical tips and tricks for that exact situation (e.g. weekends: plan one meal out, prep a Sunday brunch, protein-forward weekend breakfasts, alcohol swaps) and return them in "focus". Weave it into advice, plans and check-ins; ask at each check-in how the weak point went and update the focus if a new one appears.
 - Don't re-ask what the profile already holds unless it may have changed. After onboarding, behave like a follow-up appointment.
-- ALWAYS end your reply with exactly one clear question that moves things forward.
+- Ask a question only when you genuinely need information to help. When the person's question is answered or they're wrapping up, close warmly without a question.
 - When the basics are known, explain the estimated targets briefly: Mifflin-St Jeor BMR -> activity TDEE -> goal. Moderate deficit for fat loss (about 10-20%, max ~500 kcal), modest surplus (~200-300 kcal) for muscle gain, ~TDEE for maintenance. Protein from body weight, activity, age and goal (healthy adults ~1.2-2.2 g/kg). Fiber ~14 g per 1000 kcal. Call these estimates, not measurements.
 - Keep meals the person already eats where possible; small improvements beat overhauls. 80/20 flexibility: dessert, pizza, restaurants and social events can fit. Never call foods good, bad, clean or cheat. Never criticise what someone ate; give neutral, practical feedback (e.g. "you have ~450 kcal left, room for dinner and a small dessert").
 - SAFETY: never encourage starvation, purging, extreme fasting, crash diets, unsafe supplements or very-low-calorie diets. No calorie-deficit plan for anyone under 18 without professional supervision. For pregnancy, diabetes, kidney or liver disease, eating-disorder concerns, rapid unexplained weight change or similar: say you can help organise general nutrition but changes should be coordinated with their healthcare professional, and set medical_flag. No high-protein targets with kidney disease. When uncertain, label KNOWN / ESTIMATED / NEEDS MEDICAL REVIEW.
@@ -761,7 +798,7 @@ const GOAL_FIRST = `GOAL FIRST (takes precedence over any weight-loss assumption
 
 // Short brief for everyday chat after onboarding (faster: less to read each time).
 const COACH_FOLLOWUP = `You are the dietitian inside "Forkcast": evidence-based, warm, practical, concise. The person's full profile, targets and today's food are in APP STATE; don't re-ask what's there.
-- Answer in max ~90 words, plain words, in the person's language; end with one short question.
+- Answer in max ~90 words, plain words, in the person's language. Ask a question only when you genuinely need information to help. When the person's question is answered or they're wrapping up, close warmly without a question.
 - Keep foods they enjoy; 80/20 flexibility; never call foods good/bad/clean/cheat; never criticise what they ate.
 - Use their weak-point focus when relevant. For check-ins, look at trends; if adherence was low, adjust the plan before cutting calories.
 - If they say what they ate, put it in log_items with honest estimates.
@@ -770,9 +807,9 @@ ${GOAL_FIRST}`;
 
 // Streamed chat: the reply comes first as plain text (shown while it's written),
 // then the app data after a marker line.
-const COACH_STREAM_FORMAT = `First write your reply to the person: plain text, max ~90 words, **bold** and "- " bullets allowed, ending with one short question.
+const COACH_STREAM_FORMAT = `First write your reply to the person: plain text, max ~90 words, **bold** and "- " bullets allowed. Only end with a question if you really need an answer.
 Then, on a new line, write exactly @@DATA@@ followed by ONE JSON object (no other text after it):
-{"quick_replies": up to 4 short tap-able answers to your question,
+{"quick_replies": [] unless your reply ends with a question; then up to 4 short tap-able answers to it,
  "profile_patch": only new or changed facts, using sections basics{age,sex,height_cm,weight_kg,goal_weight_kg,waist_cm,goal,activity}, health{conditions,allergies,medications,notes}, lifestyle{job,training,sleep,stress,schedule}, current_diet{typical_day,alcohol,takeout,weekends}, obstacles{weak_point,triggers}, preferences{likes,dislikes,pattern,cuisines}, cooking{level,appliances,max_weekday_minutes,people,prep_style}, shopping{country,city,supermarkets,budget,priority}; {} if nothing new,
  "targets": null or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} only when you deliberately change targets,
  "log_items": [] or [{"name":s,"amount":s,"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n,"slot":"Breakfast"|"Lunch"|"Snack"|"Dinner"}],
@@ -780,8 +817,8 @@ Then, on a new line, write exactly @@DATA@@ followed by ONE JSON object (no othe
  "medical_flag": null or one line}`;
 
 const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
-{"reply": string (max ~140 words; **bold** and "- " bullet lines allowed; must end with one question),
- "quick_replies": array of up to 4 short tap-able answers to your question (strings, may be empty),
+{"reply": string (max ~140 words; **bold** and "- " bullet lines allowed; a question only if you need one),
+ "quick_replies": [] unless the reply ends with a question; then up to 4 short tap-able answers,
  "profile_patch": object holding ONLY new or changed facts, using these sections and keys:
    basics{age:number, sex:"female"|"male", height_cm:number, weight_kg:number, goal_weight_kg:number, waist_cm:number, goal:"fat loss"|"muscle gain"|"recomposition"|"maintenance"|"performance"|"healthier eating"|"digestive comfort"|"other", activity:"sedentary"|"light"|"moderate"|"very"|"extra"},
    health{conditions, allergies, intolerances, medications, notes}, lifestyle{job, steps, training, sleep, stress, schedule, meal_times},
@@ -794,7 +831,7 @@ const COACH_FORMAT = `Reply with ONLY one JSON object, no other text:
  "onboarding_complete": true once all eight consultation areas are covered, else false,
  "medical_flag": null or a one-line note when something NEEDS MEDICAL REVIEW}`;
 
-const greeting = () => `Hi, I'm ${coachName()}, your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
+const greeting = () => S.profile.onboarded ? `Hi, I'm ${coachName()}. What can I help you with?` : `Hi, I'm ${coachName()}, your dietitian here in Forkcast. Before I suggest a single meal I want to understand you: your body and goal, your health, your routine, what you love eating and how much you actually want to cook. Think of it as a first appointment, a few questions at a time.
 
 Let's start simple: **how old are you, and what's your height and current weight?**`;
 
@@ -819,13 +856,13 @@ Reply with ONLY one JSON object:
    "goal": "their actual goal in a few words",
    "context": "one sentence: relevant body-composition and health context (no BMI judgements in isolation)",
    "maintenance_kcal": n (estimate),
-   "strategy": "deficit" | "maintenance" | "recomposition" | "surplus",
+   "strategy": "deficit" | "maintenance" | "recomposition" | "recomp_cut" (small deficit + strength training) | "surplus",
    "reasoning": "one or two sentences: why this strategy fits; if a deficit is NOT appropriate, say why",
    "training": "one sentence on training and recovery",
    "monitoring": "one sentence: what to watch over the next 2-4 weeks"},
- "targets": null, or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} ONLY if the device targets don't fit this person,
- "summary": "warm welcome in the person's language, max 90 words: what you understood, the 1-2 most useful first steps, and ONE question at the end. **bold** and '- ' bullets allowed",
- "quick_replies": up to 3 short answers to your question,
+ "targets": null, or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} ONLY if the device targets don't fit this person. If you keep the device targets, your strategy must be the device strategy,
+ "summary": "warm welcome in the person's language, max 90 words: what you understood, the 1-2 most useful first steps. A question at the end only if it's genuinely useful. **bold** and '- ' bullets allowed",
+ "quick_replies": [] unless the summary ends with a question; then up to 3 short answers,
  "focus": {"weak_point": short name, "why": one sentence, "tips": 3-4 short concrete tips},
  "medical_flag": null or one line when something needs medical review}`;
   },
@@ -941,6 +978,7 @@ const Store = {
     return data ? data.data : null;
   },
   save(k, v){
+    if (v && typeof v === 'object') v._at = Date.now(); // newest copy wins when syncing
     try { localStorage.setItem(this.key(k), JSON.stringify(v)); } catch {}
     if (!this.sb || !this.uid) return;
     this.pending[k] = v; this.flush(k);
@@ -1010,17 +1048,20 @@ async function syncRemote(){
   const keys = ['profile','chat','plan','progress','log-' + today];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
   if (uid !== Store.uid) return; // signed out meanwhile
+  // Whichever copy was saved last wins, as a whole: merging would let an older
+  // copy bring back values that were deliberately cleared (e.g. old targets).
+  const current = { profile:S.profile, chat:S.chat, plan:S.plan, progress:S.progress, ['log-' + today]:S.logs[today] };
   vals.forEach((v, i) => {
-    const k = keys[i];
-    if (v) {
-      if (k === 'profile') S.profile = merge(S.profile, v);
+    const k = keys[i], local = current[k];
+    const localAt = local?._at || 0, remoteAt = v?._at || 0;
+    if (v && (remoteAt >= localAt || !localAt)) {
+      if (k === 'profile') S.profile = { data:{}, targets:null, targetsSource:null, quick:[], onboarded:false, onboardedAt:null, flags:[], ...v };
       else if (k === 'chat') S.chat = v;
       else if (k === 'plan') S.plan = v;
-      else if (k === 'progress') S.progress = merge({weighins:[],checkins:[]}, v);
-      else S.logs[dkey()] = v;
-    } else {
-      const local = Store.local(k);
-      if (local) Store.save(k, local);
+      else if (k === 'progress') S.progress = { weighins:[], checkins:[], ...v };
+      else S.logs[today] = v;
+    } else if (local && localAt) {
+      Store.save(k, local); // this device has the newer copy: send it up
     }
   });
   S.synced = true;
@@ -1037,6 +1078,7 @@ const ACT = { sedentary:1.2, light:1.375, moderate:1.55, very:1.725, extra:1.9 }
 const STRATEGY = {
   deficit:        { label:'Fat loss',        short:'a modest deficit' },
   recomposition:  { label:'Recomposition',   short:'maintenance calories with strength training' },
+  recomp_cut:     { label:'Recomposition with a small deficit', short:'a small deficit with high protein and strength training' },
   surplus:        { label:'Muscle gain',     short:'a small surplus' },
   maintenance:    { label:'Maintenance',     short:'maintenance calories' }
 };
@@ -1051,7 +1093,13 @@ function chooseStrategy(d, bmi){
     if (+b.age < 18 || redFlags || lean) return { key:'maintenance', why: +b.age < 18 ? 'under 18: no calorie deficit' : redFlags ? 'a health answer needs review before any deficit' : 'you\'re already lean, so a deficit isn\'t advised' };
     return { key:'deficit', why:'fat loss is your goal' };
   }
-  if (goal === 'toned' || goal.includes('recomp')) return { key:'recomposition', why:'definition comes mostly from building muscle, not eating less' };
+  // "Both": lose fat and build muscle. A small deficit with high protein and
+  // strength training does both, unless you're already lean or there are warning signs.
+  if ((goal === 'toned' && toned === 'both') || goal.includes('recomp')) {
+    if (+b.age < 18 || redFlags || lean) return { key:'recomposition', why: lean ? 'you\'re already lean, so building muscle at maintenance fits better than eating less' : 'a health answer needs review before any deficit' };
+    return { key:'recomp_cut', why:'you want to lose some fat and build muscle at the same time' };
+  }
+  if (goal === 'toned') return { key:'recomposition', why:'definition comes mostly from building muscle, not eating less' };
   if (goal.includes('gain')) return { key: redFlags ? 'maintenance' : 'surplus', why:'muscle grows best with enough energy' };
   return { key:'maintenance', why:'your goal doesn\'t need a deficit' };
 }
@@ -1075,10 +1123,11 @@ function calcTargets(d){
   const strat = chooseStrategy(d, bmi), goal = String(b.goal || '');
   let kcal = tdee;
   if (strat.key === 'deficit') kcal = Math.max(tdee - 500, tdee * 0.85, bmr * 1.1);
+  if (strat.key === 'recomp_cut') kcal = Math.max(tdee - 300, tdee * 0.9, bmr * 1.1);
   if (strat.key === 'surplus') kcal = tdee + Math.min(300, Math.max(150, tdee * 0.08));
   const kidney = /kidney|renal|ckd/i.test(JSON.stringify(d.health || {}));
   // Protein within ~1.4–2.0 g/kg for active adults; lower with kidney disease.
-  const perKg = kidney ? 0.8 : ['deficit','recomposition','surplus'].includes(strat.key) ? 1.8 : goal.includes('perform') ? 1.6 : 1.4;
+  const perKg = kidney ? 0.8 : strat.key === 'recomp_cut' ? 2.0 : ['deficit','recomposition','surplus'].includes(strat.key) ? 1.8 : goal.includes('perform') ? 1.6 : 1.4;
   const refW = bmi > 30 ? (+b.goal_weight_kg || 25 * (h/100) ** 2) : w;
   kcal = Math.round(kcal / 10) * 10;
   const protein = Math.round(perKg * refW);
@@ -1530,7 +1579,7 @@ function obBack(){ if (S.ob.step > 0) { obSave(); S.ob.step--; window.scrollTo(0
 async function finishOnboarding(){
   obSave();
   if (!S.profile.onboarded) { S.profile.onboarded = true; S.profile.onboardedAt = dkey(); }
-  S.profile.targets = null;            // use the fresh on-device estimate until the review says otherwise
+  S.profile.targets = null; S.profile.targetsSource = null; // fresh on-device estimate until the review says otherwise
   S.obDone = true; S.ob.review = null; save.profile(); window.scrollTo(0, 0); render();
   if (!S.sampleOK) { S.ob.review = { error:'Sign in to get your dietitian\'s notes.' }; render(); return; }
   const t = targets();
@@ -1786,7 +1835,7 @@ function vCoach(){
       <header class="chat-head">
         <span class="ai-avatar" aria-hidden="true">${STAR}</span>
         <div class="chat-title"><b>${esc(coachName())}</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
-        <button class="iconbtn2" data-act="newchat" aria-label="New conversation" title="New conversation"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>
+        <button class="newchat-btn" data-act="newchat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
         <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
       </header>
       ${!S.profile.onboarded ? `<div class="consult-bar" aria-hidden="true"><span style="width:${Math.max(4, done / SECTIONS.length * 100)}%"></span></div>` : ''}
@@ -1797,6 +1846,7 @@ function vCoach(){
           aiRow(`${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's meals</div>` : ''}`)).join('')}
         ${S.busy.chat ? (S.chat.live ? `<div class="msg-row"><span class="ai-dot" aria-hidden="true">${STAR}</span><div class="msg ai" id="liveMsg">${md(S.chat.live)}</div></div>` : aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`)) : ''}
       </div>
+      ${!S.busy.chat && last.role === 'assistant' && !last.quick?.length && !last.fresh && all.length > 2 ? `<div class="wrapup"><button class="btn ghost small" data-act="newchat">Start a new chat</button></div>` : ''}
       ${!S.busy.chat && last.role === 'assistant' && last.quick?.length ? `<div class="quick">${last.quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
       ${S.err.chat ? `<div class="notice warn chat-err">${esc(S.err.chat)}</div>` : ''}
       <div class="chatbar">
@@ -2116,7 +2166,7 @@ const OB_STEPS = [
   // Goal first: nothing is calculated until we know what you actually want.
   { key:'basics', title:'What\'s your main goal?', sub:'With food and training. This decides your whole plan.', need:['basics.goal'], body: () => `
     ${obChips('basics.goal', 'Pick one', [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']], true)}
-    ${obGet('basics.goal') === 'toned' ? obChips('basics.toned_focus', '“Toned” can mean different things. What matters most?', [['muscle','Building muscle'],['fat','Losing some body fat'],['both','Both / not sure']]) : ''}
+    ${obGet('basics.goal') === 'toned' ? obChips('basics.toned_focus', '“Toned” can mean different things. What matters most?', [['muscle','Mainly build muscle'],['fat','Mainly lose body fat'],['both','Both: lose fat and build muscle']]) : ''}
     ${['muscle gain','toned'].includes(obGet('basics.goal')) ? obMulti('basics.muscle_areas', 'Which areas?', ['Glutes','Legs','Shoulders','Arms','Back','Core','Whole body']) : ''}
     ${obGet('basics.goal') === 'other' ? obText('basics.goal_other', 'Tell us your goal', 'e.g. more energy for a marathon') : ''}` },
   { key:'basics', title:'About you', sub:'Used to estimate your energy needs.', need:['basics.sex','basics.age','basics.height_cm','basics.weight_kg'], body: () => `
@@ -2175,6 +2225,19 @@ const OB_STEPS = [
     ${obMulti('shopping.priority', 'What matters most?', ['Price','Convenience','Organic','Quality','Less waste'])}`; } }
 ];
 
+const OB_ICONS = [
+  STAR,
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><circle cx="12" cy="13" r="3"/><path d="M3 4v6M21 4v16"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h12l-2 4 2 4H4"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13c0-5 3-9 6-9s6 4 6 9a6 6 0 0 1-12 0z"/><path d="M12 4v5"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z"/><path d="M2 10h20M9 6c0-1 1-2 3-2s3 1 3 2"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>'
+];
+
 // Supermarket chips for the country typed in the step above, and its currency.
 function storesFor(country){
   const c = String(country || '').toLowerCase().trim();
@@ -2193,15 +2256,16 @@ function obNeeded(path){
   const need = OB_STEPS[S.ob.step]?.need || [];
   return need.includes(path) || (path === 'basics.toned_focus' && obGet('basics.goal') === 'toned');
 }
-const obLabel = (path, label) => obNeeded(path) ? label : `${label} <span class="opt-tag">(optional)</span>`;
+const obLabel = (path, label) => `<span class="q-title">${label}${obNeeded(path) ? '' : ' <span class="opt-tag">(optional)</span>'}</span>`;
 function obChips(path, label, opts, stacked){
   const cur = String(obGet(path) ?? '');
-  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}</legend><div class="ob-chips${stacked ? ' stacked' : ''}">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
+  stacked = stacked || opts.some(([, l]) => l.length > 20);
+  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}</legend><div class="ob-chips${stacked ? ' stacked' : ''}" role="radiogroup">${opts.map(([v, l]) => `<button type="button" class="chip" role="radio" data-ob="${path}" data-v="${esc(v)}" aria-checked="${cur === String(v)}" aria-pressed="${cur === String(v)}">${esc(l)}${stacked ? '<i class="radio" aria-hidden="true"></i>' : ''}</button>`).join('')}</div></fieldset>`;
 }
 // Multi-select; picking "Other" opens a text box for it.
 function obMulti(path, label, opts){
   const cur = String(obGet(path) || '').split(', ').filter(Boolean);
-  return `<fieldset class="ob-q"><legend>${obLabel(path, label)} <span class="hint">· pick all that apply</span></legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
+  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}<span class="hint">Pick all that apply</span></legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
     ${cur.includes('Other') ? `<input type="text" class="other-input" id="ob-${path.replace('.', '-')}-other" data-field="${path}_other" value="${esc(obGet(path + '_other') ?? '')}" placeholder="Type it here" aria-label="${esc(label)}: other">` : ''}</fieldset>`;
 }
 function obNum(path, label, unit, step = 1){
@@ -2226,11 +2290,15 @@ function vOnboarding(){
   return `<div class="onboard">
     <header class="ob-top">
       ${i > 0 ? `<button class="ob-back" data-act="obback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Back</button>` : ''}
-      <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
-      <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
+      <div class="ob-segs" role="progressbar" aria-valuemin="1" aria-valuemax="${OB_STEPS.length}" aria-valuenow="${i + 1}" aria-label="Step ${i + 1} of ${OB_STEPS.length}">${OB_STEPS.map((_, k) => `<i class="${k < i ? 'done' : k === i ? 'now' : ''}"></i>`).join('')}</div>
       ${!st.need ? `<button class="ob-skip" data-act="obskip">${last ? 'Skip & finish' : 'Skip'}</button>` : ''}
     </header>
-    <div class="ob-head"><h1>${st.title}</h1><p class="muted">${st.sub}</p></div>
+    <div class="ob-topic">
+      <span class="ob-ic" aria-hidden="true">${OB_ICONS[i] || STAR}</span>
+      <span class="ob-step">Step ${i + 1} of ${OB_STEPS.length}</span>
+      <h1>${st.title}</h1>
+      <p class="muted">${st.sub}</p>
+    </div>
     <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
     ${missing.length ? `<div class="notice warn">To continue, please answer: ${missing.join(', ')}.</div>` : ''}
     <div class="ob-actions">
@@ -2248,12 +2316,17 @@ function vObDone(){
   const t = targets(), r = S.ob.review;
   return `<div class="onboard">
     <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>You're all set</h1><p class="muted">Your starting plan. Every number is an estimate; we'll check it over the next 2–4 weeks.</p></div>
-    ${t ? (() => { const a = r?.assessment, key = a?.strategy && STRATEGY[a.strategy] ? a.strategy : t.strategy, st = STRATEGY[key] || STRATEGY.maintenance;
+    ${t ? (() => {
+      // The strategy shown always matches the numbers in use (the same ones Today shows):
+      // the dietitian's only if it set its own targets, otherwise the device's.
+      const ra = r?.assessment, coachSet = S.profile.targetsSource === 'coach' && S.profile.targets;
+      const key = coachSet && ra?.strategy && STRATEGY[ra.strategy] ? ra.strategy : t.strategy;
+      const a = ra && ra.strategy === key ? ra : (ra ? { training:ra.training, monitoring:ra.monitoring } : null), st = STRATEGY[key] || STRATEGY.maintenance;
       return `<section class="card strategy">
         <span class="label">Your strategy</span>
         <h2>${st.label}</h2>
         <p>${esc(a?.reasoning || (st.short[0].toUpperCase() + st.short.slice(1) + ', because ' + t.why + '.'))}</p>
-        <dl class="facts"><dt>Maintenance</dt><dd>≈ ${(a?.maintenance_kcal ? r0(a.maintenance_kcal) : t.tdee).toLocaleString()} kcal <span class="muted">(estimate)</span></dd>
+        <dl class="facts"><dt>Maintenance</dt><dd>≈ ${(calcTargets(S.profile.data)?.tdee || t.tdee).toLocaleString()} kcal <span class="muted">(estimate)</span></dd><dt>Your target</dt><dd><b>${t.kcal.toLocaleString()} kcal</b> a day</dd>
         ${a?.training ? `<dt>Training</dt><dd>${esc(a.training)}</dd>` : ''}${a?.monitoring ? `<dt>We'll watch</dt><dd>${esc(a.monitoring)}</dd>` : ''}</dl>
       </section>`; })() : ''}
     ${t ? `<section class="card ob-targets">

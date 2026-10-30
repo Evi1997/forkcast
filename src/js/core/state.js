@@ -45,17 +45,20 @@ async function syncRemote(){
   const keys = ['profile','chat','plan','progress','log-' + today];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
   if (uid !== Store.uid) return; // signed out meanwhile
+  // Whichever copy was saved last wins, as a whole: merging would let an older
+  // copy bring back values that were deliberately cleared (e.g. old targets).
+  const current = { profile:S.profile, chat:S.chat, plan:S.plan, progress:S.progress, ['log-' + today]:S.logs[today] };
   vals.forEach((v, i) => {
-    const k = keys[i];
-    if (v) {
-      if (k === 'profile') S.profile = merge(S.profile, v);
+    const k = keys[i], local = current[k];
+    const localAt = local?._at || 0, remoteAt = v?._at || 0;
+    if (v && (remoteAt >= localAt || !localAt)) {
+      if (k === 'profile') S.profile = { data:{}, targets:null, targetsSource:null, quick:[], onboarded:false, onboardedAt:null, flags:[], ...v };
       else if (k === 'chat') S.chat = v;
       else if (k === 'plan') S.plan = v;
-      else if (k === 'progress') S.progress = merge({weighins:[],checkins:[]}, v);
-      else S.logs[dkey()] = v;
-    } else {
-      const local = Store.local(k);
-      if (local) Store.save(k, local);
+      else if (k === 'progress') S.progress = { weighins:[], checkins:[], ...v };
+      else S.logs[today] = v;
+    } else if (local && localAt) {
+      Store.save(k, local); // this device has the newer copy: send it up
     }
   });
   S.synced = true;

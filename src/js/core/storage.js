@@ -12,6 +12,7 @@ const Store = {
     return data ? data.data : null;
   },
   save(k, v){
+    if (v && typeof v === 'object') v._at = Date.now(); // newest copy wins when syncing
     try { localStorage.setItem(this.key(k), JSON.stringify(v)); } catch {}
     if (!this.sb || !this.uid) return;
     this.pending[k] = v; this.flush(k);

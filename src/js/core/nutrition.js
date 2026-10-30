@@ -6,6 +6,7 @@ const ACT = { sedentary:1.2, light:1.375, moderate:1.55, very:1.725, extra:1.9 }
 const STRATEGY = {
   deficit:        { label:'Fat loss',        short:'a modest deficit' },
   recomposition:  { label:'Recomposition',   short:'maintenance calories with strength training' },
+  recomp_cut:     { label:'Recomposition with a small deficit', short:'a small deficit with high protein and strength training' },
   surplus:        { label:'Muscle gain',     short:'a small surplus' },
   maintenance:    { label:'Maintenance',     short:'maintenance calories' }
 };
@@ -20,7 +21,13 @@ function chooseStrategy(d, bmi){
     if (+b.age < 18 || redFlags || lean) return { key:'maintenance', why: +b.age < 18 ? 'under 18: no calorie deficit' : redFlags ? 'a health answer needs review before any deficit' : 'you\'re already lean, so a deficit isn\'t advised' };
     return { key:'deficit', why:'fat loss is your goal' };
   }
-  if (goal === 'toned' || goal.includes('recomp')) return { key:'recomposition', why:'definition comes mostly from building muscle, not eating less' };
+  // "Both": lose fat and build muscle. A small deficit with high protein and
+  // strength training does both, unless you're already lean or there are warning signs.
+  if ((goal === 'toned' && toned === 'both') || goal.includes('recomp')) {
+    if (+b.age < 18 || redFlags || lean) return { key:'recomposition', why: lean ? 'you\'re already lean, so building muscle at maintenance fits better than eating less' : 'a health answer needs review before any deficit' };
+    return { key:'recomp_cut', why:'you want to lose some fat and build muscle at the same time' };
+  }
+  if (goal === 'toned') return { key:'recomposition', why:'definition comes mostly from building muscle, not eating less' };
   if (goal.includes('gain')) return { key: redFlags ? 'maintenance' : 'surplus', why:'muscle grows best with enough energy' };
   return { key:'maintenance', why:'your goal doesn\'t need a deficit' };
 }
@@ -44,10 +51,11 @@ function calcTargets(d){
   const strat = chooseStrategy(d, bmi), goal = String(b.goal || '');
   let kcal = tdee;
   if (strat.key === 'deficit') kcal = Math.max(tdee - 500, tdee * 0.85, bmr * 1.1);
+  if (strat.key === 'recomp_cut') kcal = Math.max(tdee - 300, tdee * 0.9, bmr * 1.1);
   if (strat.key === 'surplus') kcal = tdee + Math.min(300, Math.max(150, tdee * 0.08));
   const kidney = /kidney|renal|ckd/i.test(JSON.stringify(d.health || {}));
   // Protein within ~1.4–2.0 g/kg for active adults; lower with kidney disease.
-  const perKg = kidney ? 0.8 : ['deficit','recomposition','surplus'].includes(strat.key) ? 1.8 : goal.includes('perform') ? 1.6 : 1.4;
+  const perKg = kidney ? 0.8 : strat.key === 'recomp_cut' ? 2.0 : ['deficit','recomposition','surplus'].includes(strat.key) ? 1.8 : goal.includes('perform') ? 1.6 : 1.4;
   const refW = bmi > 30 ? (+b.goal_weight_kg || 25 * (h/100) ** 2) : w;
   kcal = Math.round(kcal / 10) * 10;
   const protein = Math.round(perKg * refW);

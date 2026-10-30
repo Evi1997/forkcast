@@ -17,7 +17,7 @@ function obBack(){ if (S.ob.step > 0) { obSave(); S.ob.step--; window.scrollTo(0
 async function finishOnboarding(){
   obSave();
   if (!S.profile.onboarded) { S.profile.onboarded = true; S.profile.onboardedAt = dkey(); }
-  S.profile.targets = null;            // use the fresh on-device estimate until the review says otherwise
+  S.profile.targets = null; S.profile.targetsSource = null; // fresh on-device estimate until the review says otherwise
   S.obDone = true; S.ob.review = null; save.profile(); window.scrollTo(0, 0); render();
   if (!S.sampleOK) { S.ob.review = { error:'Sign in to get your dietitian\'s notes.' }; render(); return; }
   const t = targets();

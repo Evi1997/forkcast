@@ -558,3 +558,40 @@ body.kb-open .ob-actions{position:static;background:none;padding-top:4px}
 .onboard{padding-bottom:96px}
 .ob-actions{position:fixed;left:0;right:0;bottom:0;z-index:30;margin:0 auto;max-width:600px;padding:12px max(16px,env(safe-area-inset-right,0px)) max(12px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:linear-gradient(transparent,var(--bg) 22%)}
 body.kb-open .ob-actions{display:none}
+
+/* Onboarding v2: clear topic header, one card per question, calmer spacing */
+.onboard{gap:22px}
+.ob-top{min-height:44px}
+.ob-segs{flex:1;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px}
+.ob-segs i{height:5px;border-radius:99px;background:var(--surface-2)}
+.ob-segs i.done{background:var(--accent)}
+.ob-segs i.now{background:color-mix(in srgb,var(--accent) 45%,var(--surface-2))}
+.ob-topic{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:6px 2px 4px}
+.ob-ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);margin-bottom:10px}
+.ob-ic svg{width:26px;height:26px}
+.ob-step{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.ob-topic h1{font-size:clamp(1.8rem,7vw,2.3rem);line-height:1.1}
+.ob-topic p{font-size:1rem;max-width:40ch}
+.ob-body{gap:14px}
+.ob-body > .ob-q,.ob-body > .field,.ob-body > .fields{background:var(--surface);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
+.ob-body > .fields{gap:12px}
+.ob-q{gap:12px}
+.ob-q legend{display:flex;flex-direction:column;gap:2px;font-size:1.02rem;font-weight:700;margin-bottom:12px;float:left;width:100%}
+.ob-q legend + *{clear:both}
+.ob-q legend .hint{font-size:.8rem;font-weight:500;color:var(--muted)}
+.ob-q legend .opt-tag,.field label .opt-tag{font-size:.8rem;font-weight:500;color:var(--muted)}
+.ob-body .field > label{font-size:1.02rem;font-weight:700;color:var(--ink);margin-bottom:10px}
+.ob-body .fields .field > label{font-size:.85rem;color:var(--muted);margin-bottom:6px}
+.ob-chips{gap:10px}
+.ob-chips .chip{padding:11px 16px;font-size:.95rem;font-weight:600;border-color:var(--line);background:var(--surface)}
+.ob-chips .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* Long single-choice answers: full-width rows with a radio mark */
+.ob-chips.stacked{gap:8px}
+.ob-chips.stacked .chip{display:flex;align-items:center;justify-content:space-between;gap:12px;border-radius:16px;padding:14px 16px;background:var(--surface-2);border-color:transparent;color:var(--ink);text-align:left}
+.ob-chips.stacked .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);flex:none;background:var(--surface)}
+.chip[aria-pressed="true"] .radio{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,var(--surface) 50%)}
+.ob-body textarea,.ob-body input[type=text]{background:var(--surface-2)}
+.newchat-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;border:0;border-radius:12px;background:var(--surface-2);color:var(--ink);font-weight:700;font-size:.85rem;padding:9px 12px;cursor:pointer;flex:none;min-height:40px}
+.newchat-btn svg{width:16px;height:16px}
+.wrapup{display:flex;justify-content:center;padding:0 16px 8px}

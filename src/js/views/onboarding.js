@@ -10,7 +10,7 @@ const OB_STEPS = [
   // Goal first: nothing is calculated until we know what you actually want.
   { key:'basics', title:'What\'s your main goal?', sub:'With food and training. This decides your whole plan.', need:['basics.goal'], body: () => `
     ${obChips('basics.goal', 'Pick one', [['fat loss','Lose weight and body fat'],['toned','Look more toned and defined'],['muscle gain','Build muscle'],['maintenance','Maintain my weight, get fitter'],['healthier eating','Better health, energy or digestion'],['performance','Better sports performance'],['other','Something else']], true)}
-    ${obGet('basics.goal') === 'toned' ? obChips('basics.toned_focus', '“Toned” can mean different things. What matters most?', [['muscle','Building muscle'],['fat','Losing some body fat'],['both','Both / not sure']]) : ''}
+    ${obGet('basics.goal') === 'toned' ? obChips('basics.toned_focus', '“Toned” can mean different things. What matters most?', [['muscle','Mainly build muscle'],['fat','Mainly lose body fat'],['both','Both: lose fat and build muscle']]) : ''}
     ${['muscle gain','toned'].includes(obGet('basics.goal')) ? obMulti('basics.muscle_areas', 'Which areas?', ['Glutes','Legs','Shoulders','Arms','Back','Core','Whole body']) : ''}
     ${obGet('basics.goal') === 'other' ? obText('basics.goal_other', 'Tell us your goal', 'e.g. more energy for a marathon') : ''}` },
   { key:'basics', title:'About you', sub:'Used to estimate your energy needs.', need:['basics.sex','basics.age','basics.height_cm','basics.weight_kg'], body: () => `
@@ -69,6 +69,19 @@ const OB_STEPS = [
     ${obMulti('shopping.priority', 'What matters most?', ['Price','Convenience','Organic','Quality','Less waste'])}`; } }
 ];
 
+const OB_ICONS = [
+  STAR,
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".5"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="7"/><circle cx="12" cy="13" r="3"/><path d="M3 4v6M21 4v16"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4h12l-2 4 2 4H4"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13c0-5 3-9 6-9s6 4 6 9a6 6 0 0 1-12 0z"/><path d="M12 4v5"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z"/><path d="M2 10h20M9 6c0-1 1-2 3-2s3 1 3 2"/></svg>',
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>'
+];
+
 // Supermarket chips for the country typed in the step above, and its currency.
 function storesFor(country){
   const c = String(country || '').toLowerCase().trim();
@@ -87,15 +100,16 @@ function obNeeded(path){
   const need = OB_STEPS[S.ob.step]?.need || [];
   return need.includes(path) || (path === 'basics.toned_focus' && obGet('basics.goal') === 'toned');
 }
-const obLabel = (path, label) => obNeeded(path) ? label : `${label} <span class="opt-tag">(optional)</span>`;
+const obLabel = (path, label) => `<span class="q-title">${label}${obNeeded(path) ? '' : ' <span class="opt-tag">(optional)</span>'}</span>`;
 function obChips(path, label, opts, stacked){
   const cur = String(obGet(path) ?? '');
-  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}</legend><div class="ob-chips${stacked ? ' stacked' : ''}">${opts.map(([v, l]) => `<button type="button" class="chip" data-ob="${path}" data-v="${esc(v)}" aria-pressed="${cur === String(v)}">${esc(l)}</button>`).join('')}</div></fieldset>`;
+  stacked = stacked || opts.some(([, l]) => l.length > 20);
+  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}</legend><div class="ob-chips${stacked ? ' stacked' : ''}" role="radiogroup">${opts.map(([v, l]) => `<button type="button" class="chip" role="radio" data-ob="${path}" data-v="${esc(v)}" aria-checked="${cur === String(v)}" aria-pressed="${cur === String(v)}">${esc(l)}${stacked ? '<i class="radio" aria-hidden="true"></i>' : ''}</button>`).join('')}</div></fieldset>`;
 }
 // Multi-select; picking "Other" opens a text box for it.
 function obMulti(path, label, opts){
   const cur = String(obGet(path) || '').split(', ').filter(Boolean);
-  return `<fieldset class="ob-q"><legend>${obLabel(path, label)} <span class="hint">· pick all that apply</span></legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
+  return `<fieldset class="ob-q"><legend>${obLabel(path, label)}<span class="hint">Pick all that apply</span></legend><div class="ob-chips">${opts.map(o => `<button type="button" class="chip" data-obm="${path}" data-v="${esc(o)}" aria-pressed="${cur.includes(o)}">${cur.includes(o) ? '✓ ' : ''}${esc(o)}</button>`).join('')}</div>
     ${cur.includes('Other') ? `<input type="text" class="other-input" id="ob-${path.replace('.', '-')}-other" data-field="${path}_other" value="${esc(obGet(path + '_other') ?? '')}" placeholder="Type it here" aria-label="${esc(label)}: other">` : ''}</fieldset>`;
 }
 function obNum(path, label, unit, step = 1){
@@ -120,11 +134,15 @@ function vOnboarding(){
   return `<div class="onboard">
     <header class="ob-top">
       ${i > 0 ? `<button class="ob-back" data-act="obback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>Back</button>` : ''}
-      <div class="ob-progress" aria-label="Step ${i + 1} of ${OB_STEPS.length}"><span style="width:${(i + 1) / OB_STEPS.length * 100}%"></span></div>
-      <span class="muted num" style="font-size:.85rem">${i + 1}/${OB_STEPS.length}</span>
+      <div class="ob-segs" role="progressbar" aria-valuemin="1" aria-valuemax="${OB_STEPS.length}" aria-valuenow="${i + 1}" aria-label="Step ${i + 1} of ${OB_STEPS.length}">${OB_STEPS.map((_, k) => `<i class="${k < i ? 'done' : k === i ? 'now' : ''}"></i>`).join('')}</div>
       ${!st.need ? `<button class="ob-skip" data-act="obskip">${last ? 'Skip & finish' : 'Skip'}</button>` : ''}
     </header>
-    <div class="ob-head"><h1>${st.title}</h1><p class="muted">${st.sub}</p></div>
+    <div class="ob-topic">
+      <span class="ob-ic" aria-hidden="true">${OB_ICONS[i] || STAR}</span>
+      <span class="ob-step">Step ${i + 1} of ${OB_STEPS.length}</span>
+      <h1>${st.title}</h1>
+      <p class="muted">${st.sub}</p>
+    </div>
     <form class="ob-body" id="obForm" novalidate>${st.body()}</form>
     ${missing.length ? `<div class="notice warn">To continue, please answer: ${missing.join(', ')}.</div>` : ''}
     <div class="ob-actions">
@@ -142,12 +160,17 @@ function vObDone(){
   const t = targets(), r = S.ob.review;
   return `<div class="onboard">
     <div class="ob-head"><span class="ai-avatar" aria-hidden="true">${STAR}</span><h1>You're all set</h1><p class="muted">Your starting plan. Every number is an estimate; we'll check it over the next 2–4 weeks.</p></div>
-    ${t ? (() => { const a = r?.assessment, key = a?.strategy && STRATEGY[a.strategy] ? a.strategy : t.strategy, st = STRATEGY[key] || STRATEGY.maintenance;
+    ${t ? (() => {
+      // The strategy shown always matches the numbers in use (the same ones Today shows):
+      // the dietitian's only if it set its own targets, otherwise the device's.
+      const ra = r?.assessment, coachSet = S.profile.targetsSource === 'coach' && S.profile.targets;
+      const key = coachSet && ra?.strategy && STRATEGY[ra.strategy] ? ra.strategy : t.strategy;
+      const a = ra && ra.strategy === key ? ra : (ra ? { training:ra.training, monitoring:ra.monitoring } : null), st = STRATEGY[key] || STRATEGY.maintenance;
       return `<section class="card strategy">
         <span class="label">Your strategy</span>
         <h2>${st.label}</h2>
         <p>${esc(a?.reasoning || (st.short[0].toUpperCase() + st.short.slice(1) + ', because ' + t.why + '.'))}</p>
-        <dl class="facts"><dt>Maintenance</dt><dd>≈ ${(a?.maintenance_kcal ? r0(a.maintenance_kcal) : t.tdee).toLocaleString()} kcal <span class="muted">(estimate)</span></dd>
+        <dl class="facts"><dt>Maintenance</dt><dd>≈ ${(calcTargets(S.profile.data)?.tdee || t.tdee).toLocaleString()} kcal <span class="muted">(estimate)</span></dd><dt>Your target</dt><dd><b>${t.kcal.toLocaleString()} kcal</b> a day</dd>
         ${a?.training ? `<dt>Training</dt><dd>${esc(a.training)}</dd>` : ''}${a?.monitoring ? `<dt>We'll watch</dt><dd>${esc(a.monitoring)}</dd>` : ''}</dl>
       </section>`; })() : ''}
     ${t ? `<section class="card ob-targets">
