@@ -96,6 +96,7 @@ document.addEventListener('click', e => {
     cur = cur.includes(v) ? cur.filter(x => x !== v) : v === 'None' ? ['None'] : [...cur.filter(x => x !== 'None'), v];
     obSet(path, cur.join(', ')); render();
   }
+  else if (a === 'hidetip') { try { localStorage.setItem(LS + 'tipHidden', dkey()); } catch {} render(); }
   else if (a === 'gotoday') gotoDay(el.dataset.k);
   else if (a === 'prevweek') shiftDay(-7);
   else if (a === 'nextweek') shiftDay(7);

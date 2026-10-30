@@ -525,3 +525,29 @@ body.kb-open .ob-actions{position:static;background:none;padding-top:4px}
 .ob-q legend .hint{font-weight:500;color:var(--muted);font-size:.82rem}
 .field label .opt-tag{font-weight:500}
 .other-input{margin-top:4px}
+
+/* Today: compact balance card (number first, small ring, one macro row) */
+.balance{display:flex;flex-direction:column;gap:16px;padding:18px 20px}
+.bal-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.bal-main{display:flex;flex-direction:column;min-width:0}
+.bal-num{font-size:2.6rem;font-weight:800;letter-spacing:-.05em;line-height:1}
+.bal-unit{font-weight:700;margin-top:2px}
+.bal-sub{font-size:.82rem;color:rgba(255,255,255,.62);margin-top:6px}
+.est{font-size:.68rem;font-weight:700;padding:1px 6px;border-radius:6px;background:rgba(255,255,255,.12);margin-left:4px}
+.mini-ring{position:relative;width:64px;height:64px;flex:none}
+.mini-ring svg{width:100%;height:100%}
+.mini-ring .num{position:absolute;inset:0;display:grid;place-items:center;font-size:.8rem}
+.mac-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.mac{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mac-l{font-size:.72rem;font-weight:600;color:rgba(255,255,255,.62)}
+.mac-v{font-size:.95rem;white-space:nowrap}
+.mac-v small{font-size:.7rem;font-weight:600;color:rgba(255,255,255,.55)}
+.mac-bar{height:5px;border-radius:99px;background:var(--hero-track);overflow:hidden}
+.mac-bar i{display:block;height:100%;border-radius:99px}
+/* Tip: one quiet line under the meals */
+.tipline{display:flex;align-items:center;gap:4px;background:var(--paprika-soft);border-radius:18px;padding:4px 4px 4px 12px}
+.tipline-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit;padding:8px 0}
+.tipline .tip-ic{width:34px;height:34px;border-radius:11px}
+.tipline .tip-ic svg{width:18px;height:18px}
+.tipline .tip-txt b{font-size:.88rem}
+.tipline .tip-txt span{font-size:.82rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}

@@ -12,22 +12,21 @@ function vToday(){
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
   ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
-    <section class="card hero fuel" aria-label="Calories and macros">
-      <div class="ring">
-        <svg viewBox="0 0 176 176"><circle cx="88" cy="88" r="78" fill="none" stroke="var(--hero-track)" stroke-width="16"/>
-        <circle cx="88" cy="88" r="78" fill="none" stroke="var(--accent)" stroke-width="16" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C * (1 - pct)}" style="transition:stroke-dashoffset .6s ease"/></svg>
-        <div class="center">${t ? `<span class="big">${Math.abs(left).toLocaleString()}</span><span class="label">${left >= 0 ? (isToday ? 'kcal left' : 'kcal under target') : 'kcal above target'}</span><span class="muted num" style="font-size:.8rem;margin-top:6px">${eaten.kcal} / ${kcalT}</span>` : `<span class="big">${eaten.kcal}</span><span class="label">kcal eaten</span>`}</div>
+    <section class="card hero balance" aria-label="Calories and macros">
+      <div class="bal-top">
+        <div class="bal-main">
+          ${t ? `<span class="bal-num num">${Math.abs(left).toLocaleString()}</span><span class="bal-unit">${left >= 0 ? (isToday ? 'kcal left' : 'kcal under target') : 'kcal above target'}</span>
+          <span class="bal-sub num">${eaten.kcal.toLocaleString()} eaten · ${kcalT.toLocaleString()} goal <span class="est" title="${S.profile.targets ? 'Targets set with your dietitian' : 'Mifflin-St Jeor estimate from your profile'}">est.</span></span>`
+          : `<span class="bal-num num">${eaten.kcal.toLocaleString()}</span><span class="bal-unit">kcal eaten</span><span class="bal-sub">Targets appear after your setup.</span>`}
+        </div>
+        <div class="mini-ring" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="var(--hero-track)" stroke-width="8"/><circle cx="32" cy="32" r="26" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="${2 * Math.PI * 26}" stroke-dashoffset="${2 * Math.PI * 26 * (1 - pct)}" transform="rotate(-90 32 32)"/></svg><span class="num">${Math.round(pct * 100)}%</span></div>
       </div>
-      <div class="macros">
-        ${bar('Protein', eaten.protein, t?.protein, 'var(--pink)')}
-        ${bar('Carbs', eaten.carbs, t?.carbs, 'var(--amber)')}
-        ${bar('Fat', eaten.fat, t?.fat, 'var(--blue)')}
-        ${bar('Fiber', eaten.fiber, t?.fiber, 'var(--accent)')}
-        <p class="muted" style="font-size:.8rem">${t ? `<span class="tag est">Estimated</span> ${S.profile.targets ? 'Targets set with your dietitian.' : 'Mifflin-St Jeor estimate from your profile.'}` : 'Targets appear once your dietitian knows your age, height, weight and goal.'}</p>
+      <div class="mac-row">
+        ${[['Protein', eaten.protein, t?.protein, 'var(--pink)'], ['Carbs', eaten.carbs, t?.carbs, 'var(--amber)'], ['Fat', eaten.fat, t?.fat, 'var(--blue)'], ['Fiber', eaten.fiber, t?.fiber, 'var(--accent)']].map(([l, v, g, c]) => `<div class="mac"><span class="mac-l">${l}</span><span class="mac-v num">${r0(v)}<small>${g ? '/' + g : ''} g</small></span><span class="mac-bar"><i style="width:${g ? Math.min(v / g * 100, 100) : 0}%;background:${c}"></i></span></div>`).join('')}
       </div>
     </section>
-  ${isToday ? focusCard() : ''}
   ${mealsSection(t)}
+  ${isToday ? focusCard() : ''}
   ${S.sheet ? logSheet() : ''}
 `;
 }
@@ -152,11 +151,14 @@ function smartTip(){
 }
 function focusCard(){
   const tip = smartTip(); if (!tip) return '';
-  return `<button class="tipcard" data-act="askquick" data-q="${esc(tip.q)}" aria-label="${esc(tip.title)}. Talk it through with your dietitian">
-    <span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></span>
-    <span class="tip-txt"><b>${esc(tip.title)}</b><span>${esc(tip.text)}</span></span>
-    <svg class="tip-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
-  </button>`;
+  try { if (localStorage.getItem(LS + 'tipHidden') === dkey()) return ''; } catch {}
+  return `<div class="tipline">
+    <button class="tipline-main" data-act="askquick" data-q="${esc(tip.q)}" aria-label="${esc(tip.title)}. ${esc(tip.text)} Ask your dietitian">
+      <span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg></span>
+      <span class="tip-txt"><b>${esc(tip.title)}</b><span>${esc(tip.text)}</span></span>
+    </button>
+    <button class="x small-x" data-act="hidetip" aria-label="Hide tips for today">×</button>
+  </div>`;
 }
 
 // "x/7 days logged" with the week's days as circles (green = logged).
