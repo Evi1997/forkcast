@@ -757,3 +757,25 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .tool-btn:hover{background:var(--accent-soft)}
 .tool-btn.busy{cursor:default;color:var(--muted)}
 .tool-hint{margin:2px 4px 0;font-size:.82rem;color:var(--muted)}
+
+/* Growing plant: Today pill and sheet */
+:root{--leaf:#4C8A2B;--leaf-new:#8BC34A;--stem:#3B6D11;--pot:#B5651D;--pot-rim:#C9792E}
+@media (prefers-color-scheme:dark){:root{--leaf:#6FAE3E;--leaf-new:#A5D66B;--stem:#5E9A2E;--pot:#9A5518;--pot-rim:#B0662A}}
+.plant-pill{display:flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;color:var(--ink);cursor:pointer;flex:none}
+.plant-pill .plant{flex:none;margin:-4px 0}
+.plant-pill > span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}
+.plant-pill b{font-size:1.4rem;font-weight:800;color:var(--accent)}
+.plant-pill .label{font-size:.7rem}
+.plant-pill.pop .plant{animation:leaf-pop .9s cubic-bezier(.2,.8,.2,1.4)}
+@keyframes leaf-pop{0%{transform:scale(.8)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.plant-pill.pop .plant{animation:none}}
+.plant-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:4px 0 6px}
+.plant-hero .plant{margin-bottom:6px}
+.plant-hero b{font-size:1.8rem;font-weight:800;line-height:1.1}
+.plant-hero .stage{font-weight:700;color:var(--accent)}
+.plant-hero p{max-width:32ch;font-size:.92rem;margin-top:6px}
+.milestones{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.milestones span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:16px;background:var(--surface-2);font-size:.78rem;color:var(--muted);text-align:center}
+.milestones b{font-size:1.05rem;color:var(--ink)}
+.milestones .got{background:var(--accent-soft);color:var(--accent)}
+.milestones .got b{color:var(--accent)}

@@ -27,6 +27,7 @@ function vToday(){
     </section>
   ${mealsSection(t)}
   ${S.sheet ? logSheet() : ''}
+  ${S.plantOpen ? plantSheet() : ''}
 `;
 }
 
@@ -175,7 +176,7 @@ function streakPill(day){
   const week = cells.filter(c => days.has(c.k)).length, thisWeek = cells.some(c => c.k === today);
   const dots = cells.map(c => `<button class="${days.has(c.k) ? 'on' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}">${c.l[0]}</button>`).join('');
   return `<div class="streak" aria-label="${week} of 7 days logged ${thisWeek ? 'this week' : 'that week'}">
-    <div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div>
+    <button class="plant-pill${S.leafPop && Date.now() - S.leafPop < 4000 ? ' pop' : ''}" data-act="plant" aria-label="Your plant: ${leafCount()} leaves. ${week} of 7 days logged ${thisWeek ? 'this week' : 'that week'}">${plantSVG(leafCount(), 30)}<span><b class="num">${leafCount()}</b><span class="label">${leafCount() === 1 ? 'leaf' : 'leaves'}</span></span></button>
     <div class="week-nav"><button class="wk-arrow" data-act="prevweek" aria-label="Previous week">‹</button><div class="week-dots">${dots}</div><button class="wk-arrow" data-act="nextweek" aria-label="Next week" ${thisWeek ? 'disabled' : ''}>›</button></div>
   </div>`;
 }

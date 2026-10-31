@@ -888,6 +888,28 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .tool-btn:hover{background:var(--accent-soft)}
 .tool-btn.busy{cursor:default;color:var(--muted)}
 .tool-hint{margin:2px 4px 0;font-size:.82rem;color:var(--muted)}
+
+/* Growing plant: Today pill and sheet */
+:root{--leaf:#4C8A2B;--leaf-new:#8BC34A;--stem:#3B6D11;--pot:#B5651D;--pot-rim:#C9792E}
+@media (prefers-color-scheme:dark){:root{--leaf:#6FAE3E;--leaf-new:#A5D66B;--stem:#5E9A2E;--pot:#9A5518;--pot-rim:#B0662A}}
+.plant-pill{display:flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;color:var(--ink);cursor:pointer;flex:none}
+.plant-pill .plant{flex:none;margin:-4px 0}
+.plant-pill > span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}
+.plant-pill b{font-size:1.4rem;font-weight:800;color:var(--accent)}
+.plant-pill .label{font-size:.7rem}
+.plant-pill.pop .plant{animation:leaf-pop .9s cubic-bezier(.2,.8,.2,1.4)}
+@keyframes leaf-pop{0%{transform:scale(.8)}50%{transform:scale(1.18)}100%{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.plant-pill.pop .plant{animation:none}}
+.plant-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:4px 0 6px}
+.plant-hero .plant{margin-bottom:6px}
+.plant-hero b{font-size:1.8rem;font-weight:800;line-height:1.1}
+.plant-hero .stage{font-weight:700;color:var(--accent)}
+.plant-hero p{max-width:32ch;font-size:.92rem;margin-top:6px}
+.milestones{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.milestones span{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:16px;background:var(--surface-2);font-size:.78rem;color:var(--muted);text-align:center}
+.milestones b{font-size:1.05rem;color:var(--ink)}
+.milestones .got{background:var(--accent-soft);color:var(--accent)}
+.milestones .got b{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -902,7 +924,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1793463902';
+const BUILD = '1793464514';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1563,7 +1585,8 @@ function addItems(items, k = vday()){
   S.logs[k] = S.logs[k] || {items:[]};
   for (const i of items) S.logs[k].items.push({ id:uid(), slot:i.slot || S.logSlot, name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber), at:Date.now() });
   save.log(k);
-  const days = new Set(S.profile.loggedDays || []); if (!days.has(k)) { days.add(k); S.profile.loggedDays = [...days].sort().slice(-90); save.profile(); }
+  const days = new Set(S.profile.loggedDays || []);
+  if (!days.has(k)) { S.profile.leaves = leafCount() + 1; S.leafPop = Date.now(); days.add(k); S.profile.loggedDays = [...days].sort().slice(-90); save.profile(); }
 }
 
 async function analyseFood(text, clarification){
@@ -1613,7 +1636,7 @@ function confirmLog(){
   if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
   if (r.save && items.length) rememberMeal(r, items, slot);
-  showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
+  showToast(S.leafPop && Date.now() - S.leafPop < 1000 ? `Added to ${slot} · a new leaf grew` : `${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
   closeSheet();
 }
 
@@ -1890,6 +1913,7 @@ function vToday(){
     </section>
   ${mealsSection(t)}
   ${S.sheet ? logSheet() : ''}
+  ${S.plantOpen ? plantSheet() : ''}
 `;
 }
 
@@ -2038,8 +2062,54 @@ function streakPill(day){
   const week = cells.filter(c => days.has(c.k)).length, thisWeek = cells.some(c => c.k === today);
   const dots = cells.map(c => `<button class="${days.has(c.k) ? 'on' : ''}" data-act="gotoday" data-k="${c.k}" aria-pressed="${c.k === day}" ${c.k > today ? 'disabled' : ''} aria-label="${fromKey(c.k).toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'})}${days.has(c.k) ? ', logged' : ''}">${c.l[0]}</button>`).join('');
   return `<div class="streak" aria-label="${week} of 7 days logged ${thisWeek ? 'this week' : 'that week'}">
-    <div><div class="n">${week}<span class="muted" style="font-size:.9rem;font-weight:700">/7</span></div><div class="label" style="font-size:.7rem">days logged</div></div>
+    <button class="plant-pill${S.leafPop && Date.now() - S.leafPop < 4000 ? ' pop' : ''}" data-act="plant" aria-label="Your plant: ${leafCount()} leaves. ${week} of 7 days logged ${thisWeek ? 'this week' : 'that week'}">${plantSVG(leafCount(), 30)}<span><b class="num">${leafCount()}</b><span class="label">${leafCount() === 1 ? 'leaf' : 'leaves'}</span></span></button>
     <div class="week-nav"><button class="wk-arrow" data-act="prevweek" aria-label="Previous week">‹</button><div class="week-dots">${dots}</div><button class="wk-arrow" data-act="nextweek" aria-label="Next week" ${thisWeek ? 'disabled' : ''}>›</button></div>
+  </div>`;
+}
+
+// === views/plant.js ===
+// The growing plant: one leaf for every day something was logged. It never
+// shrinks, so a missed day costs nothing (no streak pressure).
+const PLANT_STAGES = [[0,'Seed'],[1,'Sprout'],[10,'Seedling'],[20,'Bush'],[30,'Flower'],[50,'Peppers']];
+const PLANT_NEXT = { 1:'Log a meal to grow the first leaf.', 10:'At 10 leaves it becomes a seedling.', 20:'At 20 it grows into a bush.', 30:'At 30 it flowers.', 50:'At 50 it grows peppers.' };
+const leafCount = () => Math.max(S.profile.leaves || 0, (S.profile.loggedDays || []).length);
+const plantStage = n => PLANT_STAGES.filter(([m]) => n >= m).pop()[1];
+
+// Drawn on the device from the count alone: a stem with pointed leaves, side
+// branches from 10 leaves, a flower at 30 and peppers at 50. Newest leaf is lighter.
+function plantSVG(n, size){
+  const h = Math.min(16 + n * 2.2, 70), base = 100, top = base - h;
+  const leaf = (x, y, len, ang) => `<path d="M0 0Q${len * .45} ${-len * .42} ${len} 0Q${len * .45} ${len * .3} 0 0z" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${ang})"/>`;
+  const list = [], len = 11 + Math.min(n, 30) * .3;
+  // Leaves on the main stem, alternating sides, the top pair pointing upwards.
+  const main = Math.min(n, 7);
+  for (let i = 0; i < main; i++) { const t = (i + 1) / (main + .6), side = i % 2 ? 1 : -1; list.push([50, base - t * h, len * (1.05 - t * .3), side > 0 ? -28 - t * 30 : 208 + t * 30]); }
+  // Branches: one pair from 10 leaves, a second pair from 20; up to 4 leaves each.
+  const branches = [];
+  [[10, .45, 24], [20, .25, 30]].forEach(([from, at, full]) => { if (n < from) return;
+    [-1, 1].forEach((side, k) => { const per = Math.min(4, Math.ceil((n - from + 1 - k) / 2)); if (per < 1) return;
+      const reach = full * (.45 + .55 * per / 4), sy = base - at * h, ex = 50 + side * reach, ey = sy - reach * .8;
+      branches.push(`<path d="M50 ${sy.toFixed(1)}Q${50 + side * reach * .55} ${(sy - 2).toFixed(1)} ${ex} ${ey.toFixed(1)}" stroke="var(--stem)" stroke-width="2.4" stroke-linecap="round" fill="none"/>`);
+      for (let j = 0; j < per; j++) { const t = (j + 1) / per, x = 50 + side * reach * t, y = sy - reach * .8 * t * t; list.push([x, y, len * .8, j % 2 ? (side > 0 ? -70 : 250) : (side > 0 ? 10 : 170)]); }
+    }); });
+  const leaves = list.map(([x, y, l, a], i) => `<g fill="${i === list.length - 1 ? 'var(--leaf-new)' : 'var(--leaf)'}">${leaf(x, y, l, a)}</g>`).join('');
+  const flower = n >= 30 ? `<g transform="translate(50 ${top - 3})">${[0,72,144,216,288].map(a => `<ellipse rx="4.4" ry="7" transform="rotate(${a}) translate(0 -6.5)" fill="var(--paprika)"/>`).join('')}<circle r="4.2" fill="var(--amber)"/></g>` : '';
+  const fruit = n >= 50 ? [-1, 1].map(sd => { const x = 50 + sd * 20, y = base - .45 * h - 6; return `<path d="M${x} ${y}c${sd * 5} 1 ${sd * 6} 9 ${sd * 2} 15c${-sd * 4} -2 ${-sd * 6} -9 ${-sd * 2} -15z" fill="var(--paprika)"/>`; }).join('') : '';
+  const stem = n === 0 ? '<ellipse cx="50" cy="98" rx="4" ry="2.6" fill="var(--amber)"/>' : `<path d="M50 101V${top.toFixed(1)}" stroke="var(--stem)" stroke-width="3" stroke-linecap="round" fill="none"/>`;
+  return `<svg class="plant" width="${size}" height="${size * 1.2}" viewBox="${size < 48 ? '10 13 80 107' : '0 0 100 120'}" aria-hidden="true">${stem}${branches.join('')}${leaves}${fruit}${flower}
+    <path d="M34 101h32l-3 16a3 3 0 0 1-3 2.5H40a3 3 0 0 1-3-2.5z" fill="var(--pot)"/><rect x="31" y="97" width="38" height="7" rx="3" fill="var(--pot-rim)"/></svg>`;
+}
+
+function plantSheet(){
+  const n = leafCount(), next = PLANT_STAGES.find(([m]) => m > n), enter = S.plantOpen === 'enter' ? ' enter' : '';
+  return `<div class="scrim${enter}" data-act="plant"></div>
+  <div class="sheet plant-sheet${enter}" role="dialog" aria-modal="true" aria-label="Your plant">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head"><h2>Your plant</h2><button class="x close" data-act="plant" aria-label="Close">×</button></div>
+    <div class="plant-hero">${plantSVG(n, 150)}
+      <b class="num">${n} ${n === 1 ? 'leaf' : 'leaves'}</b><span class="stage">${plantStage(n)}</span>
+      <p class="muted">A new leaf for every day you log. It never shrinks.${next ? ' ' + PLANT_NEXT[next[0]] : ''}</p></div>
+    <div class="milestones">${PLANT_STAGES.slice(2).map(([m, l]) => `<span class="${n >= m ? 'got' : ''}"><b class="num">${m}</b>${l}</span>`).join('')}</div>
   </div>`;
 }
 
@@ -2634,6 +2704,7 @@ document.addEventListener('submit', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
+  if (e.key === 'Escape' && S.plantOpen) { S.plantOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
@@ -2685,6 +2756,10 @@ document.addEventListener('click', e => {
   else if (a === 'nextweek') shiftDay(7);
   else if (a === 'openlog') openSheet(el.dataset.s);
   else if (a === 'closesheet') closeSheet();
+  else if (a === 'plant') {
+    if (S.plantOpen) { S.plantOpen = null; document.body.classList.remove('sheet-open'); render(); }
+    else { S.plantOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.plantOpen = true; }
+  }
   else if (a === 'togglemeal') { S.openMeal = S.openMeal === el.dataset.s ? null : el.dataset.s; render(); }
   else if (a === 'example') { S.draft.log = S.draft.log.trim() ? S.draft.log.trim() + ', ' + el.dataset.t.toLowerCase() : el.dataset.t; render(); $('#logText')?.focus(); }
   else if (a === 'manualmode') { S.sheet.manual = !S.sheet.manual; render(); }

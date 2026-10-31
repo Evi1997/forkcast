@@ -3,7 +3,8 @@ function addItems(items, k = vday()){
   S.logs[k] = S.logs[k] || {items:[]};
   for (const i of items) S.logs[k].items.push({ id:uid(), slot:i.slot || S.logSlot, name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber), at:Date.now() });
   save.log(k);
-  const days = new Set(S.profile.loggedDays || []); if (!days.has(k)) { days.add(k); S.profile.loggedDays = [...days].sort().slice(-90); save.profile(); }
+  const days = new Set(S.profile.loggedDays || []);
+  if (!days.has(k)) { S.profile.leaves = leafCount() + 1; S.leafPop = Date.now(); days.add(k); S.profile.loggedDays = [...days].sort().slice(-90); save.profile(); }
 }
 
 async function analyseFood(text, clarification){
@@ -53,7 +54,7 @@ function confirmLog(){
   if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
   if (r.save && items.length) rememberMeal(r, items, slot);
-  showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
+  showToast(S.leafPop && Date.now() - S.leafPop < 1000 ? `Added to ${slot} · a new leaf grew` : `${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
   closeSheet();
 }
 
