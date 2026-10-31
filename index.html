@@ -867,6 +867,17 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .ai-dot.mascot{width:30px;height:30px}
 @media (max-width:360px){.ob-fields.cols-3{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.ob-hero{animation:none}}
+
+/* Before / after photos and "How much did you eat?" */
+.snap.after{padding:12px 16px;border-style:dashed}
+.snap.after .snap-ic{width:40px;height:40px;border-radius:13px;background:var(--surface-2,var(--accent-soft));color:var(--accent-deep,var(--accent));box-shadow:none}
+.snap.after .snap-ic svg{width:21px;height:21px}
+.snap.after img{width:44px;height:44px;border-radius:12px}
+.share{display:flex;flex-direction:column;gap:8px;padding:4px 0 6px}
+.share-opts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.share-opts .chip{flex:none;min-width:48px;justify-content:center}
+.share-opts .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.share-note{font-size:.82rem}
 </style>
 </head>
 <body>
@@ -918,7 +929,7 @@ HOW YOU WORK
 - Never give a generic diet before understanding the person. Run the first consultation conversationally, 1-3 questions per message, roughly in this order: basics (age, sex, height, weight, goal weight, main goal, daily activity) -> health screening (pregnancy/breastfeeding, diabetes, kidney, liver, heart, GI, thyroid, allergies, intolerances, medications affecting appetite/blood sugar/weight, eating-disorder history or concerns, recent unexplained weight loss) -> lifestyle (job, steps, training type/frequency, sleep, stress, schedule, meal times, travel) -> current eating (ask "What did a normal day of eating look like for you recently?", drinks, coffee, alcohol, takeout, weekends) -> weak points (ALWAYS ask what they see as their weak point or why they think they aren't losing weight / reaching their goal, e.g. weekends, evening snacking, eating out, stress, alcohol; then dig in: when it happens, triggers, what a typical occasion looks like) -> food preferences (ask SEPARATELY what they genuinely enjoy and what they never want; dietary pattern; cuisines) -> cooking & meal prep (skill, appliances, max weekday minutes, leftovers OK, repeats OK, people cooked for; offer A cook fresh / B prep twice a week / C prep once a week / D very low cooking) -> shopping (country, city, supermarket, weekly budget, priority: cheapest/convenience/organic/premium/balance).
 - WEAK POINT FOCUS: once you know the person's weak point, make it a focus area. Give 3-5 specific, practical tips and tricks for that exact situation (e.g. weekends: plan one meal out, prep a Sunday brunch, protein-forward weekend breakfasts, alcohol swaps) and return them in "focus". Weave it into advice, plans and check-ins; ask at each check-in how the weak point went and update the focus if a new one appears.
 - Don't re-ask what the profile already holds unless it may have changed. After onboarding, behave like a follow-up appointment.
-- Ask a question only when you genuinely need information to help. When the person's question is answered or they're wrapping up, close warmly without a question.
+- CONVERSATION: talk like a real dietitian in a session, not a help desk. Be curious: when something is vague, ask what they mean; dig into the why, the when and the how much; react to what they said before advising. Most replies end with ONE natural follow-up question that moves the conversation on. Only stop asking when the conversation has naturally finished: they say thanks/bye/that's all/got it, or confirm they have what they need. Then close warmly in a line, with no question.
 - When the basics are known, explain the estimated targets briefly: Mifflin-St Jeor BMR -> activity TDEE -> goal. Moderate deficit for fat loss (about 10-20%, max ~500 kcal), modest surplus (~200-300 kcal) for muscle gain, ~TDEE for maintenance. Protein from body weight, activity, age and goal (healthy adults ~1.2-2.2 g/kg). Fiber ~14 g per 1000 kcal. Call these estimates, not measurements.
 - Keep meals the person already eats where possible; small improvements beat overhauls. 80/20 flexibility: dessert, pizza, restaurants and social events can fit. Never call foods good, bad, clean or cheat. Never criticise what someone ate; give neutral, practical feedback (e.g. "you have ~450 kcal left, room for dinner and a small dessert").
 - SAFETY: never encourage starvation, purging, extreme fasting, crash diets, unsafe supplements or very-low-calorie diets. No calorie-deficit plan for anyone under 18 without professional supervision. For pregnancy, diabetes, kidney or liver disease, eating-disorder concerns, rapid unexplained weight change or similar: say you can help organise general nutrition but changes should be coordinated with their healthcare professional, and set medical_flag. No high-protein targets with kidney disease. When uncertain, label KNOWN / ESTIMATED / NEEDS MEDICAL REVIEW.
@@ -939,7 +950,8 @@ const GOAL_FIRST = `GOAL FIRST (takes precedence over any weight-loss assumption
 
 // Short brief for everyday chat after onboarding (faster: less to read each time).
 const COACH_FOLLOWUP = `You are the dietitian inside "Forkcast": evidence-based, warm, practical, concise. The person's full profile, targets and today's food are in APP STATE; don't re-ask what's there.
-- Answer in max ~90 words, plain words, in the person's language. Ask a question only when you genuinely need information to help. When the person's question is answered or they're wrapping up, close warmly without a question.
+- Answer in max ~90 words, plain words, in the person's language.
+- CONVERSATION: talk like a real dietitian in a session, not a help desk. Be curious: when something is vague, ask what they mean; dig into the why, the when and the how much; react to what they said before advising. Most replies end with ONE natural follow-up question that moves the conversation on. Only stop asking when the conversation has naturally finished: they say thanks/bye/that's all/got it, or confirm they have what they need. Then close warmly in a line, with no question.
 - Keep foods they enjoy; 80/20 flexibility; never call foods good/bad/clean/cheat; never criticise what they ate.
 - Use their weak-point focus when relevant. For check-ins, look at trends; if adherence was low, adjust the plan before cutting calories.
 - If they say what they ate, put it in log_items with honest estimates.
@@ -948,9 +960,10 @@ ${GOAL_FIRST}`;
 
 // Streamed chat: the reply comes first as plain text (shown while it's written),
 // then the app data after a marker line.
-const COACH_STREAM_FORMAT = `First write your reply to the person: plain text, max ~90 words, **bold** and "- " bullets allowed. Only end with a question if you really need an answer.
+const COACH_STREAM_FORMAT = `First write your reply to the person: plain text, max ~90 words, **bold** and "- " bullets allowed. Keep the conversation going with one follow-up question unless it has naturally finished.
 Then, on a new line, write exactly @@DATA@@ followed by ONE JSON object (no other text after it):
-{"quick_replies": [] unless your reply ends with a question; then up to 4 short tap-able answers to it,
+{"done": true only when the conversation has naturally finished (they said thanks/bye/that's all and you closed), else false,
+ "quick_replies": [] unless your reply ends with a question; then up to 4 short tap-able answers to it,
  "profile_patch": only new or changed facts, using sections basics{age,sex,height_cm,weight_kg,goal_weight_kg,waist_cm,goal,activity}, health{conditions,allergies,medications,notes}, lifestyle{job,training,sleep,stress,schedule}, current_diet{typical_day,alcohol,takeout,weekends}, obstacles{weak_point,triggers}, preferences{likes,dislikes,pattern,cuisines}, cooking{level,appliances,max_weekday_minutes,people,prep_style}, shopping{country,city,supermarkets,budget,priority}; {} if nothing new,
  "targets": null or {"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n} only when you deliberately change targets,
  "log_items": [] or [{"name":s,"amount":s,"kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n,"slot":"Breakfast"|"Lunch"|"Snack"|"Dinner"}],
@@ -1016,12 +1029,12 @@ Reply with ONLY one JSON object:
   },
 
   // Food diary estimate from text and/or a photo.
-  food({ text, slot, country, targets, eaten, hasPhoto, clarification }){
+  food({ text, slot, country, targets, eaten, hasPhoto, hasAfter, clarification }){
     return `You are an evidence-based dietitian estimating the nutrition of a meal someone logged in a food diary.
 Person's daily targets: ${targets ? JSON.stringify(targets) : 'not set yet'}.
 Already eaten today before this meal: ${JSON.stringify(eaten)}.
 Meal slot: ${slot}. Country/region if known: ${country || 'unknown'}.
-What they wrote: """${text || '(no text — see photo)'}"""${hasPhoto ? '\nA photo of the food is attached; use it to judge items and portions.' : ''}${clarification ? `\nTheir answer to your portion question: """${clarification}""". Do not ask another question.` : ''}
+What they wrote: """${text || '(no text — see photo)'}"""${hasPhoto ? (hasAfter ? '\nTwo photos are attached: the FIRST was taken before eating, the SECOND after (what was left). Count ONLY what was eaten: before minus leftovers. Write each amount as the eaten portion (e.g. "3 of 6 slices").' : '\nA photo of the food is attached; use it to judge items and portions.') : ''}${clarification ? `\nTheir answer to your portion question: """${clarification}""". Do not ask another question.` : ''}
 
 Split it into separate foods with realistic portion estimates (use typical portions when unstated). Numbers are grams for macros.
 Ask a clarifying question ONLY if one portion is genuinely ambiguous and would change the total by more than ~150 kcal; otherwise clarify must be null.
@@ -1155,6 +1168,7 @@ const S = {
   draft: { chat:'', log:'', ask:'' },
   logSlot: slotNow(),
   logPhoto: null,
+  logPhotoAfter: null,
   logResult: null,
   planDay: (new Date().getDay() + 6) % 7,
   openRecipe: null,
@@ -1166,7 +1180,7 @@ function resetState(){
     profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
     chat: { turns:[] }, plan: null, progress: { weighins:[], checkins:[] }, logs: {},
     busy: { chat:false, log:false, plan:false, recipe:null }, draft: { chat:'', log:'', ask:'' },
-    logResult: null, logPhoto: null, openRecipe: null, err: {}, synced: false, confirmReset: false
+    logResult: null, logPhoto: null, logPhotoAfter: null, openRecipe: null, err: {}, synced: false, confirmReset: false
   });
 }
 function loadLocal(){
@@ -1450,7 +1464,7 @@ async function sendChat(text){
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
     if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()})), dkey()); logged = r.log_items.length; }
-    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, at:Date.now() });
+    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, done:r.done === true, at:Date.now() });
     save.profile(); save.chat();
   } catch (e) {
     hardFail(e); S.err.chat = errText(e);
@@ -1520,19 +1534,27 @@ async function analyseFood(text, clarification){
   const t = targets(), eaten = sumItems(S.logs[vday()]?.items || []);
   const prompt = PROMPTS.food({ text, slot:S.logSlot, country:S.profile.data.shopping?.country, eaten,
     targets: t && { kcal:t.kcal, protein:t.protein, carbs:t.carbs, fat:t.fat, fiber:t.fiber },
-    hasPhoto: !!S.logPhoto, clarification });
+    hasPhoto: !!S.logPhoto, hasAfter: !!(S.logPhoto && S.logPhotoAfter), clarification });
   try {
     const opts = { modelTier:'quick' }; // fast model, minimal thinking: a meal estimate doesn't need more
-    if (S.logPhoto && S.canImages) opts.images = [S.logPhoto];
+    if (S.logPhoto && S.canImages) opts.images = S.logPhotoAfter ? [S.logPhoto, S.logPhotoAfter] : [S.logPhoto];
     const r = await S.sample.json(prompt, opts);
     const items = Array.isArray(r?.items) ? r.items : [];
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      S.logResult = { review: items.map(cleanItem), feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
+      S.logResult = { review: items.map(cleanItem), share: 1, feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
+}
+
+// "How much did you eat?": scale the whole plate to the share eaten (e.g. 3 of 6 slices = ½).
+const SHARES = [[1,'All'],[.75,'¾'],[2/3,'⅔'],[.5,'½'],[1/3,'⅓'],[.25,'¼']];
+function eatenShare(r, items){
+  const f = r?.share || 1; if (f === 1) return items;
+  const label = SHARES.find(([v]) => v === f)?.[1] || Math.round(f * 100) + '%';
+  return items.map(i => ({ ...i, amount: `${label} of ${i.amount || 'portion'}`, kcal:r0(i.kcal * f), protein:r0(i.protein * f), carbs:r0(i.carbs * f), fat:r0(i.fat * f), fiber:r0(i.fiber * f) }));
 }
 
 const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber) });
@@ -1540,12 +1562,12 @@ const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount 
 // Save the reviewed (and possibly edited) items to the open meal, remember the
 // combination under "My meals", and close the sheet.
 function confirmLog(){
-  const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
+  const r = S.logResult, items = eatenShare(r, (r?.review || []).filter(i => i.name.trim()));
   if (!items.length) return;
   const slot = S.sheet.slot;
   if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
-  if (r.save && items.length) rememberMeal(r, items, slot);
+  if (r.save && items.length) rememberMeal(r, r.review.filter(i => i.name.trim()).map(cleanItem), slot);
   showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
   closeSheet();
 }
@@ -1595,7 +1617,7 @@ async function addToReview(text){
   S.busy.addItem = false; render();
 }
 function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
-function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; document.body.classList.remove('sheet-open'); render(); }
+function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; S.logPhotoAfter = null; document.body.classList.remove('sheet-open'); render(); }
 let toastTimer;
 function showToast(text, undo){ S.toast = text; S.toastUndo = undo || null; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; S.toastUndo = null; render(); }, undo ? 5000 : 2600); }
 
@@ -1870,9 +1892,10 @@ function logSheet(){
   if (busy) {
     body = `<div class="sheet-wait"><div class="pulse">${mealIcon(slot)}</div><b>Counting your ${slot.toLowerCase()}…</b><span class="muted">This takes a few seconds.</span></div>`;
   } else if (r?.review) {
-    const tot = sumItems(r.review);
+    const tot = sumItems(eatenShare(r, r.review)), share = r.share || 1;
     body = `<div class="review">
       <div class="review-total"><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
+      <div class="share"><span class="label">How much did you eat?</span><div class="share-opts" role="group" aria-label="How much did you eat?">${SHARES.map(([v, l]) => `<button class="chip" data-act="share" data-v="${v}" aria-pressed="${v === share}">${l}</button>`).join('')}</div>${share !== 1 ? `<span class="muted share-note">Of the whole plate, ${sumItems(r.review).kcal.toLocaleString()} kcal</span>` : ''}</div>
       ${r.review.map((i, n) => r.editing === n ? `<div class="mi-edit" data-n="${n}">
           <div class="fields two"><div class="field"><label for="e-name-${n}">Food</label><input type="text" id="e-name-${n}" data-edit="${n}.name" value="${esc(i.name)}" placeholder="e.g. Olive oil"></div>
           <div class="field"><label for="e-amount-${n}">Amount</label><input type="text" id="e-amount-${n}" data-edit="${n}.amount" value="${esc(i.amount)}" placeholder="e.g. 1 tbsp"></div></div>
@@ -1905,7 +1928,8 @@ function logSheet(){
       ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">My meals</span>${mine.length > 3 ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
         ${(all ? mine : mine.slice(0, 3)).map(m => `<div class="saved"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`).join('')}
       </div><div class="or"><span>or add something new</span></div>` : ''}
-      ${S.canImages ? `<label class="snap" for="photo">${S.logPhoto ? `<img alt="Meal photo" src="${URL.createObjectURL(S.logPhoto)}"><span><b>Photo added</b><span class="muted">Add a few words below if you like</span></span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Take a photo</b><span class="muted">We'll recognise the food for you</span></span>`}</label><input class="hidden-file" type="file" id="photo" accept="image/*">
+      ${S.canImages ? `<label class="snap" for="photo">${S.logPhoto ? `<img alt="Meal photo, before eating" src="${URL.createObjectURL(S.logPhoto)}"><span><b>Before</b><span class="muted">Add a few words below if you like</span></span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Take a photo</b><span class="muted">We'll recognise the food for you</span></span>`}</label><input class="hidden-file" type="file" id="photo" accept="image/*">
+      ${S.logPhoto ? `<label class="snap after" for="photoAfter">${S.logPhotoAfter ? `<img alt="Meal photo, after eating" src="${URL.createObjectURL(S.logPhotoAfter)}"><span><b>After</b><span class="muted">Only what you ate is counted</span></span><button class="x" data-act="noafter" aria-label="Remove after photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Add an after photo</b><span class="muted">Leftovers? We'll count only what you ate</span></span>`}</label><input class="hidden-file" type="file" id="photoAfter" accept="image/*">` : ''}
       <div class="or"><span>or describe it</span></div>` : ''}
       <textarea id="logText" class="describe" rows="3" placeholder="Type what you ate, in your own words" aria-label="What you ate"></textarea>
       <div class="examples">${EXAMPLES[slot].map(e => `<button class="chip" data-act="example" data-t="${esc(e)}">${esc(e)}</button>`).join('')}</div>
@@ -2000,7 +2024,7 @@ function vCoach(){
           aiRow(`${md(m.content)}${m.flag ? `<div class="flag"><span class="tag med">Needs medical review</span> ${esc(m.flag)}</div>` : ''}${m.logged ? `<div class="logged">✓ Added ${m.logged} item${m.logged > 1 ? 's' : ''} to today's meals</div>` : ''}`)).join('')}
         ${S.busy.chat ? (S.chat.live ? `<div class="msg-row"><span class="ai-dot mascot" aria-hidden="true">${MASCOT}</span><div class="msg ai" id="liveMsg">${md(S.chat.live)}</div></div>` : aiRow(`<span class="typing" aria-label="Thinking"><span></span><span></span><span></span></span>`)) : ''}
       </div>
-      ${!S.busy.chat && last.role === 'assistant' && !last.quick?.length && !last.fresh && all.length > 2 ? `<div class="wrapup"><button class="btn ghost small" data-act="newchat">Start a new chat</button></div>` : ''}
+      ${!S.busy.chat && last.role === 'assistant' && last.done ? `<div class="wrapup"><button class="btn ghost small" data-act="newchat">Start a new chat</button></div>` : ''}
       ${!S.busy.chat && last.role === 'assistant' && last.quick?.length ? `<div class="quick">${last.quick.map(q => `<button class="chip" data-act="quick" data-q="${esc(q)}">${esc(q)}</button>`).join('')}</div>` : ''}
       ${S.err.chat ? `<div class="notice warn chat-err">${esc(S.err.chat)}</div>` : ''}
       <div class="chatbar">
@@ -2511,13 +2535,14 @@ document.addEventListener('input', e => {
     // Live edit of a reviewed item; totals update without redrawing the form.
     const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
     it[f] = ['kcal','protein','carbs','fat'].includes(f) ? Math.max(0, Number(e.target.value) || 0) : e.target.value;
-    const tot = sumItems(S.logResult.review); const k = $('#revKcal'), p = $('#revPfc');
+    const tot = sumItems(eatenShare(S.logResult, S.logResult.review)); const k = $('#revKcal'), p = $('#revPfc');
     if (k) k.textContent = tot.kcal; if (p) p.innerHTML = pfc(tot);
   }
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
+  if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; render(); }
   if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
     const k = e.target.dataset.k;
@@ -2575,7 +2600,9 @@ document.addEventListener('click', e => {
   else if (a === 'quick') { if (el.dataset.q === 'Weekly check-in') { go('progress'); S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); render(); S.ckSheet = true; } else sendChat(el.dataset.q); }
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
-  else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; render(); }
+  else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; S.logPhotoAfter = null; render(); }
+  else if (a === 'noafter') { e.preventDefault(); S.logPhotoAfter = null; render(); }
+  else if (a === 'share') { S.logResult.share = Number(el.dataset.v); render(); }
   else if (a === 'about') {
     if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
     else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }

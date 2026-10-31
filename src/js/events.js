@@ -12,13 +12,14 @@ document.addEventListener('input', e => {
     // Live edit of a reviewed item; totals update without redrawing the form.
     const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
     it[f] = ['kcal','protein','carbs','fat'].includes(f) ? Math.max(0, Number(e.target.value) || 0) : e.target.value;
-    const tot = sumItems(S.logResult.review); const k = $('#revKcal'), p = $('#revPfc');
+    const tot = sumItems(eatenShare(S.logResult, S.logResult.review)); const k = $('#revKcal'), p = $('#revPfc');
     if (k) k.textContent = tot.kcal; if (p) p.innerHTML = pfc(tot);
   }
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
+  if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; render(); }
   if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
     const k = e.target.dataset.k;
@@ -76,7 +77,9 @@ document.addEventListener('click', e => {
   else if (a === 'quick') { if (el.dataset.q === 'Weekly check-in') { go('progress'); S.ckSheet = 'enter'; document.body.classList.add('sheet-open'); render(); S.ckSheet = true; } else sendChat(el.dataset.q); }
   else if (a === 'ask') { const t = S.draft.ask; go('coach'); sendChat(t); }
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
-  else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; render(); }
+  else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; S.logPhotoAfter = null; render(); }
+  else if (a === 'noafter') { e.preventDefault(); S.logPhotoAfter = null; render(); }
+  else if (a === 'share') { S.logResult.share = Number(el.dataset.v); render(); }
   else if (a === 'about') {
     if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
     else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }

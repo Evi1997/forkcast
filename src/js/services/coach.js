@@ -23,7 +23,7 @@ async function sendChat(text){
     S.profile.quick = Array.isArray(r.quick_replies) ? r.quick_replies.slice(0,4).map(String) : [];
     let logged = 0;
     if (Array.isArray(r.log_items) && r.log_items.length) { addItems(r.log_items.map(i => ({...i, slot: SLOTS.includes(i.slot) ? i.slot : slotNow()})), dkey()); logged = r.log_items.length; }
-    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, at:Date.now() });
+    S.chat.turns.push({ role:'assistant', content:reply, quick:S.profile.quick, flag:r.medical_flag || null, logged, done:r.done === true, at:Date.now() });
     save.profile(); save.chat();
   } catch (e) {
     hardFail(e); S.err.chat = errText(e);
