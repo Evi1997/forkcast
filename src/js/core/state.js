@@ -35,7 +35,12 @@ function loadLocal(){
 }
 const save = {
   profile(){ Store.save('profile', S.profile); },
-  chat(){ S.chat.turns = S.chat.turns.slice(-60); Store.save('chat', S.chat); },
+  chat(){
+    // Keep the last 60 messages; move the start of today's conversation with them.
+    const cut = Math.max(0, S.chat.turns.length - 60);
+    if (cut) { S.chat.turns = S.chat.turns.slice(cut); S.chat.start = Math.max(0, (S.chat.start || 0) - cut); }
+    Store.save('chat', S.chat);
+  },
   plan(){ Store.save('plan', S.plan); },
   progress(){ Store.save('progress', S.progress); },
   log(k = dkey()){ Store.save('log-' + k, S.logs[k]); }

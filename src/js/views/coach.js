@@ -4,6 +4,7 @@ const STAR = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 2.5c.4 0
 const SEND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>';
 
 function vCoach(){
+  fixChatStart();
   const all = S.chat.turns.length ? S.chat.turns : [{ role:'assistant', content:greeting() }];
   const start = S.chat.history ? 0 : Math.min(S.chat.start || 0, all.length - 1);
   const turns = all.slice(start), last = all[all.length - 1];

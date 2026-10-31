@@ -4,6 +4,7 @@ async function sendChat(text){
   if (!text || S.busy.chat) return;
   if (!S.sampleOK) { S.err.chat = 'Sign in to talk to your dietitian.'; render(); return; }
   if (!S.chat.turns.length) S.chat.turns.push({ role:'assistant', content:greeting(), at:Date.now() });
+  fixChatStart();
   S.chat.turns.push({ role:'user', content:text, at:Date.now() });
   S.chat.history = false; S.draft.chat = ''; S.draft.ask = ''; S.err.chat = null; S.busy.chat = true;
   save.chat(); render(); scrollChat();
@@ -30,6 +31,14 @@ async function sendChat(text){
   }
   S.chat.live = null;
   S.busy.chat = false; render(); scrollChat();
+}
+// Chats saved before the trimming fix can point past the end: start again at
+// the latest greeting so the dietitian sees the whole conversation.
+function fixChatStart(){
+  const t = S.chat.turns;
+  if ((S.chat.start || 0) < t.length) return;
+  let i = t.length - 1; while (i > 0 && !t[i].fresh) i--;
+  S.chat.start = Math.max(0, i);
 }
 function scrollChat(){ const m = $('.msgs'); if (m) m.scrollTop = m.scrollHeight; }
 
