@@ -60,7 +60,7 @@ function weekStory(week, t){
 }
 
 // Range switch shared by the calories and weight cards (like a price chart).
-const RANGES = [['1W','1W'],['1M','1M'],['3M','3M'],['1Y','1Y'],['All','All']];
+const RANGES = [['1W','1W'],['1M','1M'],['3M','3M'],['1Y','1Y']];
 function rangeStart(r){
   if (!r || r === 'All') return null;
   const d = new Date(); d.setDate(d.getDate() - ({ '1W':6, '1M':29, '3M':90, '1Y':364 })[r]); return dkey(d);
@@ -100,6 +100,32 @@ function kcalBars(buckets, t, flagOver, many){
   </div>`;
 }
 
+// Calories over a longer range, drawn like a price chart: the 7-day average of
+// logged days as a line, single days as faint dots, the goal as a dashed line.
+function kcalLine(done, t, from, to){
+  const W = 360, H = 170, L = 48, R = 10, T = 12, B = 24;
+  const t0 = fromKey(from).getTime(), t1 = Math.max(fromKey(to).getTime(), t0 + 864e5);
+  // Longer spans: a 14-day average and no single-day dots, so the line stays calm.
+  const span = daysBetween(from, to), win = span > 120 ? 14 : 7, dots = done.length <= 45;
+  const avg = done.map(d => { const w = done.filter(x => { const g = daysBetween(x.k, d.k); return g >= 0 && g < win; }); return { k:d.k, v: w.reduce((a, x) => a + x.kcal, 0) / w.length }; });
+  const vals = [...(dots ? done.map(d => d.kcal) : avg.map(a => a.v)), ...(t?.kcal ? [t.kcal] : [])];
+  let lo = Math.floor(Math.min(...vals) * .92 / 100) * 100, hi = Math.ceil(Math.max(...vals) * 1.04 / 100) * 100; if (hi - lo < 400) { lo -= 200; hi += 200; } lo = Math.max(0, lo);
+  const X = k => L + (fromKey(k).getTime() - t0) / (t1 - t0) * (W - L - R), Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const line = avg.map(a => `${X(a.k).toFixed(1)},${Y(a.v).toFixed(1)}`).join(' ');
+  const font = 'font-size="11.5" fill="var(--muted)" font-family="Plus Jakarta Sans, system-ui, sans-serif"';
+  const fmt = k => fromKey(k).toLocaleDateString(undefined,{day:'numeric', month:'short'});
+  return `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Calories, ${win}-day average from ${fmt(from)} to ${fmt(to)}: about ${Math.round(avg[avg.length - 1].v / 10) * 10} kcal a day now">
+    ${[lo, (lo + hi) / 2, hi].map(v => `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" ${font}>${Math.round(v).toLocaleString()}</text>`).join('')}
+    ${t?.kcal ? `<line x1="${L}" x2="${W - R}" y1="${Y(t.kcal)}" y2="${Y(t.kcal)}" stroke="var(--ink)" stroke-opacity=".4" stroke-width="1.5" stroke-dasharray="5 5"/>` : ''}
+    <text x="${L}" y="${H - 6}" ${font}>${fmt(from)}</text><text x="${W - R}" y="${H - 6}" text-anchor="end" ${font}>${fmt(to)}</text>
+    ${!dots ? '' : done.map(d => `<circle cx="${X(d.k).toFixed(1)}" cy="${Y(d.kcal).toFixed(1)}" r="2.6" fill="var(--muted)" opacity=".45"/>`).join('')}
+    <path d="M${line.split(' ').join(' L')} L${X(avg[avg.length - 1].k).toFixed(1)},${H - B} L${X(avg[0].k).toFixed(1)},${H - B}Z" fill="var(--accent)" opacity=".1"/>
+    <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(avg[avg.length - 1].k).toFixed(1)}" cy="${Y(avg[avg.length - 1].v).toFixed(1)}" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+  </svg>
+  <div class="wlegend muted"><span><i class="lg-line"></i>${win}-day average</span>${t?.kcal ? '<span><i class="lg-goal"></i>Goal</span>' : ''}${dots ? '<span><i class="lg-day"></i>Single days</span>' : ''}</div>`;
+}
+
 function calorieCard(week, t){
   const range = S.kRange || '1W', strat = S.profile.targets ? calcTargets(S.profile.data)?.strategy : t?.strategy;
   const flagOver = ['deficit','recomp_cut'].includes(strat), today = dkey();
@@ -116,19 +142,15 @@ function calorieCard(week, t){
   }
   loadHistory();
   if (!S.hist) return `<section class="card week-card" aria-label="Calories">${head()}${rangeSeg('krange', range)}<div class="wbars ghost loading" aria-label="Loading your history">${Array.from({length:12}, (_, i) => `<span class="wbar"><span class="col"><span class="fill" style="height:${30 + (i * 37) % 45}%"></span></span><span class="dl">&nbsp;</span></span>`).join('')}</div></section>`;
-  const days = [], from = rangeStart(range) || Object.keys(S.hist).filter(k => S.hist[k].n).sort()[0] || today;
+  // Long ranges: a smooth 7-day average line, starting at the first logged day so
+  // a short history fills the chart instead of leaving it half empty.
+  const first = Object.keys(S.hist).filter(k => S.hist[k].n).sort()[0] || week.find(d => d.logged)?.k || today;
+  const from = [rangeStart(range), first].sort().pop(), days = [];
   for (let d = fromKey(from); dkey(d) <= today; d.setDate(d.getDate() + 1)) { const k = dkey(d), v = dayTotals(k); days.push({ k, ...v, logged: v.n > 0 }); }
-  const group = (keyOf, labelOf, nameOf) => { const m = new Map(); days.forEach(d => { const g = keyOf(d.k); if (!m.has(g)) m.set(g, []); m.get(g).push(d); });
-    return [...m.entries()].map(([g, ds]) => { const l = ds.filter(x => x.logged && x.k !== today), use = l.length ? l : ds.filter(x => x.logged);
-      return { label:labelOf(g), name:nameOf(g), avg:true, logged:use.length > 0, now:ds.some(x => x.k === today), kcal: use.length ? use.reduce((a, x) => a + x.kcal, 0) / use.length : 0, protein: use.length ? use.reduce((a, x) => a + x.protein, 0) / use.length : 0 }; }); };
-  let b, note = '';
-  if (range === '1M') b = days.map(d => { const dt = fromKey(d.k); return { ...d, now:d.k === today, label: dt.getDay() === 1 ? String(dt.getDate()) : '', name: dt.toLocaleDateString(undefined,{weekday:'long', day:'numeric', month:'long'}) }; });
-  else if (range === '3M') { b = group(k => mondayOf(fromKey(k)), g => { const d = fromKey(g); return d.getDate() <= 7 ? d.toLocaleDateString(undefined,{month:'short'}) : ''; }, g => 'Week of ' + fromKey(g).toLocaleDateString(undefined,{day:'numeric', month:'long'})); note = ' a day'; }
-  else { b = group(k => k.slice(0, 7), g => fromKey(g + '-01').toLocaleDateString(undefined,{month:'narrow'}), g => fromKey(g + '-01').toLocaleDateString(undefined,{month:'long', year:'numeric'})); note = ' a day'; }
-  const logged = days.filter(d => d.logged).length;
-  body = logged ? kcalBars(b, t, flagOver, b.length > 14) + legend(b.length <= 14) + `<p class="muted range-note">${logged} day${logged > 1 ? 's' : ''} logged${range === '1M' ? '. Tap a bar to open that day.' : '; bars show the daily average.'}</p>`
-    : `<p class="muted" style="font-size:.9rem;padding:12px 0">Nothing logged in this period yet.</p>`;
-  return `<section class="card week-card" aria-label="Calories">${head(avgOf(days), note)}${rangeSeg('krange', range)}${body}</section>`;
+  const done = days.filter(d => d.logged && d.k !== today), hit = t?.protein ? done.filter(d => d.protein >= t.protein * .9).length : 0;
+  body = done.length < 2 ? `<p class="muted" style="font-size:.9rem;padding:12px 0">Log a few more days and your trend line appears here.</p>`
+    : kcalLine(done, t, from, today) + `<p class="muted range-note">${done.length} days logged${t?.protein ? ` · protein on target ${hit} of them` : ''}.</p>`;
+  return `<section class="card week-card" aria-label="Calories">${head(avgOf(days), ' a day')}${rangeSeg('krange', range)}${body}</section>`;
 }
 
 function vProgress(){
