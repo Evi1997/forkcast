@@ -108,6 +108,7 @@ document.addEventListener('click', e => {
   }
   else if (a === 'hidetip') { try { localStorage.setItem(LS + 'tipHidden', dkey()); } catch {} render(); }
   else if (a === 'gotoday') gotoDay(el.dataset.k);
+  else if (a === 'progday') { S.view = 'today'; try { localStorage.setItem(LS + 'view', 'today'); } catch {} gotoDay(el.dataset.k); }
   else if (a === 'prevweek') shiftDay(-7);
   else if (a === 'nextweek') shiftDay(7);
   else if (a === 'openlog') openSheet(el.dataset.s);

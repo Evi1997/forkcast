@@ -22,29 +22,82 @@ function weightChart(){
   <div class="row muted" style="font-size:.8rem"><span style="display:inline-block;width:14px;height:3px;background:var(--accent)"></span>7-day average <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin-left:10px"></span>single weigh-ins</div>`;
 }
 
+// This week's food logs (Mon–Sun) for the story and the calorie bars: from the
+// device first, then once from the account.
+function weekLogs(){
+  const mon = fromKey(mondayOf()), today = dkey();
+  return DAYS.map((l, i) => {
+    const d = new Date(mon); d.setDate(d.getDate() + i); const k = dkey(d);
+    if (k <= today && !S.logs[k]) {
+      S.logs[k] = Store.local('log-' + k) || { items:[] };
+      S.weekAsked = S.weekAsked || {};
+      if (!S.weekAsked[k]) { S.weekAsked[k] = true; Store.remote('log-' + k).then(v => { if (v?.items) { S.logs[k] = v; if (S.view === 'progress') render(); } }).catch(() => {}); }
+    }
+    const items = S.logs[k]?.items || [];
+    return { l, k, future: k > today, today: k === today, logged: items.length > 0, ...sumItems(items) };
+  });
+}
+
+// One sentence that answers "how is my week going?", led by what matters for
+// the person's goal: protein for tone and muscle, calories for fat loss.
+function weekStory(week, t){
+  const done = week.filter(d => d.logged && !d.today), base = done.length ? done : week.filter(d => d.logged);
+  const n = base.length, soFar = !done.length;
+  if (!n) return { title:'A fresh week', sub:'Log a meal and this week\'s story starts here.' };
+  if (!t) return { title:`You logged ${n} day${n > 1 ? 's' : ''} this week.`, sub:'Finish your setup to see calories and protein against your goals.' };
+  const p = base.filter(d => d.protein >= t.protein * .9).length, r = base.filter(d => d.kcal >= t.kcal * .85 && d.kcal <= t.kcal * 1.1).length;
+  const of = soFar ? 'so far today' : `${n} day${n > 1 ? 's' : ''}`, good = x => x >= Math.ceil(n * .7);
+  const strat = S.profile.targets ? calcTargets(S.profile.data)?.strategy : t.strategy;
+  if (['recomposition','recomp_cut','surplus'].includes(strat)) return soFar
+    ? { title: p ? 'Protein on target today.' : `${r0(base[0].protein)} of ${t.protein} g protein so far.`, sub:'Protein is what turns your training into tone.' }
+    : { title:`Protein on target ${p} of ${n} days.`, sub: good(p) ? (strat === 'surplus' ? 'That\'s what turns training into muscle.' : 'That\'s what builds tone.') : 'An easy win: add a protein to breakfast.' };
+  if (strat === 'deficit') return soFar
+    ? { title:`${r0(base[0].kcal).toLocaleString()} of ${t.kcal.toLocaleString()} kcal so far.`, sub:'Steady weeks beat perfect days.' }
+    : { title:`Calories in your range ${r} of ${n} days.`, sub: good(r) ? 'Steady weeks beat perfect days.' : 'Your dietitian can suggest a few easy swaps.' };
+  return soFar ? { title:'Good start to the week.', sub:`${r0(base[0].kcal).toLocaleString()} kcal and ${r0(base[0].protein)} g protein so far.` }
+    : { title:`Balanced on ${r} of ${n} days.`, sub:`Protein on target ${p} day${p === 1 ? '' : 's'}.` };
+}
+
+function weekBars(week, t){
+  const done = week.filter(d => d.logged && !d.today), avg = done.length ? Math.round(done.reduce((a, d) => a + d.kcal, 0) / done.length / 10) * 10 : null;
+  const top = Math.max(t?.kcal ? t.kcal * 1.25 : 0, ...week.map(d => d.kcal), 1);
+  const goalY = t?.kcal ? (1 - t.kcal / top) * 100 : null;
+  // "Above goal" only matters when the plan is a deficit; for tone or muscle a bit more is fine.
+  const strat = S.profile.targets ? calcTargets(S.profile.data)?.strategy : t?.strategy, flagOver = ['deficit','recomp_cut'].includes(strat);
+  return `<section class="card week-card" aria-label="Calories this week">
+    <div class="row" style="justify-content:space-between"><h2>Calories</h2><span class="muted num">${avg ? `avg ${avg.toLocaleString()}` : ''}</span></div>
+    ${!week.some(d => d.logged) ? `<div class="wbars ghost" aria-hidden="true">${[46,62,54,70,58,40,50].map((h, i) => `<span class="wbar"><span class="col"><span class="fill" style="height:${h}%"></span></span><span class="dl">${DAYS[i][0]}</span></span>`).join('')}</div><p class="muted" style="font-size:.84rem">Each day you log becomes a bar here, with a dot when protein is on target.</p>` : `
+    <div class="wbars">${goalY !== null ? `<span class="wgoal" style="top:${goalY.toFixed(1)}%"></span>` : ''}
+      ${week.map(d => { const h = d.kcal ? Math.max(4, d.kcal / top * 100) : 0, over = flagOver && t?.kcal && d.kcal > t.kcal * 1.15, hit = t?.protein && d.protein >= t.protein * .9;
+        const lab = `${fromKey(d.k).toLocaleDateString(undefined,{weekday:'long'})}: ${d.future ? 'still to come' : d.logged ? `${r0(d.kcal)} kcal, ${r0(d.protein)} g protein${hit ? ', protein on target' : ''}` : 'nothing logged'}`;
+        return `<button class="wbar${d.today ? ' now' : ''}" ${d.future ? 'disabled' : `data-act="progday" data-k="${d.k}"`} aria-label="${lab}"><span class="col">${hit ? '<i class="pdot" aria-hidden="true"></i>' : ''}<span class="fill${over ? ' over' : ''}${!d.logged ? ' none' : ''}" style="height:${h}%"></span></span><span class="dl">${d.l[0]}</span></button>`; }).join('')}
+    </div>
+    <div class="wlegend muted">${t?.kcal ? '<span><i class="lg-goal"></i>Goal</span>' : ''}${t?.protein ? '<span><i class="lg-dot"></i>Protein on target</span>' : ''}${flagOver ? '<span><i class="lg-over"></i>Above goal</span>' : ''}</div>`}
+  </section>`;
+}
+
 function vProgress(){
   const w = [...S.progress.weighins].sort((a, b) => a.date.localeCompare(b.date));
   const avg = end => { const win = w.filter(y => { const d = daysBetween(y.date, end); return d >= 0 && d < 7; }); return win.reduce((a, y) => a + +y.weight, 0) / win.length; };
   const now = w.length ? avg(w[w.length - 1].date) : null;
   const diff = w.length > 1 ? now - +w[0].weight : null, span = w.length > 1 ? daysBetween(w[0].date, w[w.length - 1].date) : 0;
-  const days = new Set(S.profile.loggedDays || []), mon = fromKey(mondayOf());
-  const logged = DAYS.filter((l, i) => { const d = new Date(mon); d.setDate(d.getDate() + i); return days.has(dkey(d)); }).length;
+  const t = targets(), week = weekLogs(), story = weekStory(week, t), n = leafCount();
   const lastCk = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt, ckIn = lastCk ? 7 - daysBetween(lastCk, dkey()) : 0;
-  const tile = (label, value, sub, act) => `<${act ? `button class="tile tile-btn" data-act="${act}"` : 'div class="tile"'}><span class="label">${label}</span><b class="num">${value}</b><span class="muted">${sub}</span></${act ? 'button' : 'div'}>`;
+  const mon = fromKey(mondayOf()), sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+  const range = `${mon.toLocaleDateString(undefined,{day:'numeric',month:'short'})} – ${sun.toLocaleDateString(undefined,{day:'numeric',month:'short'})}`;
+  const change = diff === null ? '' : Math.abs(diff) < 0.2 ? 'steady' : `${diff < 0 ? '↓' : '↑'} ${Math.abs(diff).toFixed(1)} kg`;
   return `
-  <div class="head"><div><div class="label">Trends over single readings</div><h1>Progress</h1></div></div>
-  <div class="tiles">
-    ${tile('Weight', now ? now.toFixed(1) + '<small> kg</small>' : '–', now ? '7-day average' : 'Log your first weigh-in')}
-    ${tile('Change', diff === null ? '–' : (Math.abs(diff) < 0.1 ? 'Steady' : (diff < 0 ? '↓ ' : '↑ ') + Math.abs(diff).toFixed(1) + '<small> kg</small>'), diff === null ? 'Needs 2 weigh-ins' : `over ${span >= 14 ? Math.round(span / 7) + ' weeks' : span + ' days'}`)}
-    ${tile('Logged', logged + '<small>/7</small>', 'days this week')}
-    ${tile('Check-in', ckIn <= 0 ? 'Due' : `${ckIn}<small> day${ckIn > 1 ? 's' : ''}</small>`, ckIn <= 0 ? 'Tap to start' : 'until the next one', 'cksheet')}
+  <div class="head"><div><div class="label">${range}</div><h1>Progress</h1></div></div>
+  <section class="story" aria-live="polite"><span class="label">This week</span><p class="story-t">${esc(story.title)}</p><p class="story-s">${esc(story.sub)}</p></section>
+  ${weekBars(week, t)}
+  <div class="duo">
+    <a class="tile mini" href="#weight"><span class="label">Weight trend</span>${now ? `<b class="num">${now.toFixed(1)}<small> kg</small></b>${change ? `<span class="chip-s">${change}${span ? ` · ${span >= 14 ? Math.round(span / 7) + ' wk' : span + ' d'}` : ''}</span>` : '<span class="muted">Add one more for a trend</span>'}` : '<b class="num">–</b><span class="muted">Add a weigh-in</span>'}</a>
+    <button class="tile mini plant-tile" data-act="plant" aria-label="Your plant: ${n} leaves">${plantSVG(n, 40)}<span><b class="num">${n}</b><span class="muted">${n === 1 ? 'leaf' : 'leaves'}</span></span></button>
   </div>
-  <section class="card stack">
-    <div class="row" style="justify-content:space-between"><h2>Weight trend</h2><span class="muted" style="font-size:.8rem">Trend matters more than one day</span></div>
-    ${weightChart()}
-  </section>
-  <section class="card stack">
-    <h2>Log weight</h2>
+  <button class="focus-row" data-act="cksheet"><span class="fr-txt"><b>${S.profile.focus ? `${esc(S.profile.focus.weak_point)} focus` : 'Weekly check-in'}</b><span class="muted">${S.profile.focus ? 'How did it go? Tell your dietitian at check-in.' : 'Two minutes to fine-tune your plan.'}</span></span><span class="ck-pill${ckIn <= 0 ? ' due' : ''}">${ckIn <= 0 ? 'Check in' : `in ${ckIn} day${ckIn > 1 ? 's' : ''}`}</span></button>
+  <section class="card stack" id="weight">
+    <div class="row" style="justify-content:space-between"><h2>Weight</h2><span class="muted" style="font-size:.8rem">${w.length > 1 ? '7-day average' : 'Same time of day works best'}</span></div>
+    ${w.length > 1 ? weightChart() : `<p class="muted" style="font-size:.9rem">${w.length ? 'One weigh-in so far. Add a couple more this week and the trend line appears.' : 'Weigh in 2–3 times a week. The trend line appears after two.'}</p>`}
     <div class="weigh-row"><div class="unit-input"><input type="number" id="wKg" step="0.1" inputmode="decimal" aria-label="Weight in kg" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"><span>kg</span></div><button class="btn primary" data-act="weigh">Save</button></div>
     <details class="plan-notes"><summary>Another day or add waist</summary>
       <div class="fields two" style="margin-top:10px"><div class="field"><label for="wDate">Date</label><input type="date" id="wDate" value="${dkey()}" max="${dkey()}"></div>
@@ -52,7 +105,8 @@ function vProgress(){
     </details>
     ${w.length ? `<details class="plan-notes"><summary>Recent weigh-ins</summary><div class="hist">${w.slice(-8).reverse().map(x => `<div class="mrow"><span class="mname">${fromKey(x.date).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}${x.waist ? ` <span class="muted">· waist ${x.waist} cm</span>` : ''}</span><span class="num">${x.weight} kg</span><button class="x small-x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in">×</button></div>`).join('')}</div></details>` : ''}
   </section>
-  ${S.ckSheet ? checkinSheet() : ''}`;
+  ${S.ckSheet ? checkinSheet() : ''}
+  ${S.plantOpen ? plantSheet() : ''}`;
 }
 
 function checkinSheet(){
