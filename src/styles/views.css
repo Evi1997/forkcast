@@ -830,3 +830,16 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .wdelta{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
 .wkg{font-size:1rem;font-weight:800;min-width:66px;text-align:right}
 .wkg small{font-size:.8rem;color:var(--muted);font-weight:700}
+/* Range switch (1W 1M 3M 1Y All) */
+.seg{display:flex;gap:2px;padding:3px;border-radius:99px;background:var(--surface-2);align-self:flex-start}
+.seg button{border:0;background:none;font:inherit;font-size:.8rem;font-weight:700;color:var(--muted);padding:7px 12px;min-height:32px;border-radius:99px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(16,20,15,.12)}
+.wbars.many{gap:2px}
+.wbars.many .fill{border-radius:3px 3px 1px 1px}
+.wbars.many .dl{font-size:.68rem;white-space:nowrap;overflow:visible}
+.wbar .fill.hit{box-shadow:inset 0 3px 0 var(--accent-deep)}
+.lg-dot.sq{border-radius:2px}
+.range-note{font-size:.8rem}
+.wbars.loading .fill{animation:pulse-bar 1.2s ease-in-out infinite alternate}
+@keyframes pulse-bar{from{opacity:.5}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.wbars.loading .fill{animation:none}}

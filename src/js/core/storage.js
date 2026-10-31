@@ -11,6 +11,13 @@ const Store = {
     if (error) { console.warn('load failed', k, error.message); return null; }
     return data ? data.data : null;
   },
+  // Every document whose key starts with a prefix, in one request (e.g. all food logs).
+  async remoteAll(prefix){
+    if (!this.sb || !this.uid) return [];
+    const { data, error } = await this.sb.from('user_docs').select('key,data').like('key', prefix + '%');
+    if (error) { console.warn('load failed', prefix, error.message); return []; }
+    return data || [];
+  },
   save(k, v){
     if (v && typeof v === 'object') v._at = Date.now(); // newest copy wins when syncing
     try { localStorage.setItem(this.key(k), JSON.stringify(v)); } catch {}

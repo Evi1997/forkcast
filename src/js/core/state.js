@@ -23,7 +23,8 @@ function resetState(){
     profile: { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] },
     chat: { turns:[] }, plan: null, progress: { weighins:[], checkins:[] }, logs: {},
     busy: { chat:false, log:false, plan:false, recipe:null }, draft: { chat:'', log:'', ask:'' },
-    logResult: null, logPhoto: null, logPhotoAfter: null, openRecipe: null, err: {}, synced: false, confirmReset: false
+    logResult: null, logPhoto: null, logPhotoAfter: null, openRecipe: null, err: {}, synced: false, confirmReset: false,
+    hist: null, histLoading: false, weekAsked: null, kRange: null, wRange: null
   });
 }
 function loadLocal(){
