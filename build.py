@@ -4,6 +4,7 @@
 Usage:  python3 build.py
 No dependencies. Edit files in src/, never index.html directly.
 """
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).parent
@@ -50,11 +51,13 @@ def join(folder, names, comment):
 def main():
     template = (SRC / "index.template.html").read_text()
     css = join("styles", STYLES, "/* === {} === */")
-    js = join("js", SCRIPTS, "// === {} ===")
+    build_id = str(int(time.time()))
+    js = f"const BUILD = '{build_id}';\n\n" + join("js", SCRIPTS, "// === {} ===")
     out = (template
            .replace("<!-- @styles -->", "<style>\n" + css + "\n</style>")
            .replace("<!-- @scripts -->", "<script>\n" + js + "\n</script>"))
     (ROOT / "index.html").write_text(out)
+    (ROOT / "version.txt").write_text(build_id + "\n")
     print(f"Built index.html ({len(out) // 1024} KB) from {len(STYLES)} styles and {len(SCRIPTS)} scripts")
 
 

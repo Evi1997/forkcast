@@ -102,7 +102,10 @@ Reply with ONLY one JSON object:
   // Once onboarding is done the brief is much shorter: no consultation script.
   coach(state, history, onboarded, persona){
     const rules = (persona ? persona + '\n' : '') + (onboarded ? COACH_FOLLOWUP : COACH_RULES + '\n' + GOAL_FIRST);
-    return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
+    // Repeated after the latest message: models follow the nearest instruction best.
+    const last = history[history.length - 1], nudge = '\n\n(Dietitian: reply to this like a real conversation. Engage with what I said and end with ONE natural follow-up question, unless I am clearly wrapping up, e.g. thanks/bye/that\'s all; then close warmly and set "done": true.)';
+    const turns = last?.role === 'user' ? [...history.slice(0, -1), { ...last, content: last.content + nudge }] : history;
+    return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...turns];
   },
 
   // Food diary estimate from text and/or a photo.

@@ -738,10 +738,16 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 @media (prefers-reduced-motion:reduce){.ob-hero{animation:none}}
 
 /* Before / after photos and "How much did you eat?" */
-.snap.after{padding:12px 16px;border-style:dashed}
-.snap.after .snap-ic{width:40px;height:40px;border-radius:13px;background:var(--surface-2,var(--accent-soft));color:var(--accent-deep,var(--accent));box-shadow:none}
-.snap.after .snap-ic svg{width:21px;height:21px}
-.snap.after img{width:44px;height:44px;border-radius:12px}
+.snaps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.snap.tile{position:relative;flex-direction:column;align-items:flex-start;gap:4px;padding:14px;min-height:132px}
+.snap.tile b{font-size:.98rem}.snap.tile b small{font-weight:600;color:var(--muted);font-size:.78rem}
+.snap.tile .muted{font-size:.82rem;line-height:1.3}
+.snap.tile img{width:52px;height:52px;border-radius:14px;margin-bottom:4px}
+.snap.tile .x{position:absolute;top:8px;right:8px;margin:0}
+.snap.after .snap-ic{background:var(--surface-2);color:var(--accent-deep);box-shadow:none}
+.snap.after.off{cursor:default}
+.snap.after.off .snap-ic{opacity:.5}
+.snap.after.off:hover{border-color:var(--line);background:none}
 .share{display:flex;flex-direction:column;gap:8px;padding:4px 0 6px}
 .share-opts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .share-opts .chip{flex:none;min-width:48px;justify-content:center}

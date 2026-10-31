@@ -869,10 +869,16 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 @media (prefers-reduced-motion:reduce){.ob-hero{animation:none}}
 
 /* Before / after photos and "How much did you eat?" */
-.snap.after{padding:12px 16px;border-style:dashed}
-.snap.after .snap-ic{width:40px;height:40px;border-radius:13px;background:var(--surface-2,var(--accent-soft));color:var(--accent-deep,var(--accent));box-shadow:none}
-.snap.after .snap-ic svg{width:21px;height:21px}
-.snap.after img{width:44px;height:44px;border-radius:12px}
+.snaps{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.snap.tile{position:relative;flex-direction:column;align-items:flex-start;gap:4px;padding:14px;min-height:132px}
+.snap.tile b{font-size:.98rem}.snap.tile b small{font-weight:600;color:var(--muted);font-size:.78rem}
+.snap.tile .muted{font-size:.82rem;line-height:1.3}
+.snap.tile img{width:52px;height:52px;border-radius:14px;margin-bottom:4px}
+.snap.tile .x{position:absolute;top:8px;right:8px;margin:0}
+.snap.after .snap-ic{background:var(--surface-2);color:var(--accent-deep);box-shadow:none}
+.snap.after.off{cursor:default}
+.snap.after.off .snap-ic{opacity:.5}
+.snap.after.off:hover{border-color:var(--line);background:none}
 .share{display:flex;flex-direction:column;gap:8px;padding:4px 0 6px}
 .share-opts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .share-opts .chip{flex:none;min-width:48px;justify-content:center}
@@ -892,6 +898,8 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
+const BUILD = '1793463558';
+
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
 const ICONS = {
@@ -1025,7 +1033,10 @@ Reply with ONLY one JSON object:
   // Once onboarding is done the brief is much shorter: no consultation script.
   coach(state, history, onboarded, persona){
     const rules = (persona ? persona + '\n' : '') + (onboarded ? COACH_FOLLOWUP : COACH_RULES + '\n' + GOAL_FIRST);
-    return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...history];
+    // Repeated after the latest message: models follow the nearest instruction best.
+    const last = history[history.length - 1], nudge = '\n\n(Dietitian: reply to this like a real conversation. Engage with what I said and end with ONE natural follow-up question, unless I am clearly wrapping up, e.g. thanks/bye/that\'s all; then close warmly and set "done": true.)';
+    const turns = last?.role === 'user' ? [...history.slice(0, -1), { ...last, content: last.content + nudge }] : history;
+    return [{ role:'user', content: rules + '\n\n' + COACH_STREAM_FORMAT + '\n\nAPP STATE (JSON, what you already know):\n' + JSON.stringify(state) + '\n\nThe conversation follows.' }, ...turns];
   },
 
   // Food diary estimate from text and/or a photo.
@@ -1928,8 +1939,10 @@ function logSheet(){
       ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">My meals</span>${mine.length > 3 ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
         ${(all ? mine : mine.slice(0, 3)).map(m => `<div class="saved"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`).join('')}
       </div><div class="or"><span>or add something new</span></div>` : ''}
-      ${S.canImages ? `<label class="snap" for="photo">${S.logPhoto ? `<img alt="Meal photo, before eating" src="${URL.createObjectURL(S.logPhoto)}"><span><b>Before</b><span class="muted">Add a few words below if you like</span></span><button class="x" data-act="nophoto" aria-label="Remove photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Take a photo</b><span class="muted">We'll recognise the food for you</span></span>`}</label><input class="hidden-file" type="file" id="photo" accept="image/*">
-      ${S.logPhoto ? `<label class="snap after" for="photoAfter">${S.logPhotoAfter ? `<img alt="Meal photo, after eating" src="${URL.createObjectURL(S.logPhotoAfter)}"><span><b>After</b><span class="muted">Only what you ate is counted</span></span><button class="x" data-act="noafter" aria-label="Remove after photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Add an after photo</b><span class="muted">Leftovers? We'll count only what you ate</span></span>`}</label><input class="hidden-file" type="file" id="photoAfter" accept="image/*">` : ''}
+      ${S.canImages ? `<div class="snaps">
+        <label class="snap tile" for="photo">${S.logPhoto ? `<img alt="Meal photo, before eating" src="${URL.createObjectURL(S.logPhoto)}"><button class="x" data-act="nophoto" aria-label="Remove before photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>`}<b>Before</b><span class="muted">${S.logPhoto ? 'Added' : 'Photo of your meal'}</span></label>
+        <label class="snap tile after${S.logPhoto ? '' : ' off'}" ${S.logPhoto ? 'for="photoAfter"' : 'aria-disabled="true"'}>${S.logPhotoAfter ? `<img alt="Meal photo, after eating" src="${URL.createObjectURL(S.logPhotoAfter)}"><button class="x" data-act="noafter" aria-label="Remove after photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>`}<b>After <small>(optional)</small></b><span class="muted">${S.logPhotoAfter ? 'Only what you ate counts' : S.logPhoto ? 'Leftovers, if any' : 'Add the before photo first'}</span></label>
+      </div><input class="hidden-file" type="file" id="photo" accept="image/*"><input class="hidden-file" type="file" id="photoAfter" accept="image/*">
       <div class="or"><span>or describe it</span></div>` : ''}
       <textarea id="logText" class="describe" rows="3" placeholder="Type what you ate, in your own words" aria-label="What you ate"></textarea>
       <div class="examples">${EXAMPLES[slot].map(e => `<button class="chip" data-act="example" data-t="${esc(e)}">${esc(e)}</button>`).join('')}</div>
@@ -2762,8 +2775,21 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || S.auth.status !== 'signed-in' || Date.now() - lastSync < 15000) return;
   lastSync = Date.now();
   syncRemote();
-  navigator.serviceWorker?.getRegistration().then(r => r?.update()).catch(() => {});
+  checkForUpdate();
 });
+// Home-screen apps resume without reloading, so look for a newer version on
+// launch and on every return to the app, and switch to it when nothing is open.
+async function checkForUpdate(){
+  try {
+    const v = (await (await fetch('version.txt', { cache:'no-store' })).text()).trim();
+    if (!v || v === BUILD) return;
+    if (S.sheet || S.ob || Object.values(S.busy).some(Boolean) || document.activeElement?.matches('input,textarea')) { S.updateReady = true; return; }
+    // Once per version, so a briefly stale copy of the page can't cause a reload loop.
+    if (sessionStorage.getItem('fc-reloaded') === v) return;
+    sessionStorage.setItem('fc-reloaded', v); location.reload();
+  } catch {}
+}
+setTimeout(checkForUpdate, 3000);
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 </script>
 </body>
