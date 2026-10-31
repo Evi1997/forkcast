@@ -884,6 +884,8 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .share-opts .chip{flex:none;min-width:48px;justify-content:center}
 .share-opts .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .share-note{font-size:.82rem}
+.left-note{display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:14px;background:var(--accent-soft);color:var(--ink);font-size:.88rem}
+.left-note span{color:var(--accent-deep);font-weight:800}
 </style>
 </head>
 <body>
@@ -898,7 +900,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1793463558';
+const BUILD = '1793463647';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1054,6 +1056,17 @@ Reply with only JSON:
  "clarify": null or "Approximately how much rice did you eat: 100 g, 200 g, or something else?",
  "options": ["100 g","200 g","300 g"],
  "meal_name": "short, appetising name for this combination so it can be reused, 2-4 words, e.g. Protein oat bowl"}`;
+  },
+
+  // An already-logged meal plus a photo of what's left: return what was eaten.
+  leftovers(items){
+    return `You are an evidence-based dietitian. This meal was logged before eating:
+${JSON.stringify(items)}
+The attached photo was taken AFTER eating and shows what was left on the plate (it may be empty).
+Return the same items reduced to what was actually eaten (logged minus leftovers). Keep names; write each amount as the eaten portion (e.g. "about half of 1 plate"). Drop an item only if it was left completely. Numbers are grams for macros.
+Reply with only JSON:
+{"items":[{"name":"...","amount":"...","kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n}],
+ "note":"one short neutral line on what was left, e.g. About half the rice was left"}`;
   },
 
   // Shared context for the plan and shopping prompts.
@@ -1568,6 +1581,19 @@ function eatenShare(r, items){
   return items.map(i => ({ ...i, amount: `${label} of ${i.amount || 'portion'}`, kcal:r0(i.kcal * f), protein:r0(i.protein * f), carbs:r0(i.carbs * f), fat:r0(i.fat * f), fiber:r0(i.fiber * f) }));
 }
 
+// After photo on a meal that's already in the review: count only what was eaten.
+async function leftoversFromPhoto(file){
+  const r = S.logResult; if (!r?.review?.length || !file || S.busy.leftover) return;
+  if (!S.sampleOK) { S.err.log = 'Sign in to count leftovers from a photo.'; render(); return; }
+  S.busy.leftover = true; S.err.log = null; render();
+  try {
+    const out = await S.sample.json(PROMPTS.leftovers(eatenShare(r, r.review)), { modelTier:'quick', images:[file] });
+    const items = Array.isArray(out?.items) ? out.items.map(cleanItem) : [];
+    if (items.length) { r.review = items; r.share = 1; r.leftNote = out?.note ? String(out.note) : 'Counted from your after photo'; }
+  } catch (e) { hardFail(e); S.err.log = errText(e); }
+  S.busy.leftover = false; render();
+}
+
 const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber) });
 
 // Save the reviewed (and possibly edited) items to the open meal, remember the
@@ -1907,6 +1933,9 @@ function logSheet(){
     body = `<div class="review">
       <div class="review-total"><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
       <div class="share"><span class="label">How much did you eat?</span><div class="share-opts" role="group" aria-label="How much did you eat?">${SHARES.map(([v, l]) => `<button class="chip" data-act="share" data-v="${v}" aria-pressed="${v === share}">${l}</button>`).join('')}</div>${share !== 1 ? `<span class="muted share-note">Of the whole plate, ${sumItems(r.review).kcal.toLocaleString()} kcal</span>` : ''}</div>
+      ${S.canImages ? (S.busy.leftover ? `<div class="snap after"><span class="spinner"></span><span><b>Checking what's left…</b></span></div>`
+        : r.leftNote ? `<div class="left-note"><span aria-hidden="true">✓</span>${esc(r.leftNote)}</div>`
+        : `<label class="snap after" for="photoLeft"><span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Add an after photo</b><span class="muted">Leftovers? Only what you ate counts</span></span></label><input class="hidden-file" type="file" id="photoLeft" accept="image/*">`) : ''}
       ${r.review.map((i, n) => r.editing === n ? `<div class="mi-edit" data-n="${n}">
           <div class="fields two"><div class="field"><label for="e-name-${n}">Food</label><input type="text" id="e-name-${n}" data-edit="${n}.name" value="${esc(i.name)}" placeholder="e.g. Olive oil"></div>
           <div class="field"><label for="e-amount-${n}">Amount</label><input type="text" id="e-amount-${n}" data-edit="${n}.amount" value="${esc(i.amount)}" placeholder="e.g. 1 tbsp"></div></div>
@@ -2556,6 +2585,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', e => {
   if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
   if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; render(); }
+  if (e.target.id === 'photoLeft') { leftoversFromPhoto(e.target.files?.[0]); e.target.value = ''; }
   if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
     const k = e.target.dataset.k;

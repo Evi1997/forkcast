@@ -125,6 +125,17 @@ Reply with only JSON:
  "meal_name": "short, appetising name for this combination so it can be reused, 2-4 words, e.g. Protein oat bowl"}`;
   },
 
+  // An already-logged meal plus a photo of what's left: return what was eaten.
+  leftovers(items){
+    return `You are an evidence-based dietitian. This meal was logged before eating:
+${JSON.stringify(items)}
+The attached photo was taken AFTER eating and shows what was left on the plate (it may be empty).
+Return the same items reduced to what was actually eaten (logged minus leftovers). Keep names; write each amount as the eaten portion (e.g. "about half of 1 plate"). Drop an item only if it was left completely. Numbers are grams for macros.
+Reply with only JSON:
+{"items":[{"name":"...","amount":"...","kcal":n,"protein":n,"carbs":n,"fat":n,"fiber":n}],
+ "note":"one short neutral line on what was left, e.g. About half the rice was left"}`;
+  },
+
   // Shared context for the plan and shopping prompts.
   planContext({ profile, targets, focus, checkin }){
     return `PERSON (from consultation): ${JSON.stringify(profile)}

@@ -37,6 +37,19 @@ function eatenShare(r, items){
   return items.map(i => ({ ...i, amount: `${label} of ${i.amount || 'portion'}`, kcal:r0(i.kcal * f), protein:r0(i.protein * f), carbs:r0(i.carbs * f), fat:r0(i.fat * f), fiber:r0(i.fiber * f) }));
 }
 
+// After photo on a meal that's already in the review: count only what was eaten.
+async function leftoversFromPhoto(file){
+  const r = S.logResult; if (!r?.review?.length || !file || S.busy.leftover) return;
+  if (!S.sampleOK) { S.err.log = 'Sign in to count leftovers from a photo.'; render(); return; }
+  S.busy.leftover = true; S.err.log = null; render();
+  try {
+    const out = await S.sample.json(PROMPTS.leftovers(eatenShare(r, r.review)), { modelTier:'quick', images:[file] });
+    const items = Array.isArray(out?.items) ? out.items.map(cleanItem) : [];
+    if (items.length) { r.review = items; r.share = 1; r.leftNote = out?.note ? String(out.note) : 'Counted from your after photo'; }
+  } catch (e) { hardFail(e); S.err.log = errText(e); }
+  S.busy.leftover = false; render();
+}
+
 const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount || ''), kcal:r0(i.kcal), protein:r0(i.protein ?? i.p), carbs:r0(i.carbs ?? i.c), fat:r0(i.fat ?? i.f), fiber:r0(i.fiber) });
 
 // Save the reviewed (and possibly edited) items to the open meal, remember the
