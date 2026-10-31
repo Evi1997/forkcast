@@ -175,7 +175,7 @@ document.addEventListener('click', e => {
     if (gone) showToast(`Removed ${gone.name}`, () => { S.plan.extra = before; save.plan(); }); render();
   }
   else if (a === 'weigh') {
-    const kg = parseFloat($('#wKg').value), date = $('#wDate').value || dkey(), waist = parseFloat($('#wWaist').value);
+    const kg = parseFloat($('#wKg').value), date = $('#wDate')?.value || dkey(), waist = parseFloat($('#wWaist')?.value);
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
     S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
     if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }

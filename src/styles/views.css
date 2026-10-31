@@ -821,3 +821,12 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .ck-pill.due{background:var(--accent);color:var(--accent-ink)}
 .wbars.ghost{height:110px}
 .wbars.ghost .fill{background:var(--surface-2)}
+.wlist{display:flex;flex-direction:column;margin-top:4px}
+.wlist .label{margin-bottom:2px}
+.wrow{display:flex;align-items:center;gap:10px;min-height:48px;border-top:1px solid var(--line)}
+.wrow:first-of-type{border-top:0}
+.wdate{flex:1;min-width:0;font-size:.92rem;color:var(--muted)}
+.wdate b{color:var(--ink);font-weight:700}
+.wdelta{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.wkg{font-size:1rem;font-weight:800;min-width:66px;text-align:right}
+.wkg small{font-size:.8rem;color:var(--muted);font-weight:700}

@@ -952,6 +952,15 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .ck-pill.due{background:var(--accent);color:var(--accent-ink)}
 .wbars.ghost{height:110px}
 .wbars.ghost .fill{background:var(--surface-2)}
+.wlist{display:flex;flex-direction:column;margin-top:4px}
+.wlist .label{margin-bottom:2px}
+.wrow{display:flex;align-items:center;gap:10px;min-height:48px;border-top:1px solid var(--line)}
+.wrow:first-of-type{border-top:0}
+.wdate{flex:1;min-width:0;font-size:.92rem;color:var(--muted)}
+.wdate b{color:var(--ink);font-weight:700}
+.wdelta{font-size:.75rem;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.wkg{font-size:1rem;font-weight:800;min-width:66px;text-align:right}
+.wkg small{font-size:.8rem;color:var(--muted);font-weight:700}
 </style>
 </head>
 <body>
@@ -966,7 +975,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1793465070';
+const BUILD = '1793465257';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -2468,16 +2477,14 @@ function vProgress(){
     <a class="tile mini" href="#weight"><span class="label">Weight trend</span>${now ? `<b class="num">${now.toFixed(1)}<small> kg</small></b>${change ? `<span class="chip-s">${change}${span ? ` · ${span >= 14 ? Math.round(span / 7) + ' wk' : span + ' d'}` : ''}</span>` : '<span class="muted">Add one more for a trend</span>'}` : '<b class="num">–</b><span class="muted">Add a weigh-in</span>'}</a>
     <button class="tile mini plant-tile" data-act="plant" aria-label="Your plant: ${n} leaves">${plantSVG(n, 40)}<span><b class="num">${n}</b><span class="muted">${n === 1 ? 'leaf' : 'leaves'}</span></span></button>
   </div>
-  <button class="focus-row" data-act="cksheet"><span class="fr-txt"><b>${S.profile.focus ? `${esc(S.profile.focus.weak_point)} focus` : 'Weekly check-in'}</b><span class="muted">${S.profile.focus ? 'How did it go? Tell your dietitian at check-in.' : 'Two minutes to fine-tune your plan.'}</span></span><span class="ck-pill${ckIn <= 0 ? ' due' : ''}">${ckIn <= 0 ? 'Check in' : `in ${ckIn} day${ckIn > 1 ? 's' : ''}`}</span></button>
+  <button class="focus-row" data-act="cksheet"><span class="fr-txt"><b>Weekly check-in</b><span class="muted">Two minutes to fine-tune your plan.</span></span><span class="ck-pill${ckIn <= 0 ? ' due' : ''}">${ckIn <= 0 ? 'Check in' : `in ${ckIn} day${ckIn > 1 ? 's' : ''}`}</span></button>
   <section class="card stack" id="weight">
     <div class="row" style="justify-content:space-between"><h2>Weight</h2><span class="muted" style="font-size:.8rem">${w.length > 1 ? '7-day average' : 'Same time of day works best'}</span></div>
     ${w.length > 1 ? weightChart() : `<p class="muted" style="font-size:.9rem">${w.length ? 'One weigh-in so far. Add a couple more this week and the trend line appears.' : 'Weigh in 2–3 times a week. The trend line appears after two.'}</p>`}
     <div class="weigh-row"><div class="unit-input"><input type="number" id="wKg" step="0.1" inputmode="decimal" aria-label="Weight in kg" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"><span>kg</span></div><button class="btn primary" data-act="weigh">Save</button></div>
-    <details class="plan-notes"><summary>Another day or add waist</summary>
-      <div class="fields two" style="margin-top:10px"><div class="field"><label for="wDate">Date</label><input type="date" id="wDate" value="${dkey()}" max="${dkey()}"></div>
-      <div class="field"><label for="wWaist">Waist (cm)</label><input type="number" id="wWaist" step="0.5" inputmode="decimal"></div></div>
-    </details>
-    ${w.length ? `<details class="plan-notes"><summary>Recent weigh-ins</summary><div class="hist">${w.slice(-8).reverse().map(x => `<div class="mrow"><span class="mname">${fromKey(x.date).toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'})}${x.waist ? ` <span class="muted">· waist ${x.waist} cm</span>` : ''}</span><span class="num">${x.weight} kg</span><button class="x small-x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in">×</button></div>`).join('')}</div></details>` : ''}
+    ${w.length ? `<div class="wlist"><span class="label">Recent</span>${w.slice(-4).reverse().map((x, i, arr) => {
+      const prev = w[w.length - 2 - i], d = prev ? +x.weight - +prev.weight : null;
+      return `<div class="wrow"><span class="wdate"><b>${fromKey(x.date).toLocaleDateString(undefined,{weekday:'short'})}</b> ${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</span>${d === null ? '' : `<span class="wdelta">${Math.abs(d) < 0.05 ? 'same' : (d < 0 ? '↓ ' : '↑ ') + Math.abs(d).toFixed(1)}</span>`}<b class="num wkg">${x.weight}<small> kg</small></b><button class="x small-x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in of ${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'long'})}">×</button></div>`; }).join('')}</div>` : ''}
   </section>
   ${S.ckSheet ? checkinSheet() : ''}
   ${S.plantOpen ? plantSheet() : ''}`;
@@ -2491,7 +2498,7 @@ function checkinSheet(){
     <div class="sheet-head"><h2>Weekly check-in</h2><button class="x close" data-act="cksheet" aria-label="Close">×</button></div>
     <p class="muted" style="font-size:.88rem">Two minutes. Your dietitian looks at the trend and adjusts the plan with you.</p>
     <div class="sliders">${[['adherence','Followed the plan'],['hunger','Hunger'],['energy','Energy']].map(([k, l]) => `<div class="sl"><label for="ck-${k}"><span>${l}</span><span class="num">${ck[k]}/10</span></label><input type="range" min="1" max="10" id="ck-${k}" data-ck="${k}" value="${ck[k]}"></div>`).join('')}</div>
-    <div class="field"><label for="ckWeak">How did ${S.profile.focus ? esc(S.profile.focus.weak_point.toLowerCase()) : 'your weak point'} go?</label><input type="text" id="ckWeak" placeholder="e.g. Saturday was fine, Sunday brunch got away from me"></div>
+    <div class="field"><label for="ckWeak">What made this week harder? (optional)</label><input type="text" id="ckWeak" placeholder="e.g. Saturday was fine, Sunday brunch got away from me"></div>
     <details class="plan-notes"><summary>More details (optional)</summary>
       <div class="stack" style="margin-top:10px">
         <div class="field"><label for="ckSleep">Sleep</label><input type="text" id="ckSleep" placeholder="~7 h, waking at night"></div>
@@ -2915,7 +2922,7 @@ document.addEventListener('click', e => {
     if (gone) showToast(`Removed ${gone.name}`, () => { S.plan.extra = before; save.plan(); }); render();
   }
   else if (a === 'weigh') {
-    const kg = parseFloat($('#wKg').value), date = $('#wDate').value || dkey(), waist = parseFloat($('#wWaist').value);
+    const kg = parseFloat($('#wKg').value), date = $('#wDate')?.value || dkey(), waist = parseFloat($('#wWaist')?.value);
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
     S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
     if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }
