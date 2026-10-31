@@ -23,18 +23,10 @@ async function analyseFood(text, clarification){
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      S.logResult = { review: items.map(cleanItem), share: 1, feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
+      S.logResult = { review: items.map(cleanItem), leftNote: S.logPhoto && S.logPhotoAfter ? 'Counted from your after photo' : null, feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
-}
-
-// "How much did you eat?": scale the whole plate to the share eaten (e.g. 3 of 6 slices = ½).
-const SHARES = [[1,'All'],[.75,'¾'],[2/3,'⅔'],[.5,'½'],[1/3,'⅓'],[.25,'¼']];
-function eatenShare(r, items){
-  const f = r?.share || 1; if (f === 1) return items;
-  const label = SHARES.find(([v]) => v === f)?.[1] || Math.round(f * 100) + '%';
-  return items.map(i => ({ ...i, amount: `${label} of ${i.amount || 'portion'}`, kcal:r0(i.kcal * f), protein:r0(i.protein * f), carbs:r0(i.carbs * f), fat:r0(i.fat * f), fiber:r0(i.fiber * f) }));
 }
 
 // After photo on a meal that's already in the review: count only what was eaten.
@@ -43,9 +35,9 @@ async function leftoversFromPhoto(file){
   if (!S.sampleOK) { S.err.log = 'Sign in to count leftovers from a photo.'; render(); return; }
   S.busy.leftover = true; S.err.log = null; render();
   try {
-    const out = await S.sample.json(PROMPTS.leftovers(eatenShare(r, r.review)), { modelTier:'quick', images:[file] });
+    const out = await S.sample.json(PROMPTS.leftovers(r.review), { modelTier:'quick', images:[file] });
     const items = Array.isArray(out?.items) ? out.items.map(cleanItem) : [];
-    if (items.length) { r.review = items; r.share = 1; r.leftNote = out?.note ? String(out.note) : 'Counted from your after photo'; }
+    if (items.length) { r.review = items; r.leftNote = out?.note ? String(out.note) : 'Counted from your after photo'; }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.leftover = false; render();
 }
@@ -55,12 +47,12 @@ const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount 
 // Save the reviewed (and possibly edited) items to the open meal, remember the
 // combination under "My meals", and close the sheet.
 function confirmLog(){
-  const r = S.logResult, items = eatenShare(r, (r?.review || []).filter(i => i.name.trim()));
+  const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
   if (!items.length) return;
   const slot = S.sheet.slot;
   if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
-  if (r.save && items.length) rememberMeal(r, r.review.filter(i => i.name.trim()).map(cleanItem), slot);
+  if (r.save && items.length) rememberMeal(r, items, slot);
   showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
   closeSheet();
 }

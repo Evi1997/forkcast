@@ -879,13 +879,15 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .snap.after.off{cursor:default}
 .snap.after.off .snap-ic{opacity:.5}
 .snap.after.off:hover{border-color:var(--line);background:none}
-.share{display:flex;flex-direction:column;gap:8px;padding:4px 0 6px}
-.share-opts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-.share-opts .chip{flex:none;min-width:48px;justify-content:center}
-.share-opts .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.share-note{font-size:.82rem}
 .left-note{display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:14px;background:var(--accent-soft);color:var(--ink);font-size:.88rem}
 .left-note span{color:var(--accent-deep);font-weight:800}
+.rev-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rev-tools .tool-btn:only-child{grid-column:1 / -1}
+.tool-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 14px;border-radius:16px;border:0;background:var(--surface-2);color:var(--ink);font:inherit;font-weight:700;font-size:.95rem;cursor:pointer}
+.tool-btn svg{width:19px;height:19px;color:var(--accent-deep)}
+.tool-btn:hover{background:var(--accent-soft)}
+.tool-btn.busy{cursor:default;color:var(--muted)}
+.tool-hint{margin:2px 4px 0;font-size:.82rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -900,7 +902,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1793463647';
+const BUILD = '1793463809';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1567,18 +1569,10 @@ async function analyseFood(text, clarification){
     if (r?.clarify && !clarification) {
       S.logResult = { text, clarify:String(r.clarify), options:(r.options || []).slice(0,4).map(String), items };
     } else {
-      S.logResult = { review: items.map(cleanItem), share: 1, feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
+      S.logResult = { review: items.map(cleanItem), leftNote: S.logPhoto && S.logPhotoAfter ? 'Counted from your after photo' : null, feedback: r?.feedback ? String(r.feedback) : null, name: String(r?.meal_name || '').slice(0, 40), save: true };
     }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.log = false; render();
-}
-
-// "How much did you eat?": scale the whole plate to the share eaten (e.g. 3 of 6 slices = ½).
-const SHARES = [[1,'All'],[.75,'¾'],[2/3,'⅔'],[.5,'½'],[1/3,'⅓'],[.25,'¼']];
-function eatenShare(r, items){
-  const f = r?.share || 1; if (f === 1) return items;
-  const label = SHARES.find(([v]) => v === f)?.[1] || Math.round(f * 100) + '%';
-  return items.map(i => ({ ...i, amount: `${label} of ${i.amount || 'portion'}`, kcal:r0(i.kcal * f), protein:r0(i.protein * f), carbs:r0(i.carbs * f), fat:r0(i.fat * f), fiber:r0(i.fiber * f) }));
 }
 
 // After photo on a meal that's already in the review: count only what was eaten.
@@ -1587,9 +1581,9 @@ async function leftoversFromPhoto(file){
   if (!S.sampleOK) { S.err.log = 'Sign in to count leftovers from a photo.'; render(); return; }
   S.busy.leftover = true; S.err.log = null; render();
   try {
-    const out = await S.sample.json(PROMPTS.leftovers(eatenShare(r, r.review)), { modelTier:'quick', images:[file] });
+    const out = await S.sample.json(PROMPTS.leftovers(r.review), { modelTier:'quick', images:[file] });
     const items = Array.isArray(out?.items) ? out.items.map(cleanItem) : [];
-    if (items.length) { r.review = items; r.share = 1; r.leftNote = out?.note ? String(out.note) : 'Counted from your after photo'; }
+    if (items.length) { r.review = items; r.leftNote = out?.note ? String(out.note) : 'Counted from your after photo'; }
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.leftover = false; render();
 }
@@ -1599,12 +1593,12 @@ const cleanItem = i => ({ name:String(i.name || 'Food'), amount:String(i.amount 
 // Save the reviewed (and possibly edited) items to the open meal, remember the
 // combination under "My meals", and close the sheet.
 function confirmLog(){
-  const r = S.logResult, items = eatenShare(r, (r?.review || []).filter(i => i.name.trim()));
+  const r = S.logResult, items = (r?.review || []).filter(i => i.name.trim());
   if (!items.length) return;
   const slot = S.sheet.slot;
   if (r.replaceIds) { const L = S.logs[vday()]; L.items = L.items.filter(i => !r.replaceIds.includes(i.id)); }
   addItems(items.map(i => ({...i, slot})));
-  if (r.save && items.length) rememberMeal(r, r.review.filter(i => i.name.trim()).map(cleanItem), slot);
+  if (r.save && items.length) rememberMeal(r, items, slot);
   showToast(`${r.replaceIds ? 'Updated' : 'Added to'} ${slot} · ${sumItems(items).kcal} kcal${r.save && !r.replaceIds ? ' · saved' : ''}`);
   closeSheet();
 }
@@ -1929,13 +1923,10 @@ function logSheet(){
   if (busy) {
     body = `<div class="sheet-wait"><div class="pulse">${mealIcon(slot)}</div><b>Counting your ${slot.toLowerCase()}…</b><span class="muted">This takes a few seconds.</span></div>`;
   } else if (r?.review) {
-    const tot = sumItems(eatenShare(r, r.review)), share = r.share || 1;
+    const tot = sumItems(r.review);
     body = `<div class="review">
-      <div class="review-total"><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
-      <div class="share"><span class="label">How much did you eat?</span><div class="share-opts" role="group" aria-label="How much did you eat?">${SHARES.map(([v, l]) => `<button class="chip" data-act="share" data-v="${v}" aria-pressed="${v === share}">${l}</button>`).join('')}</div>${share !== 1 ? `<span class="muted share-note">Of the whole plate, ${sumItems(r.review).kcal.toLocaleString()} kcal</span>` : ''}</div>
-      ${S.canImages ? (S.busy.leftover ? `<div class="snap after"><span class="spinner"></span><span><b>Checking what's left…</b></span></div>`
-        : r.leftNote ? `<div class="left-note"><span aria-hidden="true">✓</span>${esc(r.leftNote)}</div>`
-        : `<label class="snap after" for="photoLeft"><span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Add an after photo</b><span class="muted">Leftovers? Only what you ate counts</span></span></label><input class="hidden-file" type="file" id="photoLeft" accept="image/*">`) : ''}
+      <div class="review-total"><span class="big num" id="revKcal">${tot.kcal.toLocaleString()}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
+      ${r.leftNote ? `<div class="left-note"><span aria-hidden="true">✓</span>${esc(r.leftNote)}</div>` : ''}
       ${r.review.map((i, n) => r.editing === n ? `<div class="mi-edit" data-n="${n}">
           <div class="fields two"><div class="field"><label for="e-name-${n}">Food</label><input type="text" id="e-name-${n}" data-edit="${n}.name" value="${esc(i.name)}" placeholder="e.g. Olive oil"></div>
           <div class="field"><label for="e-amount-${n}">Amount</label><input type="text" id="e-amount-${n}" data-edit="${n}.amount" value="${esc(i.amount)}" placeholder="e.g. 1 tbsp"></div></div>
@@ -1946,7 +1937,10 @@ function logSheet(){
           <div class="row" style="justify-content:space-between"><button class="btn ghost small" data-act="dropitem" data-n="${n}">Remove</button><button class="btn small" data-act="doneedit">Done</button></div>
         </div>` : `<button class="mi mi-btn" data-act="edititem" data-n="${n}" aria-label="Edit ${esc(i.name || 'item')}"><span><span class="name">${esc(i.name || 'New item')}</span><span class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</span></span><span class="num">${r0(i.kcal)}</span><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>`).join('')}
       ${r.adding || S.busy.addItem ? `<form class="additem" id="moreForm"><input type="text" id="moreText" placeholder="e.g. 1 tbsp olive oil" aria-label="Item to add" autocomplete="off"><button class="btn small" type="submit" ${S.busy.addItem ? 'disabled' : ''}>${S.busy.addItem ? '<span class="spinner"></span>' : 'Add'}</button></form>`
-        : `<button class="add-row" data-act="addrow"><span aria-hidden="true">+</span> Add item</button>`}
+        : `<div class="rev-tools"><button class="tool-btn" data-act="addrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add item</button>
+          ${S.canImages && !r.leftNote ? (S.busy.leftover ? `<span class="tool-btn busy"><span class="spinner"></span>Checking…</span>`
+            : `<label class="tool-btn" for="photoLeft"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>After photo</label><input class="hidden-file" type="file" id="photoLeft" accept="image/*">`) : ''}</div>
+        ${S.canImages && !r.leftNote && !S.busy.leftover ? `<p class="tool-hint">Didn't finish? Snap what's left and only what you ate counts.</p>` : ''}`}
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>${r.replaceIds ? 'Save changes' : `Add to ${slot}`}</button>${r.replaceIds ? '' : '<button class="btn ghost" data-act="editlog">Start over</button>'}</div>`;
   } else if (r?.clarify) {
@@ -2577,7 +2571,7 @@ document.addEventListener('input', e => {
     // Live edit of a reviewed item; totals update without redrawing the form.
     const [n, f] = e.target.dataset.edit.split('.'), it = S.logResult.review[+n];
     it[f] = ['kcal','protein','carbs','fat'].includes(f) ? Math.max(0, Number(e.target.value) || 0) : e.target.value;
-    const tot = sumItems(eatenShare(S.logResult, S.logResult.review)); const k = $('#revKcal'), p = $('#revPfc');
+    const tot = sumItems(S.logResult.review); const k = $('#revKcal'), p = $('#revPfc');
     if (k) k.textContent = tot.kcal; if (p) p.innerHTML = pfc(tot);
   }
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
@@ -2645,7 +2639,6 @@ document.addEventListener('click', e => {
   else if (a === 'askquick') { go('coach'); sendChat(el.dataset.q); }
   else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; S.logPhotoAfter = null; render(); }
   else if (a === 'noafter') { e.preventDefault(); S.logPhotoAfter = null; render(); }
-  else if (a === 'share') { S.logResult.share = Number(el.dataset.v); render(); }
   else if (a === 'about') {
     if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
     else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }

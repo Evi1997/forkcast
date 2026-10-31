@@ -748,10 +748,12 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .snap.after.off{cursor:default}
 .snap.after.off .snap-ic{opacity:.5}
 .snap.after.off:hover{border-color:var(--line);background:none}
-.share{display:flex;flex-direction:column;gap:8px;padding:4px 0 6px}
-.share-opts{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
-.share-opts .chip{flex:none;min-width:48px;justify-content:center}
-.share-opts .chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
-.share-note{font-size:.82rem}
 .left-note{display:flex;gap:8px;align-items:center;padding:10px 14px;border-radius:14px;background:var(--accent-soft);color:var(--ink);font-size:.88rem}
 .left-note span{color:var(--accent-deep);font-weight:800}
+.rev-tools{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.rev-tools .tool-btn:only-child{grid-column:1 / -1}
+.tool-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 14px;border-radius:16px;border:0;background:var(--surface-2);color:var(--ink);font:inherit;font-weight:700;font-size:.95rem;cursor:pointer}
+.tool-btn svg{width:19px;height:19px;color:var(--accent-deep)}
+.tool-btn:hover{background:var(--accent-soft)}
+.tool-btn.busy{cursor:default;color:var(--muted)}
+.tool-hint{margin:2px 4px 0;font-size:.82rem;color:var(--muted)}

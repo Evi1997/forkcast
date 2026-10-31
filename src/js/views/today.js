@@ -74,13 +74,10 @@ function logSheet(){
   if (busy) {
     body = `<div class="sheet-wait"><div class="pulse">${mealIcon(slot)}</div><b>Counting your ${slot.toLowerCase()}…</b><span class="muted">This takes a few seconds.</span></div>`;
   } else if (r?.review) {
-    const tot = sumItems(eatenShare(r, r.review)), share = r.share || 1;
+    const tot = sumItems(r.review);
     body = `<div class="review">
-      <div class="review-total"><span class="big num" id="revKcal">${tot.kcal}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
-      <div class="share"><span class="label">How much did you eat?</span><div class="share-opts" role="group" aria-label="How much did you eat?">${SHARES.map(([v, l]) => `<button class="chip" data-act="share" data-v="${v}" aria-pressed="${v === share}">${l}</button>`).join('')}</div>${share !== 1 ? `<span class="muted share-note">Of the whole plate, ${sumItems(r.review).kcal.toLocaleString()} kcal</span>` : ''}</div>
-      ${S.canImages ? (S.busy.leftover ? `<div class="snap after"><span class="spinner"></span><span><b>Checking what's left…</b></span></div>`
-        : r.leftNote ? `<div class="left-note"><span aria-hidden="true">✓</span>${esc(r.leftNote)}</div>`
-        : `<label class="snap after" for="photoLeft"><span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span><span><b>Add an after photo</b><span class="muted">Leftovers? Only what you ate counts</span></span></label><input class="hidden-file" type="file" id="photoLeft" accept="image/*">`) : ''}
+      <div class="review-total"><span class="big num" id="revKcal">${tot.kcal.toLocaleString()}</span><span class="muted">kcal</span><span class="pfc" id="revPfc" style="margin-left:auto">${pfc(tot)}</span></div>
+      ${r.leftNote ? `<div class="left-note"><span aria-hidden="true">✓</span>${esc(r.leftNote)}</div>` : ''}
       ${r.review.map((i, n) => r.editing === n ? `<div class="mi-edit" data-n="${n}">
           <div class="fields two"><div class="field"><label for="e-name-${n}">Food</label><input type="text" id="e-name-${n}" data-edit="${n}.name" value="${esc(i.name)}" placeholder="e.g. Olive oil"></div>
           <div class="field"><label for="e-amount-${n}">Amount</label><input type="text" id="e-amount-${n}" data-edit="${n}.amount" value="${esc(i.amount)}" placeholder="e.g. 1 tbsp"></div></div>
@@ -91,7 +88,10 @@ function logSheet(){
           <div class="row" style="justify-content:space-between"><button class="btn ghost small" data-act="dropitem" data-n="${n}">Remove</button><button class="btn small" data-act="doneedit">Done</button></div>
         </div>` : `<button class="mi mi-btn" data-act="edititem" data-n="${n}" aria-label="Edit ${esc(i.name || 'item')}"><span><span class="name">${esc(i.name || 'New item')}</span><span class="meta">${esc(i.amount || '')}${i.amount ? ' · ' : ''}${pfc(i)}</span></span><span class="num">${r0(i.kcal)}</span><svg class="pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg></button>`).join('')}
       ${r.adding || S.busy.addItem ? `<form class="additem" id="moreForm"><input type="text" id="moreText" placeholder="e.g. 1 tbsp olive oil" aria-label="Item to add" autocomplete="off"><button class="btn small" type="submit" ${S.busy.addItem ? 'disabled' : ''}>${S.busy.addItem ? '<span class="spinner"></span>' : 'Add'}</button></form>`
-        : `<button class="add-row" data-act="addrow"><span aria-hidden="true">+</span> Add item</button>`}
+        : `<div class="rev-tools"><button class="tool-btn" data-act="addrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add item</button>
+          ${S.canImages && !r.leftNote ? (S.busy.leftover ? `<span class="tool-btn busy"><span class="spinner"></span>Checking…</span>`
+            : `<label class="tool-btn" for="photoLeft"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg>After photo</label><input class="hidden-file" type="file" id="photoLeft" accept="image/*">`) : ''}</div>
+        ${S.canImages && !r.leftNote && !S.busy.leftover ? `<p class="tool-hint">Didn't finish? Snap what's left and only what you ate counts.</p>` : ''}`}
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="confirmlog" ${r.review.length ? '' : 'disabled'}>${r.replaceIds ? 'Save changes' : `Add to ${slot}`}</button>${r.replaceIds ? '' : '<button class="btn ghost" data-act="editlog">Start over</button>'}</div>`;
   } else if (r?.clarify) {
