@@ -150,7 +150,7 @@ LATEST CHECK-IN: ${JSON.stringify(checkin || 'none')}`;
 ${PROMPTS.planContext(ctx)}
 ${ctx.avoid?.length ? `\nThis is NEXT week's plan. For variety, don't repeat these dishes from this week: ${ctx.avoid.join('; ')}\n` : ''}
 Reply with only JSON:
-{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","photo":"2-3 word English name of the finished dish as people photograph it, e.g. yogurt berries, lentil soup, chicken curry"}]}]}
+{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","wiki":"exact title of the English Wikipedia article for the closest classic dish, e.g. Chili con carne, Lentil soup, Porridge, Buddha bowl, Stir frying, Strained yogurt"}]}]}
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
@@ -179,7 +179,13 @@ ${PROMPTS.planContext(ctx)}
 
 Swap this ${meal.slot}: "${meal.name}" (${meal.portion}; ${meal.kcal} kcal, ${meal.p} g protein).
 Suggest ONE different dish for the same slot, with about the same calories (±10%) and protein, that fits the person's tastes and cooking time. Not any of: ${avoid.join('; ')}.
-Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","photo":"2-3 word English name of the finished dish"}`;
+Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","wiki":"exact title of the English Wikipedia article for the closest classic dish"}`;
+  },
+
+  photoTitles(names){
+    return `For each dish, give the exact title of the English Wikipedia article for the closest classic dish, one that has a photo of the dish itself (e.g. "Turkey chili with beans" → "Chili con carne", "Chicken quinoa bowl" → "Buddha bowl", "Overnight oats" → "Porridge", "Beef stir-fry with rice" → "Stir frying", "Greek yogurt with berries" → "Strained yogurt").
+Dishes: ${JSON.stringify(names)}
+Reply with only JSON: {"titles":{"<dish exactly as given>":"<Wikipedia title>"}}`;
   },
 
   recipe(meal, person){

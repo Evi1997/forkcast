@@ -77,25 +77,27 @@ function planMealSheet(){
     ${dishPhoto(P, key, m)}
     <div class="review-total"><span class="big num">${r0(m.kcal)}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(m)}</span></div>
     <dl class="facts"><dt>Portion</dt><dd>${esc(m.portion)}</dd>${m.swap ? `<dt>Swap</dt><dd>${esc(m.swap)}</dd>` : ''}</dl>
-    ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>`
-      : `<button class="btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
-    <div class="sheet-actions" style="display:flex;flex-direction:row;gap:10px">
-      <button class="btn" data-act="swapmeal" data-i="${i}" data-j="${j}" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span> Swapping…' : SWAP_IC + ' Swap'}</button>
-      ${S.planWeek === 1 ? '' : `<button class="btn primary big-btn" style="flex:1" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`}
+    ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>` : ''}
+    <div class="sheet-actions meal-actions">
+      <button class="swap-btn big" data-act="swapmeal" data-i="${i}" data-j="${j}" aria-label="Swap for another meal" title="Swap for another meal" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+      ${rec ? (S.planWeek === 1 ? '' : `<button class="btn primary big-btn" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`)
+        : `<button class="btn primary big-btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
     </div>
+    ${!rec && S.planWeek !== 1 ? `<button class="btn ghost" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>` : ''}
   </div>`;
 }
 
 // Photo of the dish, or the meal's own colour and icon while there is none.
+const mealGlyph = (m, w) => SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : '';
 function dishThumb(P, key, m){
-  const p = P.photos?.[key];
+  const p = mealPic(P, m);
   if (p?.thumb) return `<span class="pthumb"><img src="${esc(p.thumb)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('ph');this.remove()"></span>`;
-  return `<span class="pthumb ph${key in (P.photos || {}) || S.photosOff ? '' : ' loading'}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : ''}</span>`;
+  return `<span class="pthumb ph${p === undefined && navigator.onLine ? ' loading' : ''}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 2)}</span>`;
 }
 function dishPhoto(P, key, m){
-  const p = P.photos?.[key];
-  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : ''}</figure>`;
-  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(m.name)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">Photo: ${esc(p.by)} · ${esc(p.lic)}</a></figcaption></figure>`;
+  const p = mealPic(P, m);
+  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 1.6)}</figure>`;
+  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.page)}, a dish like this one" loading="lazy"><figcaption><a href="${esc(p.url || '')}" target="_blank" rel="noopener">${esc(p.page)} · ${esc(p.by || 'Wikimedia')}${p.lic ? ' · ' + esc(p.lic) : ''}</a></figcaption></figure>`;
 }
 
 // Keep the chosen day visible in the day picker after every redraw.

@@ -24,7 +24,7 @@ function render(){
   if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view !== 'plan' && (S.shopOpen || S.prep)) { S.shopOpen = null; S.prep = null; prepWake(false); document.body.classList.remove('sheet-open', 'prepping'); }
   if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
-  if (S.view === 'plan' && curPlan()) loadDayPhotos(Math.min(S.planDay, curPlan().days.length - 1));
+  if (S.view === 'plan' && curPlan()) loadWeekPhotos();
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
 

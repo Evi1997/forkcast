@@ -25,7 +25,7 @@ async function generatePlan(){
     const avoid = next && thisWeekPlan() ? thisWeekPlan().days.flatMap(d => d.meals.map(m => m.name)) : [];
     const plan = await S.sample.json(PROMPTS.plan({ ...planContext(), avoid }), { modelTier:'default', cache:false });
     if (!Array.isArray(plan?.days) || !plan.days.length) throw { code:'invalid_json' };
-    setCurPlan({ weekOf: next ? nextMonday() : mondayOf(), created: Date.now(), days: plan.days.slice(0,7), recipes:{}, photos:{}, checked:{} });
+    setCurPlan({ weekOf: next ? nextMonday() : mondayOf(), created: Date.now(), days: plan.days.slice(0,7), recipes:{}, checked:{} });
     S.planDay = next ? 0 : (new Date().getDay() + 6) % 7;
   } catch (e) { hardFail(e); S.err.plan = errText(e); }
   S.busy.plan = false; render();
@@ -48,12 +48,12 @@ async function swapMeal(i, j){
     const others = P.days.flatMap(d => d.meals.map(x => x.name));
     const r = await S.sample.json(PROMPTS.swapMeal(planContext(), m, others), { modelTier:'quick', cache:false });
     if (!r?.name || !r.kcal) throw { code:'invalid_json' };
-    const key = i + '-' + j, before = { meal:m, recipe:P.recipes?.[key], photo:P.photos?.[key], stale:P.listStale };
+    const key = i + '-' + j, before = { meal:m, recipe:P.recipes?.[key], stale:P.listStale };
     P.days[i].meals[j] = { ...r, slot:m.slot };
-    if (P.recipes) delete P.recipes[key]; if (P.photos) delete P.photos[key];
+    if (P.recipes) delete P.recipes[key];
     if (P.grocery?.length) P.listStale = true;
     save.plan();
-    showToast(`Swapped for ${r.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; if (before.photo !== undefined) P.photos[key] = before.photo; P.listStale = before.stale; save.plan(); });
+    showToast(`Swapped for ${r.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; P.listStale = before.stale; save.plan(); });
   } catch (e) { hardFail(e); S.err.plan = errText(e); }
   S.busy.swap = null; render();
 }
@@ -106,42 +106,57 @@ async function loadRecipe(key, meal){
   S.busy.recipe = null; render();
 }
 
-// Dish photos: free, openly licensed photos from Openverse (no key, called
-// straight from the phone). Each result is scored against the dish name so an
-// unrelated photo is never shown; no good match falls back to the meal icon.
-// Fetched once per meal for the day being viewed and kept inside the plan.
-const photoBusy = new Set();
-const PHOTO_STOP = new Set(['with','and','the','a','of','in','on','fresh','homemade','easy','bowl','plate']);
-async function findPhoto(q){
-  const words = String(q).toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !PHOTO_STOP.has(w));
-  if (!words.length) return null;
-  const res = await fetch('https://api.openverse.org/v1/images/?page_size=10&category=photograph&mature=false&q=' + encodeURIComponent(words.slice(0, 4).join(' ')));
-  if (res.status === 429) { S.photosOff = true; return undefined; }
-  if (!res.ok) return undefined;
-  const body = await res.json();
-  const food = /food|dish|meal|breakfast|lunch|dinner|cuisine|recipe|salad|soup|bowl|plate/;
-  let best = null, bestScore = 0;
-  (body.results || []).forEach(r => {
-    const text = (r.title + ' ' + (r.tags || []).map(t => t.name).join(' ')).toLowerCase();
-    const hits = words.filter(w => text.includes(w.replace(/s$/, ''))).length;
-    const score = hits / words.length + (food.test(text) ? .25 : 0);
-    if (score > bestScore) { best = r; bestScore = score; }
+// Dish photos: the lead photo of the Wikipedia article for the closest classic
+// dish (e.g. "Chili con carne" for a turkey chili). The AI names the article,
+// so the photo always shows the right kind of dish; Wikipedia and Wikimedia
+// Commons are free, need no key and allow calls straight from the phone.
+// Plans keep P.wiki (meal name -> article) and P.pics (article -> photo or null).
+const WIKI = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&';
+const mealWiki = (P, m) => m.wiki || P.wiki?.[m.name];
+const mealPic = (P, m) => { const t = mealWiki(P, m); return t ? P.pics?.[t] : undefined; };
+const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent.trim(); };
+
+async function wikiPhotos(titles){
+  const out = {};
+  const q = (await (await fetch(WIKI + 'action=query&redirects=1&prop=pageimages&piprop=name|thumbnail&pithumbsize=500&titles=' + encodeURIComponent(titles.join('|')))).json()).query || {};
+  const follow = (t, list) => (list || []).reduce((x, n) => n.from === x ? n.to : x, t);
+  const pages = Object.values(q.pages || {});
+  titles.forEach(t => {
+    const p = pages.find(p => p.title === follow(follow(t, q.normalized), q.redirects));
+    out[t] = p?.thumbnail?.source && /\.(jpe?g|png|webp)$/i.test(p.pageimage || '') ? { src:p.thumbnail.source, thumb:p.thumbnail.source.replace(/\/\d+px-/, '/120px-'), file:p.pageimage, page:p.title } : null;
   });
-  if (!best || bestScore < .5) return null;
-  const flickr = /staticflickr\.com/.test(best.url), size = s => best.url.replace(/(_[a-z])?\.jpg$/, s + '.jpg');
-  return { src: flickr ? size('_z') : best.url, thumb: flickr ? size('_q') : best.thumbnail, by: best.creator || 'Unknown', url: best.foreign_landing_url, lic: ('CC ' + (best.license || '').toUpperCase() + ' ' + (best.license_version || '')).trim() };
+  // Author and licence for the credit line.
+  const files = [...new Set(Object.values(out).filter(Boolean).map(x => 'File:' + x.file))];
+  if (files.length) {
+    const m = (await (await fetch(WIKI + 'action=query&prop=imageinfo&iiprop=extmetadata|url&iiextmetadatafilter=Artist|LicenseShortName&titles=' + encodeURIComponent(files.join('|')))).json()).query || {};
+    Object.values(m.pages || {}).forEach(pg => {
+      const info = pg.imageinfo?.[0]; if (!info) return;
+      const name = pg.title.replace(/^File:/, '').replace(/ /g, '_');
+      Object.values(out).forEach(x => { if (x && x.file.replace(/ /g, '_') === name) { const by = stripHtml(info.extmetadata?.Artist?.value); x.by = by && !/^no machine-readable/i.test(by) ? by.replace(/\s*\(.*?\)\s*/g, ' ').trim().slice(0, 32) : 'Wikimedia Commons'; x.lic = info.extmetadata?.LicenseShortName?.value || ''; x.url = info.descriptionurl; } });
+    });
+  }
+  return out;
 }
-async function loadDayPhotos(di){
+
+let photosBusy = false;
+async function loadWeekPhotos(){
   const P = curPlan();
-  if (S.photosOff || !navigator.onLine || !P?.days?.[di]) return;
-  P.photos = P.photos || {};
-  const todo = P.days[di].meals.map((m, j) => [di + '-' + j, m]).filter(([k]) => !(k in P.photos) && !photoBusy.has(k));
-  if (!todo.length) return;
-  todo.forEach(([k]) => photoBusy.add(k));
-  let changed = false;
-  await Promise.all(todo.map(async ([k, m]) => {
-    try { const p = await findPhoto(m.photo || m.name); if (p !== undefined) { P.photos[k] = p; changed = true; } } catch {}
-    photoBusy.delete(k);
-  }));
-  if (changed) { save.plan(); if (S.view === 'plan') render(); }
+  if (photosBusy || !P?.days || !navigator.onLine) return;
+  photosBusy = true;
+  try {
+    // Plans made before photos came from Wikipedia: ask once for the article names.
+    const missing = [...new Set(P.days.flatMap(d => d.meals).filter(m => !mealWiki(P, m)).map(m => m.name))];
+    if (missing.length && S.sampleOK && !(P.wikiAsked > Date.now() - 864e5)) {
+      P.wikiAsked = Date.now();
+      try { const r = await S.sample.json(PROMPTS.photoTitles(missing), { modelTier:'quick', cache:{gcTime:864e5} }); P.wiki = { ...(P.wiki || {}), ...(r?.titles || {}) }; } catch {}
+      save.plan();
+    }
+    P.pics = P.pics || {};
+    const todo = [...new Set(P.days.flatMap(d => d.meals).map(m => mealWiki(P, m)).filter(t => t && !(t in P.pics)))];
+    for (let i = 0; i < todo.length; i += 40) Object.assign(P.pics, await wikiPhotos(todo.slice(i, i + 40)));
+    if (todo.length) save.plan();
+    delete P.photos; // old keyword-search photos, often the wrong dish
+  } catch {}
+  photosBusy = false;
+  if (S.view === 'plan') render();
 }

@@ -75,7 +75,7 @@ function prepMode(){
   if (i < 0) {
     // What you'll make: the batch-cooked dishes of the week, with their photos.
     const seen = new Map();
-    P.days.forEach((d, di) => d.meals.forEach((m, j) => { if (m.prep !== 'fresh') { const k = di + '-' + j, e = seen.get(m.name) || { m, key:k, n:0 }; e.n++; if (P.photos?.[k]?.thumb && !P.photos?.[e.key]?.thumb) e.key = k; seen.set(m.name, e); } }));
+    P.days.forEach((d, di) => d.meals.forEach((m, j) => { if (m.prep !== 'fresh') { const e = seen.get(m.name) || { m, key:di + '-' + j, n:0 }; e.n++; seen.set(m.name, e); } }));
     const dishes = [...seen.values()];
     body = `<h1 class="prep-h">You'll make</h1>
       ${sessions.length > 1 ? `<div class="stores" role="group" aria-label="Prep session">${sessions.map((x, k) => `<button class="chip" data-act="prepsession" data-s="${k}" aria-pressed="${k === S.prep.s}">${esc(x.when)}</button>`).join('')}</div>` : ''}

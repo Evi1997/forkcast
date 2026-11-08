@@ -547,6 +547,10 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .swap-btn{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;cursor:pointer}
 .swap-btn svg{width:18px;height:18px}
 .swap-btn:disabled{cursor:default}
+.swap-btn.big{width:54px;height:54px}
+.swap-btn.big svg{width:22px;height:22px}
+.meal-actions{display:flex;flex-direction:row;align-items:center;gap:10px}
+.meal-actions .big-btn{flex:1}
 .dish.ph{background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c)}
 .dish.ph svg{width:56px;height:56px}
 .weeksw{display:flex;align-items:center;gap:8px;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:6px}
@@ -1042,7 +1046,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794135736';
+const BUILD = '1794149232';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1225,7 +1229,7 @@ LATEST CHECK-IN: ${JSON.stringify(checkin || 'none')}`;
 ${PROMPTS.planContext(ctx)}
 ${ctx.avoid?.length ? `\nThis is NEXT week's plan. For variety, don't repeat these dishes from this week: ${ctx.avoid.join('; ')}\n` : ''}
 Reply with only JSON:
-{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","photo":"2-3 word English name of the finished dish as people photograph it, e.g. yogurt berries, lentil soup, chicken curry"}]}]}
+{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","wiki":"exact title of the English Wikipedia article for the closest classic dish, e.g. Chili con carne, Lentil soup, Porridge, Buddha bowl, Stir frying, Strained yogurt"}]}]}
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
@@ -1254,7 +1258,13 @@ ${PROMPTS.planContext(ctx)}
 
 Swap this ${meal.slot}: "${meal.name}" (${meal.portion}; ${meal.kcal} kcal, ${meal.p} g protein).
 Suggest ONE different dish for the same slot, with about the same calories (±10%) and protein, that fits the person's tastes and cooking time. Not any of: ${avoid.join('; ')}.
-Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","photo":"2-3 word English name of the finished dish"}`;
+Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","wiki":"exact title of the English Wikipedia article for the closest classic dish"}`;
+  },
+
+  photoTitles(names){
+    return `For each dish, give the exact title of the English Wikipedia article for the closest classic dish, one that has a photo of the dish itself (e.g. "Turkey chili with beans" → "Chili con carne", "Chicken quinoa bowl" → "Buddha bowl", "Overnight oats" → "Porridge", "Beef stir-fry with rice" → "Stir frying", "Greek yogurt with berries" → "Strained yogurt").
+Dishes: ${JSON.stringify(names)}
+Reply with only JSON: {"titles":{"<dish exactly as given>":"<Wikipedia title>"}}`;
   },
 
   recipe(meal, person){
@@ -1868,7 +1878,7 @@ async function generatePlan(){
     const avoid = next && thisWeekPlan() ? thisWeekPlan().days.flatMap(d => d.meals.map(m => m.name)) : [];
     const plan = await S.sample.json(PROMPTS.plan({ ...planContext(), avoid }), { modelTier:'default', cache:false });
     if (!Array.isArray(plan?.days) || !plan.days.length) throw { code:'invalid_json' };
-    setCurPlan({ weekOf: next ? nextMonday() : mondayOf(), created: Date.now(), days: plan.days.slice(0,7), recipes:{}, photos:{}, checked:{} });
+    setCurPlan({ weekOf: next ? nextMonday() : mondayOf(), created: Date.now(), days: plan.days.slice(0,7), recipes:{}, checked:{} });
     S.planDay = next ? 0 : (new Date().getDay() + 6) % 7;
   } catch (e) { hardFail(e); S.err.plan = errText(e); }
   S.busy.plan = false; render();
@@ -1891,12 +1901,12 @@ async function swapMeal(i, j){
     const others = P.days.flatMap(d => d.meals.map(x => x.name));
     const r = await S.sample.json(PROMPTS.swapMeal(planContext(), m, others), { modelTier:'quick', cache:false });
     if (!r?.name || !r.kcal) throw { code:'invalid_json' };
-    const key = i + '-' + j, before = { meal:m, recipe:P.recipes?.[key], photo:P.photos?.[key], stale:P.listStale };
+    const key = i + '-' + j, before = { meal:m, recipe:P.recipes?.[key], stale:P.listStale };
     P.days[i].meals[j] = { ...r, slot:m.slot };
-    if (P.recipes) delete P.recipes[key]; if (P.photos) delete P.photos[key];
+    if (P.recipes) delete P.recipes[key];
     if (P.grocery?.length) P.listStale = true;
     save.plan();
-    showToast(`Swapped for ${r.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; if (before.photo !== undefined) P.photos[key] = before.photo; P.listStale = before.stale; save.plan(); });
+    showToast(`Swapped for ${r.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; P.listStale = before.stale; save.plan(); });
   } catch (e) { hardFail(e); S.err.plan = errText(e); }
   S.busy.swap = null; render();
 }
@@ -1949,44 +1959,59 @@ async function loadRecipe(key, meal){
   S.busy.recipe = null; render();
 }
 
-// Dish photos: free, openly licensed photos from Openverse (no key, called
-// straight from the phone). Each result is scored against the dish name so an
-// unrelated photo is never shown; no good match falls back to the meal icon.
-// Fetched once per meal for the day being viewed and kept inside the plan.
-const photoBusy = new Set();
-const PHOTO_STOP = new Set(['with','and','the','a','of','in','on','fresh','homemade','easy','bowl','plate']);
-async function findPhoto(q){
-  const words = String(q).toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !PHOTO_STOP.has(w));
-  if (!words.length) return null;
-  const res = await fetch('https://api.openverse.org/v1/images/?page_size=10&category=photograph&mature=false&q=' + encodeURIComponent(words.slice(0, 4).join(' ')));
-  if (res.status === 429) { S.photosOff = true; return undefined; }
-  if (!res.ok) return undefined;
-  const body = await res.json();
-  const food = /food|dish|meal|breakfast|lunch|dinner|cuisine|recipe|salad|soup|bowl|plate/;
-  let best = null, bestScore = 0;
-  (body.results || []).forEach(r => {
-    const text = (r.title + ' ' + (r.tags || []).map(t => t.name).join(' ')).toLowerCase();
-    const hits = words.filter(w => text.includes(w.replace(/s$/, ''))).length;
-    const score = hits / words.length + (food.test(text) ? .25 : 0);
-    if (score > bestScore) { best = r; bestScore = score; }
+// Dish photos: the lead photo of the Wikipedia article for the closest classic
+// dish (e.g. "Chili con carne" for a turkey chili). The AI names the article,
+// so the photo always shows the right kind of dish; Wikipedia and Wikimedia
+// Commons are free, need no key and allow calls straight from the phone.
+// Plans keep P.wiki (meal name -> article) and P.pics (article -> photo or null).
+const WIKI = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&';
+const mealWiki = (P, m) => m.wiki || P.wiki?.[m.name];
+const mealPic = (P, m) => { const t = mealWiki(P, m); return t ? P.pics?.[t] : undefined; };
+const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent.trim(); };
+
+async function wikiPhotos(titles){
+  const out = {};
+  const q = (await (await fetch(WIKI + 'action=query&redirects=1&prop=pageimages&piprop=name|thumbnail&pithumbsize=500&titles=' + encodeURIComponent(titles.join('|')))).json()).query || {};
+  const follow = (t, list) => (list || []).reduce((x, n) => n.from === x ? n.to : x, t);
+  const pages = Object.values(q.pages || {});
+  titles.forEach(t => {
+    const p = pages.find(p => p.title === follow(follow(t, q.normalized), q.redirects));
+    out[t] = p?.thumbnail?.source && /\.(jpe?g|png|webp)$/i.test(p.pageimage || '') ? { src:p.thumbnail.source, thumb:p.thumbnail.source.replace(/\/\d+px-/, '/120px-'), file:p.pageimage, page:p.title } : null;
   });
-  if (!best || bestScore < .5) return null;
-  const flickr = /staticflickr\.com/.test(best.url), size = s => best.url.replace(/(_[a-z])?\.jpg$/, s + '.jpg');
-  return { src: flickr ? size('_z') : best.url, thumb: flickr ? size('_q') : best.thumbnail, by: best.creator || 'Unknown', url: best.foreign_landing_url, lic: ('CC ' + (best.license || '').toUpperCase() + ' ' + (best.license_version || '')).trim() };
+  // Author and licence for the credit line.
+  const files = [...new Set(Object.values(out).filter(Boolean).map(x => 'File:' + x.file))];
+  if (files.length) {
+    const m = (await (await fetch(WIKI + 'action=query&prop=imageinfo&iiprop=extmetadata|url&iiextmetadatafilter=Artist|LicenseShortName&titles=' + encodeURIComponent(files.join('|')))).json()).query || {};
+    Object.values(m.pages || {}).forEach(pg => {
+      const info = pg.imageinfo?.[0]; if (!info) return;
+      const name = pg.title.replace(/^File:/, '').replace(/ /g, '_');
+      Object.values(out).forEach(x => { if (x && x.file.replace(/ /g, '_') === name) { const by = stripHtml(info.extmetadata?.Artist?.value); x.by = by && !/^no machine-readable/i.test(by) ? by.replace(/\s*\(.*?\)\s*/g, ' ').trim().slice(0, 32) : 'Wikimedia Commons'; x.lic = info.extmetadata?.LicenseShortName?.value || ''; x.url = info.descriptionurl; } });
+    });
+  }
+  return out;
 }
-async function loadDayPhotos(di){
+
+let photosBusy = false;
+async function loadWeekPhotos(){
   const P = curPlan();
-  if (S.photosOff || !navigator.onLine || !P?.days?.[di]) return;
-  P.photos = P.photos || {};
-  const todo = P.days[di].meals.map((m, j) => [di + '-' + j, m]).filter(([k]) => !(k in P.photos) && !photoBusy.has(k));
-  if (!todo.length) return;
-  todo.forEach(([k]) => photoBusy.add(k));
-  let changed = false;
-  await Promise.all(todo.map(async ([k, m]) => {
-    try { const p = await findPhoto(m.photo || m.name); if (p !== undefined) { P.photos[k] = p; changed = true; } } catch {}
-    photoBusy.delete(k);
-  }));
-  if (changed) { save.plan(); if (S.view === 'plan') render(); }
+  if (photosBusy || !P?.days || !navigator.onLine) return;
+  photosBusy = true;
+  try {
+    // Plans made before photos came from Wikipedia: ask once for the article names.
+    const missing = [...new Set(P.days.flatMap(d => d.meals).filter(m => !mealWiki(P, m)).map(m => m.name))];
+    if (missing.length && S.sampleOK && !(P.wikiAsked > Date.now() - 864e5)) {
+      P.wikiAsked = Date.now();
+      try { const r = await S.sample.json(PROMPTS.photoTitles(missing), { modelTier:'quick', cache:{gcTime:864e5} }); P.wiki = { ...(P.wiki || {}), ...(r?.titles || {}) }; } catch {}
+      save.plan();
+    }
+    P.pics = P.pics || {};
+    const todo = [...new Set(P.days.flatMap(d => d.meals).map(m => mealWiki(P, m)).filter(t => t && !(t in P.pics)))];
+    for (let i = 0; i < todo.length; i += 40) Object.assign(P.pics, await wikiPhotos(todo.slice(i, i + 40)));
+    if (todo.length) save.plan();
+    delete P.photos; // old keyword-search photos, often the wrong dish
+  } catch {}
+  photosBusy = false;
+  if (S.view === 'plan') render();
 }
 
 // === services/onboarding.js ===
@@ -2073,7 +2098,7 @@ function render(){
   if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view !== 'plan' && (S.shopOpen || S.prep)) { S.shopOpen = null; S.prep = null; prepWake(false); document.body.classList.remove('sheet-open', 'prepping'); }
   if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
-  if (S.view === 'plan' && curPlan()) loadDayPhotos(Math.min(S.planDay, curPlan().days.length - 1));
+  if (S.view === 'plan' && curPlan()) loadWeekPhotos();
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
 
@@ -2466,25 +2491,27 @@ function planMealSheet(){
     ${dishPhoto(P, key, m)}
     <div class="review-total"><span class="big num">${r0(m.kcal)}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(m)}</span></div>
     <dl class="facts"><dt>Portion</dt><dd>${esc(m.portion)}</dd>${m.swap ? `<dt>Swap</dt><dd>${esc(m.swap)}</dd>` : ''}</dl>
-    ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>`
-      : `<button class="btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
-    <div class="sheet-actions" style="display:flex;flex-direction:row;gap:10px">
-      <button class="btn" data-act="swapmeal" data-i="${i}" data-j="${j}" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span> Swapping…' : SWAP_IC + ' Swap'}</button>
-      ${S.planWeek === 1 ? '' : `<button class="btn primary big-btn" style="flex:1" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`}
+    ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>` : ''}
+    <div class="sheet-actions meal-actions">
+      <button class="swap-btn big" data-act="swapmeal" data-i="${i}" data-j="${j}" aria-label="Swap for another meal" title="Swap for another meal" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+      ${rec ? (S.planWeek === 1 ? '' : `<button class="btn primary big-btn" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`)
+        : `<button class="btn primary big-btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
     </div>
+    ${!rec && S.planWeek !== 1 ? `<button class="btn ghost" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>` : ''}
   </div>`;
 }
 
 // Photo of the dish, or the meal's own colour and icon while there is none.
+const mealGlyph = (m, w) => SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : '';
 function dishThumb(P, key, m){
-  const p = P.photos?.[key];
+  const p = mealPic(P, m);
   if (p?.thumb) return `<span class="pthumb"><img src="${esc(p.thumb)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('ph');this.remove()"></span>`;
-  return `<span class="pthumb ph${key in (P.photos || {}) || S.photosOff ? '' : ' loading'}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : ''}</span>`;
+  return `<span class="pthumb ph${p === undefined && navigator.onLine ? ' loading' : ''}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 2)}</span>`;
 }
 function dishPhoto(P, key, m){
-  const p = P.photos?.[key];
-  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : ''}</figure>`;
-  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(m.name)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">Photo: ${esc(p.by)} · ${esc(p.lic)}</a></figcaption></figure>`;
+  const p = mealPic(P, m);
+  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 1.6)}</figure>`;
+  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.page)}, a dish like this one" loading="lazy"><figcaption><a href="${esc(p.url || '')}" target="_blank" rel="noopener">${esc(p.page)} · ${esc(p.by || 'Wikimedia')}${p.lic ? ' · ' + esc(p.lic) : ''}</a></figcaption></figure>`;
 }
 
 // Keep the chosen day visible in the day picker after every redraw.
@@ -2572,7 +2599,7 @@ function prepMode(){
   if (i < 0) {
     // What you'll make: the batch-cooked dishes of the week, with their photos.
     const seen = new Map();
-    P.days.forEach((d, di) => d.meals.forEach((m, j) => { if (m.prep !== 'fresh') { const k = di + '-' + j, e = seen.get(m.name) || { m, key:k, n:0 }; e.n++; if (P.photos?.[k]?.thumb && !P.photos?.[e.key]?.thumb) e.key = k; seen.set(m.name, e); } }));
+    P.days.forEach((d, di) => d.meals.forEach((m, j) => { if (m.prep !== 'fresh') { const e = seen.get(m.name) || { m, key:di + '-' + j, n:0 }; e.n++; seen.set(m.name, e); } }));
     const dishes = [...seen.values()];
     body = `<h1 class="prep-h">You'll make</h1>
       ${sessions.length > 1 ? `<div class="stores" role="group" aria-label="Prep session">${sessions.map((x, k) => `<button class="chip" data-act="prepsession" data-s="${k}" aria-pressed="${k === S.prep.s}">${esc(x.when)}</button>`).join('')}</div>` : ''}
