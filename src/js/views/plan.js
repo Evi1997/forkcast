@@ -29,18 +29,19 @@ function vPlan(){
   <div class="daypick" role="tablist" aria-label="Day">${P.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${!next && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
   <section class="card plan-day">
     <div class="day-sum"><b class="num">${tot.kcal.toLocaleString()} kcal</b>${pfc(tot)}</div>
-    ${day.meals.map((m, j) => { const k = di + '-' + j, busy = S.busy.swap === k; return `<div class="prow${busy ? ' swapping' : ''}">
+    ${day.meals.map((m, j) => { const k = di + '-' + j; return `<div class="prow">
       <button class="prow-main" data-act="planmeal" data-i="${di}" data-j="${j}">
         ${dishThumb(P, k, m)}
-        <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${busy ? 'Finding a swap…' : esc(m.name)}</b></span>
+        <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${esc(m.name)}</b></span>
         <span class="num">${r0(m.kcal)}</span>
       </button>
-      <button class="swap-btn" data-act="swapmeal" data-i="${di}" data-j="${j}" aria-label="Swap ${esc(m.name)}" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+      <button class="swap-btn" data-act="swapmeal" data-i="${di}" data-j="${j}" aria-label="Swap ${esc(m.name)}">${SWAP_IC}</button>
     </div>`; }).join('')}
   </section>
   ${weekTools(P)}
   ${!next && !S.planNext?.days ? `<button class="tipcard" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="tip-txt"><b>Plan next week</b><span>Get it ready now. This week stays as it is.</span></span>${CHEV}</button>` : ''}
   ${S.planSheet ? planMealSheet() : ''}
+  ${S.swap ? swapSheet() : ''}
   ${S.shopOpen ? shopSheet() : ''}
   ${S.prep ? prepMode() : ''}`;
 }
@@ -69,7 +70,7 @@ function weekTools(P){
 function planMealSheet(){
   const P = curPlan(); if (!P) return '';
   const { i, j } = S.planSheet, m = P.days[i]?.meals[j]; if (!m) return '';
-  const key = i + '-' + j, rec = P.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '', busy = S.busy.swap === key;
+  const key = i + '-' + j, rec = P.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '';
   return `<div class="scrim${enter}" data-act="closeplan"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">
     <div class="grip" aria-hidden="true"></div>
@@ -79,7 +80,7 @@ function planMealSheet(){
     <dl class="facts"><dt>Portion</dt><dd>${esc(m.portion)}</dd>${m.swap ? `<dt>Swap</dt><dd>${esc(m.swap)}</dd>` : ''}</dl>
     ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>` : ''}
     <div class="sheet-actions meal-actions">
-      <button class="swap-btn big" data-act="swapmeal" data-i="${i}" data-j="${j}" aria-label="Swap for another meal" title="Swap for another meal" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+      <button class="swap-btn big" data-act="swapmeal" data-i="${i}" data-j="${j}" aria-label="Swap for another meal" title="Swap for another meal">${SWAP_IC}</button>
       ${rec ? (S.planWeek === 1 ? '' : `<button class="btn primary big-btn" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`)
         : `<button class="btn primary big-btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
     </div>
@@ -87,17 +88,38 @@ function planMealSheet(){
   </div>`;
 }
 
-// Photo of the dish, or the meal's own colour and icon while there is none.
+// The meal's own colour and icon show at once; the photo fades in over it
+// when it arrives, so nothing ever sits there "loading".
 const mealGlyph = (m, w) => SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : '';
+const fadeImg = (src, alt) => `<img src="${esc(src)}" alt="${esc(alt)}" decoding="async" onload="this.classList.add('in')" onerror="this.remove()">`;
 function dishThumb(P, key, m){
   const p = mealPic(P, m);
-  if (p?.thumb) return `<span class="pthumb"><img src="${esc(p.thumb)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('ph');this.remove()"></span>`;
-  return `<span class="pthumb ph${p === undefined && navigator.onLine ? ' loading' : ''}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 2)}</span>`;
+  return `<span class="pthumb ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 2)}${p?.thumb ? fadeImg(p.thumb, '') : ''}</span>`;
 }
 function dishPhoto(P, key, m){
   const p = mealPic(P, m);
-  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 1.6)}</figure>`;
-  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.page)}, a dish like this one" loading="lazy"><figcaption><a href="${esc(p.url || '')}" target="_blank" rel="noopener">${esc(p.page)} · ${esc(p.by || 'Wikimedia')}${p.lic ? ' · ' + esc(p.lic) : ''}</a></figcaption></figure>`;
+  return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 1.6)}${p?.src ? fadeImg(p.src, p.page + ', a dish like this one') + `<figcaption><a href="${esc(p.url || '')}" target="_blank" rel="noopener">${esc(p.page)} · ${esc(p.by || 'Wikimedia')}${p.lic ? ' · ' + esc(p.lic) : ''}</a></figcaption>` : ''}</figure>`;
+}
+
+// Swap: three options to choose from, or three more.
+function swapSheet(){
+  const P = curPlan(), sw = S.swap, m = P?.days?.[sw.i]?.meals?.[sw.j]; if (!m) return '';
+  const enter = sw.enter ? ' enter' : '';
+  const skeleton = [0,1,2].map(() => `<div class="sw-opt sk"><span class="pthumb ph"></span><span class="sk-lines"><i></i><i></i></span></div>`).join('');
+  return `<div class="scrim${enter}" data-act="closeswap"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Swap ${esc(m.slot)}">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head"><div style="min-width:0;flex:1"><div class="label">Instead of ${esc(m.name)}</div><h2>Swap ${esc(P.days[sw.i].day)} ${esc(m.slot.toLowerCase())}</h2></div><button class="x close" data-act="closeswap" aria-label="Close">×</button></div>
+    ${sw.err ? `<div class="notice warn">${esc(sw.err)}</div>` : ''}
+    <div class="sw-list" role="radiogroup" aria-label="Options" aria-busy="${!!sw.busy}">
+      ${sw.busy ? skeleton : sw.options.map((o, n) => `<button class="sw-opt" role="radio" aria-checked="${n === sw.pick}" data-act="swappick" data-n="${n}">
+        ${dishThumb(P, '', { ...o, slot:m.slot })}
+        <span class="sw-txt"><b>${esc(o.name)}</b><span class="muted">${r0(o.kcal)} kcal · ${r0(o.p)} g protein${o.time ? ' · ' + esc(o.time) : ''}</span></span>
+        <span class="sw-radio" aria-hidden="true"></span></button>`).join('')}
+    </div>
+    ${sw.busy ? '<p class="muted" style="text-align:center;font-size:.86rem">Finding three meals with about the same calories and protein…</p>' : `<button class="btn ghost" data-act="swapmore">Show 3 more</button>`}
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="swapuse" ${sw.busy || !sw.options.length ? 'disabled' : ''}>${sw.options[sw.pick] && !sw.busy ? `Use ${esc(sw.options[sw.pick].name)}` : 'Use this meal'}</button></div>
+  </div>`;
 }
 
 // Keep the chosen day visible in the day picker after every redraw.

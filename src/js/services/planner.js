@@ -39,23 +39,42 @@ function repeatWeek(){
   showToast('Same meals as before. Your shopping list is ready too.'); render();
 }
 
-// Swap one meal for another with about the same calories and protein.
-async function swapMeal(i, j){
-  const P = curPlan(), m = P?.days?.[i]?.meals?.[j]; if (!m || S.busy.swap) return;
+// Swap: three options with about the same calories and protein; pick one,
+// or ask for three more. S.swap = { i, j, options, pick, busy, seen }.
+function openSwap(i, j){
+  const P = curPlan(); if (!P?.days?.[i]?.meals?.[j]) return;
   if (!S.sampleOK) { S.err.plan = 'Sign in to swap meals.'; render(); return; }
-  S.busy.swap = i + '-' + j; S.err.plan = null; render();
+  S.planSheet = null;
+  S.swap = { i, j, options:[], pick:0, seen:[], enter:true }; document.body.classList.add('sheet-open');
+  moreSwaps();
+}
+async function moreSwaps(){
+  const sw = S.swap, P = curPlan(); if (!sw || sw.busy || !P) return;
+  const m = P.days[sw.i].meals[sw.j];
+  sw.busy = true; sw.err = null; render(); sw.enter = false;
   try {
-    const others = P.days.flatMap(d => d.meals.map(x => x.name));
-    const r = await S.sample.json(PROMPTS.swapMeal(planContext(), m, others), { modelTier:'quick', cache:false });
-    if (!r?.name || !r.kcal) throw { code:'invalid_json' };
-    const key = i + '-' + j, before = { meal:m, recipe:P.recipes?.[key], stale:P.listStale };
-    P.days[i].meals[j] = { ...r, slot:m.slot };
-    if (P.recipes) delete P.recipes[key];
-    if (P.grocery?.length) P.listStale = true;
-    save.plan();
-    showToast(`Swapped for ${r.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; P.listStale = before.stale; save.plan(); });
-  } catch (e) { hardFail(e); S.err.plan = errText(e); }
-  S.busy.swap = null; render();
+    const avoid = [...P.days.flatMap(d => d.meals.map(x => x.name)), ...sw.seen];
+    const r = await S.sample.json(PROMPTS.swapOptions(planContext(), m, avoid), { modelTier:'quick', cache:false });
+    const opts = (r?.options || []).filter(o => o?.name && o.kcal).slice(0, 3);
+    if (!opts.length) throw { code:'invalid_json' };
+    if (S.swap !== sw) return;
+    sw.options = opts; sw.pick = 0; sw.seen.push(...opts.map(o => o.name));
+    sw.busy = false; render();
+    // Photos for the options: one quick lookup, shared with the plan.
+    const titles = DISH_PHOTOS ? opts.map(o => o.wiki).filter(t => t && picFor(P, t) === undefined) : [];
+    if (titles.length) { const got = await wikiPhotos(titles); P.pics = { ...(P.pics || {}), ...got }; rememberPics(got); if (S.swap === sw) render(); }
+  } catch (e) { hardFail(e); sw.err = errText(e); sw.busy = false; render(); }
+}
+function useSwap(){
+  const sw = S.swap, P = curPlan(), o = sw?.options?.[sw.pick]; if (!o) return;
+  const { i, j } = sw, key = i + '-' + j, m = P.days[i].meals[j], before = { meal:m, recipe:P.recipes?.[key], stale:P.listStale };
+  P.days[i].meals[j] = { ...o, slot:m.slot };
+  if (P.recipes) delete P.recipes[key];
+  if (P.grocery?.length) P.listStale = true;
+  save.plan();
+  S.swap = null; document.body.classList.remove('sheet-open');
+  showToast(`Swapped for ${o.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; P.listStale = before.stale; save.plan(); });
+  render();
 }
 
 // Supermarkets to choose from: the person's own first, then common ones for their country.
@@ -113,7 +132,15 @@ async function loadRecipe(key, meal){
 // Plans keep P.wiki (meal name -> article) and P.pics (article -> photo or null).
 const WIKI = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&';
 const mealWiki = (P, m) => m.wiki || P.wiki?.[m.name];
-const mealPic = (P, m) => { const t = mealWiki(P, m); return t ? P.pics?.[t] : undefined; };
+// Photos found once are remembered on this phone for every plan, so a dish
+// that comes back another week shows its photo straight away.
+// Off for now: matching photos by dish name kept showing the wrong dish.
+const DISH_PHOTOS = false;
+const PIC_KEY = 'forkcast:pics';
+let picCache = (() => { try { return JSON.parse(localStorage.getItem(PIC_KEY)) || {}; } catch { return {}; } })();
+function rememberPics(got){ picCache = { ...picCache, ...got }; try { localStorage.setItem(PIC_KEY, JSON.stringify(picCache)); } catch {} }
+const picFor = (P, t) => t in (P?.pics || {}) ? P.pics[t] : picCache[t];
+const mealPic = (P, m) => { if (!DISH_PHOTOS) return null; const t = mealWiki(P, m); return t ? picFor(P, t) : undefined; };
 const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent.trim(); };
 
 async function wikiPhotos(titles){
@@ -141,7 +168,7 @@ async function wikiPhotos(titles){
 let photosBusy = false;
 async function loadWeekPhotos(){
   const P = curPlan();
-  if (photosBusy || !P?.days || !navigator.onLine) return;
+  if (!DISH_PHOTOS || photosBusy || !P?.days || !navigator.onLine) return;
   photosBusy = true;
   try {
     // Plans made before photos came from Wikipedia: ask once for the article names.
@@ -152,8 +179,8 @@ async function loadWeekPhotos(){
       save.plan();
     }
     P.pics = P.pics || {};
-    const todo = [...new Set(P.days.flatMap(d => d.meals).map(m => mealWiki(P, m)).filter(t => t && !(t in P.pics)))];
-    for (let i = 0; i < todo.length; i += 40) Object.assign(P.pics, await wikiPhotos(todo.slice(i, i + 40)));
+    const todo = [...new Set(P.days.flatMap(d => d.meals).map(m => mealWiki(P, m)).filter(t => t && picFor(P, t) === undefined))];
+    for (let i = 0; i < todo.length; i += 40) { const got = await wikiPhotos(todo.slice(i, i + 40)); Object.assign(P.pics, got); rememberPics(got); }
     if (todo.length) save.plan();
     delete P.photos; // old keyword-search photos, often the wrong dish
   } catch {}

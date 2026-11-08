@@ -64,6 +64,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.appleOpen) { S.appleOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.prep) { closePrep(); return; }
   if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
@@ -155,7 +156,11 @@ document.addEventListener('click', e => {
   else if (a === 'genplan') generatePlan();
   else if (a === 'planweek') { S.planWeek = +el.dataset.v; S.planDay = S.planWeek ? 0 : (new Date().getDay() + 6) % 7; S.err.plan = null; render(); window.scrollTo(0, 0); }
   else if (a === 'repeatweek') repeatWeek();
-  else if (a === 'swapmeal') swapMeal(+el.dataset.i, +el.dataset.j);
+  else if (a === 'swapmeal') openSwap(+el.dataset.i, +el.dataset.j);
+  else if (a === 'swappick') { S.swap.pick = +el.dataset.n; render(); }
+  else if (a === 'swapmore') moreSwaps();
+  else if (a === 'swapuse') useSwap();
+  else if (a === 'closeswap') { S.swap = null; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'shopopen') { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; }
   else if (a === 'closeshop') { S.shopOpen = null; S.storePick = false; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'storepick') { S.storePick = !S.storePick; S.shopStore = null; render(); }

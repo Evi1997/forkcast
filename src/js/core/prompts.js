@@ -172,14 +172,14 @@ Prep tasks are the steps of one guided session, in the order to do them: one sho
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
   },
 
-  swapMeal(ctx, meal, avoid){
+  swapOptions(ctx, meal, avoid){
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
 
 Swap this ${meal.slot}: "${meal.name}" (${meal.portion}; ${meal.kcal} kcal, ${meal.p} g protein).
-Suggest ONE different dish for the same slot, with about the same calories (±10%) and protein, that fits the person's tastes and cooking time. Not any of: ${avoid.join('; ')}.
-Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","wiki":"exact title of the English Wikipedia article for the closest classic dish"}`;
+Suggest THREE different dishes for the same slot, each with about the same calories (±10%) and protein, fitting the person's tastes and cooking time. Make the three clearly different from each other (e.g. different protein or cuisine). Not any of: ${avoid.join('; ')}.
+Reply with only JSON: {"options":[{"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"time":"20 min","prep":"batch" or "fresh","swap":"one short swap","wiki":"exact title of the English Wikipedia article for the closest classic dish"}]}`;
   },
 
   photoTitles(names){

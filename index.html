@@ -539,11 +539,12 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .prow-txt b{font-size:.95rem;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .prow .num{font-size:.9rem}
 .prow.swapping .pthumb{opacity:.5}
-.pthumb{flex:none;width:52px;height:52px;border-radius:14px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center}
-.pthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pthumb{position:relative;flex:none;width:52px;height:52px;border-radius:14px;overflow:hidden;background:var(--surface-2);display:grid;place-items:center}
+.pthumb img,.dish img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .35s ease}
+.pthumb img.in,.dish img.in{opacity:1}
+@media (prefers-reduced-motion:reduce){.pthumb img,.dish img{transition:none}}
 .pthumb.ph{background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c)}
 .pthumb.ph svg{width:24px;height:24px}
-.pthumb.loading{animation:shimmer 1.2s linear infinite;background:linear-gradient(100deg,var(--surface-2) 40%,var(--surface) 50%,var(--surface-2) 60%) 0 0/250% 100%}
 .swap-btn{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;cursor:pointer}
 .swap-btn svg{width:18px;height:18px}
 .swap-btn:disabled{cursor:default}
@@ -553,6 +554,19 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 .meal-actions .big-btn{flex:1}
 .dish.ph{background:color-mix(in srgb,var(--c) 14%,var(--surface));color:var(--c)}
 .dish.ph svg{width:56px;height:56px}
+.dish figcaption{z-index:1}
+.sw-list{display:flex;flex-direction:column;gap:8px}
+.sw-opt{display:flex;align-items:center;gap:12px;padding:10px;border-radius:18px;border:2px solid transparent;background:var(--surface-2);text-align:left;font:inherit;color:inherit;cursor:pointer;width:100%}
+.sw-opt[aria-checked="true"]{border-color:var(--accent);background:var(--surface)}
+.sw-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.sw-txt b{font-size:.95rem;line-height:1.3}
+.sw-txt .muted{font-size:.82rem}
+.sw-radio{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid var(--line-strong, var(--muted))}
+.sw-opt[aria-checked="true"] .sw-radio{border:7px solid var(--accent)}
+.sw-opt.sk{cursor:default}
+.sk-lines{flex:1;display:flex;flex-direction:column;gap:8px}
+.sk-lines i{display:block;height:10px;border-radius:6px;background:linear-gradient(100deg,var(--line) 40%,var(--surface) 50%,var(--line) 60%) 0 0/250% 100%;animation:shimmer 1.2s linear infinite}
+.sk-lines i:last-child{width:55%}
 .weeksw{display:flex;align-items:center;gap:8px;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:6px}
 .weeksw-t{flex:1;display:flex;flex-direction:column;align-items:center;line-height:1.2}
 .weeksw-t .muted{font-size:.8rem}
@@ -1046,7 +1060,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794149232';
+const BUILD = '1794149609';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1251,14 +1265,14 @@ Prep tasks are the steps of one guided session, in the order to do them: one sho
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
   },
 
-  swapMeal(ctx, meal, avoid){
+  swapOptions(ctx, meal, avoid){
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
 
 Swap this ${meal.slot}: "${meal.name}" (${meal.portion}; ${meal.kcal} kcal, ${meal.p} g protein).
-Suggest ONE different dish for the same slot, with about the same calories (±10%) and protein, that fits the person's tastes and cooking time. Not any of: ${avoid.join('; ')}.
-Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","wiki":"exact title of the English Wikipedia article for the closest classic dish"}`;
+Suggest THREE different dishes for the same slot, each with about the same calories (±10%) and protein, fitting the person's tastes and cooking time. Make the three clearly different from each other (e.g. different protein or cuisine). Not any of: ${avoid.join('; ')}.
+Reply with only JSON: {"options":[{"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"time":"20 min","prep":"batch" or "fresh","swap":"one short swap","wiki":"exact title of the English Wikipedia article for the closest classic dish"}]}`;
   },
 
   photoTitles(names){
@@ -1892,23 +1906,42 @@ function repeatWeek(){
   showToast('Same meals as before. Your shopping list is ready too.'); render();
 }
 
-// Swap one meal for another with about the same calories and protein.
-async function swapMeal(i, j){
-  const P = curPlan(), m = P?.days?.[i]?.meals?.[j]; if (!m || S.busy.swap) return;
+// Swap: three options with about the same calories and protein; pick one,
+// or ask for three more. S.swap = { i, j, options, pick, busy, seen }.
+function openSwap(i, j){
+  const P = curPlan(); if (!P?.days?.[i]?.meals?.[j]) return;
   if (!S.sampleOK) { S.err.plan = 'Sign in to swap meals.'; render(); return; }
-  S.busy.swap = i + '-' + j; S.err.plan = null; render();
+  S.planSheet = null;
+  S.swap = { i, j, options:[], pick:0, seen:[], enter:true }; document.body.classList.add('sheet-open');
+  moreSwaps();
+}
+async function moreSwaps(){
+  const sw = S.swap, P = curPlan(); if (!sw || sw.busy || !P) return;
+  const m = P.days[sw.i].meals[sw.j];
+  sw.busy = true; sw.err = null; render(); sw.enter = false;
   try {
-    const others = P.days.flatMap(d => d.meals.map(x => x.name));
-    const r = await S.sample.json(PROMPTS.swapMeal(planContext(), m, others), { modelTier:'quick', cache:false });
-    if (!r?.name || !r.kcal) throw { code:'invalid_json' };
-    const key = i + '-' + j, before = { meal:m, recipe:P.recipes?.[key], stale:P.listStale };
-    P.days[i].meals[j] = { ...r, slot:m.slot };
-    if (P.recipes) delete P.recipes[key];
-    if (P.grocery?.length) P.listStale = true;
-    save.plan();
-    showToast(`Swapped for ${r.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; P.listStale = before.stale; save.plan(); });
-  } catch (e) { hardFail(e); S.err.plan = errText(e); }
-  S.busy.swap = null; render();
+    const avoid = [...P.days.flatMap(d => d.meals.map(x => x.name)), ...sw.seen];
+    const r = await S.sample.json(PROMPTS.swapOptions(planContext(), m, avoid), { modelTier:'quick', cache:false });
+    const opts = (r?.options || []).filter(o => o?.name && o.kcal).slice(0, 3);
+    if (!opts.length) throw { code:'invalid_json' };
+    if (S.swap !== sw) return;
+    sw.options = opts; sw.pick = 0; sw.seen.push(...opts.map(o => o.name));
+    sw.busy = false; render();
+    // Photos for the options: one quick lookup, shared with the plan.
+    const titles = DISH_PHOTOS ? opts.map(o => o.wiki).filter(t => t && picFor(P, t) === undefined) : [];
+    if (titles.length) { const got = await wikiPhotos(titles); P.pics = { ...(P.pics || {}), ...got }; rememberPics(got); if (S.swap === sw) render(); }
+  } catch (e) { hardFail(e); sw.err = errText(e); sw.busy = false; render(); }
+}
+function useSwap(){
+  const sw = S.swap, P = curPlan(), o = sw?.options?.[sw.pick]; if (!o) return;
+  const { i, j } = sw, key = i + '-' + j, m = P.days[i].meals[j], before = { meal:m, recipe:P.recipes?.[key], stale:P.listStale };
+  P.days[i].meals[j] = { ...o, slot:m.slot };
+  if (P.recipes) delete P.recipes[key];
+  if (P.grocery?.length) P.listStale = true;
+  save.plan();
+  S.swap = null; document.body.classList.remove('sheet-open');
+  showToast(`Swapped for ${o.name}`, () => { P.days[i].meals[j] = before.meal; if (before.recipe) P.recipes[key] = before.recipe; P.listStale = before.stale; save.plan(); });
+  render();
 }
 
 // Supermarkets to choose from: the person's own first, then common ones for their country.
@@ -1966,7 +1999,15 @@ async function loadRecipe(key, meal){
 // Plans keep P.wiki (meal name -> article) and P.pics (article -> photo or null).
 const WIKI = 'https://en.wikipedia.org/w/api.php?format=json&origin=*&';
 const mealWiki = (P, m) => m.wiki || P.wiki?.[m.name];
-const mealPic = (P, m) => { const t = mealWiki(P, m); return t ? P.pics?.[t] : undefined; };
+// Photos found once are remembered on this phone for every plan, so a dish
+// that comes back another week shows its photo straight away.
+// Off for now: matching photos by dish name kept showing the wrong dish.
+const DISH_PHOTOS = false;
+const PIC_KEY = 'forkcast:pics';
+let picCache = (() => { try { return JSON.parse(localStorage.getItem(PIC_KEY)) || {}; } catch { return {}; } })();
+function rememberPics(got){ picCache = { ...picCache, ...got }; try { localStorage.setItem(PIC_KEY, JSON.stringify(picCache)); } catch {} }
+const picFor = (P, t) => t in (P?.pics || {}) ? P.pics[t] : picCache[t];
+const mealPic = (P, m) => { if (!DISH_PHOTOS) return null; const t = mealWiki(P, m); return t ? picFor(P, t) : undefined; };
 const stripHtml = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent.trim(); };
 
 async function wikiPhotos(titles){
@@ -1994,7 +2035,7 @@ async function wikiPhotos(titles){
 let photosBusy = false;
 async function loadWeekPhotos(){
   const P = curPlan();
-  if (photosBusy || !P?.days || !navigator.onLine) return;
+  if (!DISH_PHOTOS || photosBusy || !P?.days || !navigator.onLine) return;
   photosBusy = true;
   try {
     // Plans made before photos came from Wikipedia: ask once for the article names.
@@ -2005,8 +2046,8 @@ async function loadWeekPhotos(){
       save.plan();
     }
     P.pics = P.pics || {};
-    const todo = [...new Set(P.days.flatMap(d => d.meals).map(m => mealWiki(P, m)).filter(t => t && !(t in P.pics)))];
-    for (let i = 0; i < todo.length; i += 40) Object.assign(P.pics, await wikiPhotos(todo.slice(i, i + 40)));
+    const todo = [...new Set(P.days.flatMap(d => d.meals).map(m => mealWiki(P, m)).filter(t => t && picFor(P, t) === undefined))];
+    for (let i = 0; i < todo.length; i += 40) { const got = await wikiPhotos(todo.slice(i, i + 40)); Object.assign(P.pics, got); rememberPics(got); }
     if (todo.length) save.plan();
     delete P.photos; // old keyword-search photos, often the wrong dish
   } catch {}
@@ -2097,6 +2138,7 @@ function render(){
   if (S.view === 'plan') keepDayInView();
   if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view !== 'plan' && (S.shopOpen || S.prep)) { S.shopOpen = null; S.prep = null; prepWake(false); document.body.classList.remove('sheet-open', 'prepping'); }
+  if (S.view !== 'plan' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); }
   if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view === 'plan' && curPlan()) loadWeekPhotos();
   const at = $('#askText'); if (at) at.value = S.draft.ask;
@@ -2443,18 +2485,19 @@ function vPlan(){
   <div class="daypick" role="tablist" aria-label="Day">${P.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${!next && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
   <section class="card plan-day">
     <div class="day-sum"><b class="num">${tot.kcal.toLocaleString()} kcal</b>${pfc(tot)}</div>
-    ${day.meals.map((m, j) => { const k = di + '-' + j, busy = S.busy.swap === k; return `<div class="prow${busy ? ' swapping' : ''}">
+    ${day.meals.map((m, j) => { const k = di + '-' + j; return `<div class="prow">
       <button class="prow-main" data-act="planmeal" data-i="${di}" data-j="${j}">
         ${dishThumb(P, k, m)}
-        <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${busy ? 'Finding a swap…' : esc(m.name)}</b></span>
+        <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${esc(m.name)}</b></span>
         <span class="num">${r0(m.kcal)}</span>
       </button>
-      <button class="swap-btn" data-act="swapmeal" data-i="${di}" data-j="${j}" aria-label="Swap ${esc(m.name)}" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+      <button class="swap-btn" data-act="swapmeal" data-i="${di}" data-j="${j}" aria-label="Swap ${esc(m.name)}">${SWAP_IC}</button>
     </div>`; }).join('')}
   </section>
   ${weekTools(P)}
   ${!next && !S.planNext?.days ? `<button class="tipcard" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="tip-txt"><b>Plan next week</b><span>Get it ready now. This week stays as it is.</span></span>${CHEV}</button>` : ''}
   ${S.planSheet ? planMealSheet() : ''}
+  ${S.swap ? swapSheet() : ''}
   ${S.shopOpen ? shopSheet() : ''}
   ${S.prep ? prepMode() : ''}`;
 }
@@ -2483,7 +2526,7 @@ function weekTools(P){
 function planMealSheet(){
   const P = curPlan(); if (!P) return '';
   const { i, j } = S.planSheet, m = P.days[i]?.meals[j]; if (!m) return '';
-  const key = i + '-' + j, rec = P.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '', busy = S.busy.swap === key;
+  const key = i + '-' + j, rec = P.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '';
   return `<div class="scrim${enter}" data-act="closeplan"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">
     <div class="grip" aria-hidden="true"></div>
@@ -2493,7 +2536,7 @@ function planMealSheet(){
     <dl class="facts"><dt>Portion</dt><dd>${esc(m.portion)}</dd>${m.swap ? `<dt>Swap</dt><dd>${esc(m.swap)}</dd>` : ''}</dl>
     ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>` : ''}
     <div class="sheet-actions meal-actions">
-      <button class="swap-btn big" data-act="swapmeal" data-i="${i}" data-j="${j}" aria-label="Swap for another meal" title="Swap for another meal" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+      <button class="swap-btn big" data-act="swapmeal" data-i="${i}" data-j="${j}" aria-label="Swap for another meal" title="Swap for another meal">${SWAP_IC}</button>
       ${rec ? (S.planWeek === 1 ? '' : `<button class="btn primary big-btn" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`)
         : `<button class="btn primary big-btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
     </div>
@@ -2501,17 +2544,38 @@ function planMealSheet(){
   </div>`;
 }
 
-// Photo of the dish, or the meal's own colour and icon while there is none.
+// The meal's own colour and icon show at once; the photo fades in over it
+// when it arrives, so nothing ever sits there "loading".
 const mealGlyph = (m, w) => SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : '';
+const fadeImg = (src, alt) => `<img src="${esc(src)}" alt="${esc(alt)}" decoding="async" onload="this.classList.add('in')" onerror="this.remove()">`;
 function dishThumb(P, key, m){
   const p = mealPic(P, m);
-  if (p?.thumb) return `<span class="pthumb"><img src="${esc(p.thumb)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('ph');this.remove()"></span>`;
-  return `<span class="pthumb ph${p === undefined && navigator.onLine ? ' loading' : ''}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 2)}</span>`;
+  return `<span class="pthumb ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 2)}${p?.thumb ? fadeImg(p.thumb, '') : ''}</span>`;
 }
 function dishPhoto(P, key, m){
   const p = mealPic(P, m);
-  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 1.6)}</figure>`;
-  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.page)}, a dish like this one" loading="lazy"><figcaption><a href="${esc(p.url || '')}" target="_blank" rel="noopener">${esc(p.page)} · ${esc(p.by || 'Wikimedia')}${p.lic ? ' · ' + esc(p.lic) : ''}</a></figcaption></figure>`;
+  return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${mealGlyph(m, 1.6)}${p?.src ? fadeImg(p.src, p.page + ', a dish like this one') + `<figcaption><a href="${esc(p.url || '')}" target="_blank" rel="noopener">${esc(p.page)} · ${esc(p.by || 'Wikimedia')}${p.lic ? ' · ' + esc(p.lic) : ''}</a></figcaption>` : ''}</figure>`;
+}
+
+// Swap: three options to choose from, or three more.
+function swapSheet(){
+  const P = curPlan(), sw = S.swap, m = P?.days?.[sw.i]?.meals?.[sw.j]; if (!m) return '';
+  const enter = sw.enter ? ' enter' : '';
+  const skeleton = [0,1,2].map(() => `<div class="sw-opt sk"><span class="pthumb ph"></span><span class="sk-lines"><i></i><i></i></span></div>`).join('');
+  return `<div class="scrim${enter}" data-act="closeswap"></div>
+  <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="Swap ${esc(m.slot)}">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="sheet-head"><div style="min-width:0;flex:1"><div class="label">Instead of ${esc(m.name)}</div><h2>Swap ${esc(P.days[sw.i].day)} ${esc(m.slot.toLowerCase())}</h2></div><button class="x close" data-act="closeswap" aria-label="Close">×</button></div>
+    ${sw.err ? `<div class="notice warn">${esc(sw.err)}</div>` : ''}
+    <div class="sw-list" role="radiogroup" aria-label="Options" aria-busy="${!!sw.busy}">
+      ${sw.busy ? skeleton : sw.options.map((o, n) => `<button class="sw-opt" role="radio" aria-checked="${n === sw.pick}" data-act="swappick" data-n="${n}">
+        ${dishThumb(P, '', { ...o, slot:m.slot })}
+        <span class="sw-txt"><b>${esc(o.name)}</b><span class="muted">${r0(o.kcal)} kcal · ${r0(o.p)} g protein${o.time ? ' · ' + esc(o.time) : ''}</span></span>
+        <span class="sw-radio" aria-hidden="true"></span></button>`).join('')}
+    </div>
+    ${sw.busy ? '<p class="muted" style="text-align:center;font-size:.86rem">Finding three meals with about the same calories and protein…</p>' : `<button class="btn ghost" data-act="swapmore">Show 3 more</button>`}
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="swapuse" ${sw.busy || !sw.options.length ? 'disabled' : ''}>${sw.options[sw.pick] && !sw.busy ? `Use ${esc(sw.options[sw.pick].name)}` : 'Use this meal'}</button></div>
+  </div>`;
 }
 
 // Keep the chosen day visible in the day picker after every redraw.
@@ -3157,6 +3221,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.appleOpen) { S.appleOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.prep) { closePrep(); return; }
   if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
@@ -3248,7 +3313,11 @@ document.addEventListener('click', e => {
   else if (a === 'genplan') generatePlan();
   else if (a === 'planweek') { S.planWeek = +el.dataset.v; S.planDay = S.planWeek ? 0 : (new Date().getDay() + 6) % 7; S.err.plan = null; render(); window.scrollTo(0, 0); }
   else if (a === 'repeatweek') repeatWeek();
-  else if (a === 'swapmeal') swapMeal(+el.dataset.i, +el.dataset.j);
+  else if (a === 'swapmeal') openSwap(+el.dataset.i, +el.dataset.j);
+  else if (a === 'swappick') { S.swap.pick = +el.dataset.n; render(); }
+  else if (a === 'swapmore') moreSwaps();
+  else if (a === 'swapuse') useSwap();
+  else if (a === 'closeswap') { S.swap = null; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'shopopen') { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; }
   else if (a === 'closeshop') { S.shopOpen = null; S.storePick = false; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'storepick') { S.storePick = !S.storePick; S.shopStore = null; render(); }
