@@ -1,34 +1,45 @@
 /* Forkcast design tokens.
-   Identity: "fresh market" — deep basil green for actions, warm paprika for highlights,
-   warm-neutral surfaces. Every text colour meets WCAG 2.2 AA (4.5:1) on its background. */
+   Identity: "Glow" — deep ink text, a raspberry accent, a burnt-orange to raspberry
+   gradient for the main action, and a soft sunset light behind frosted cards.
+   Every text colour meets WCAG 2.2 AA (4.5:1) on its background. */
 :root{
-  --bg:#FFFFFF; --surface:#FFFFFF; --surface-2:#F4F5F2; --ink:#10140F; --muted:#5F6474; --line:#E8EAE4;
-  --accent:#1F7A4F; --accent-deep:#17603D; --accent-ink:#FFFFFF; --accent-soft:#E6F2EA;
-  --paprika:#E8590C; --paprika-soft:#FDEDE4;
+  --bg:#FFF8F3; --surface:#FFFFFF; --surface-2:#F6EEF1; --ink:#1D1A2E; --muted:#635C78; --line:#EDE3EA;
+  --accent:#B5245A; --accent-deep:#8F1C47; --accent-ink:#FFFFFF; --accent-soft:#FDE7EF;
+  --paprika:#C2410C; --paprika-soft:#FFEBDD;
   /* macros: protein · carbs · fat (text-safe) */
   --pink:#C2255C; --amber:#A35200; --blue:#1864AB; --violet:#6741D9;
   --herb:var(--blue); --saffron:var(--amber); --sky:var(--accent);
   --warn:#9A4A00; --warn-soft:#FFF1DE;
-  --hero:#10140F; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.12);
-  --shadow:0 1px 2px rgba(16,20,15,.05), 0 8px 24px rgba(16,20,15,.06);
+  --hero:#1D1A2E; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.14);
+  /* Glow: the main-action gradient and the soft sunset light behind the app */
+  --grad-a:#C2410C; --grad-b:#C2255C;
+  --glow-1:rgba(255,154,92,.55); --glow-2:rgba(255,92,138,.42); --glow-3:rgba(139,108,255,.32);
+  --card-edge:rgba(255,255,255,.9);
+  --shadow:0 1px 2px rgba(29,26,46,.05), 0 10px 30px rgba(29,26,46,.07);
   --display:"Plus Jakarta Sans", "Avenir Next", system-ui, sans-serif;
   --body:"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif;
   --mono:"Plus Jakarta Sans", system-ui, sans-serif;
   --r:24px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0B0D0B; --surface:#141714; --surface-2:#1D211C; --ink:#F1F4EF; --muted:#9AA095; --line:#262B25;
-  --accent:#4CC38A; --accent-deep:#2F8F60; --accent-ink:#062012; --accent-soft:#12271C;
-  --paprika:#FF8A4C; --paprika-soft:#2E1A10;
+  --bg:#0F0D18; --surface:#1A1726; --surface-2:#241F33; --ink:#F4F1FA; --muted:#A9A3BD; --line:#2C2740;
+  --accent:#FF7AA8; --accent-deep:#E0568A; --accent-ink:#1D1A2E; --accent-soft:#2A1424;
+  --paprika:#FFA36B; --paprika-soft:#2C1A12;
   --pink:#F06595; --amber:#FFA94D; --blue:#74C0FC; --violet:#B197FC;
   --warn:#FFC078; --warn-soft:#2A1E0E;
-  --hero:#171B16; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
+  --hero:#1A1726; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
+  --grad-a:#C2410C; --grad-b:#C2255C;
+  --glow-1:rgba(255,122,69,.22); --glow-2:rgba(255,79,139,.2); --glow-3:rgba(139,108,255,.22);
+  --card-edge:rgba(255,255,255,.06);
   --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0B0D0B; --surface:#141714; --surface-2:#1D211C; --ink:#F1F4EF; --muted:#9AA095; --line:#262B25;
-  --accent:#4CC38A; --accent-deep:#2F8F60; --accent-ink:#062012; --accent-soft:#12271C;
-  --paprika:#FF8A4C; --paprika-soft:#2E1A10;
+  --bg:#0F0D18; --surface:#1A1726; --surface-2:#241F33; --ink:#F4F1FA; --muted:#A9A3BD; --line:#2C2740;
+  --accent:#FF7AA8; --accent-deep:#E0568A; --accent-ink:#1D1A2E; --accent-soft:#2A1424;
+  --paprika:#FFA36B; --paprika-soft:#2C1A12;
   --pink:#F06595; --amber:#FFA94D; --blue:#74C0FC; --violet:#B197FC;
   --warn:#FFC078; --warn-soft:#2A1E0E;
-  --hero:#171B16; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
+  --hero:#1A1726; --hero-ink:#FFFFFF; --hero-track:rgba(255,255,255,.1);
+  --grad-a:#C2410C; --grad-b:#C2255C;
+  --glow-1:rgba(255,122,69,.22); --glow-2:rgba(255,79,139,.2); --glow-3:rgba(139,108,255,.22);
+  --card-edge:rgba(255,255,255,.06);
   --shadow:0 0 0 1px rgba(255,255,255,.04); color-scheme:dark}
