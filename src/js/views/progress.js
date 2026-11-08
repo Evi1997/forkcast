@@ -76,7 +76,7 @@ async function loadHistory(){
   try { const pre = Store.key('log-'); for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith(pre)) put(k.slice(pre.length), Store.local('log-' + k.slice(pre.length))); } } catch {}
   (await Store.remoteAll('log-')).forEach(r => put(r.key.slice(4), r.data));
   S.hist = hist; S.histLoading = false;
-  // Every logged day earns its leaf, including days from before the plant existed.
+  // Every logged day counts for the apple, including days from before it existed.
   const days = Object.values(hist).filter(d => d.n).length;
   if (days > (S.profile.leaves || 0)) { S.profile.leaves = days; save.profile(); }
   if (S.view === 'progress') render();
@@ -159,7 +159,7 @@ function vProgress(){
   const avg = end => { const win = w.filter(y => { const d = daysBetween(y.date, end); return d >= 0 && d < 7; }); return win.reduce((a, y) => a + +y.weight, 0) / win.length; };
   const now = w.length ? avg(w[w.length - 1].date) : null;
   const diff = w.length > 1 ? now - +w[0].weight : null, span = w.length > 1 ? daysBetween(w[0].date, w[w.length - 1].date) : 0;
-  const t = targets(), week = weekLogs(), story = weekStory(week, t), n = leafCount();
+  const t = targets(), week = weekLogs(), story = weekStory(week, t);
   const lastCk = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt, ckIn = lastCk ? 7 - daysBetween(lastCk, dkey()) : 0;
   const mon = fromKey(mondayOf()), sun = new Date(mon); sun.setDate(sun.getDate() + 6);
   const range = `${mon.toLocaleDateString(undefined,{day:'numeric',month:'short'})} – ${sun.toLocaleDateString(undefined,{day:'numeric',month:'short'})}`;
@@ -170,9 +170,8 @@ function vProgress(){
   ${calorieCard(week, t)}
   <div class="duo">
     <a class="tile mini" href="#weight"><span class="label">Weight trend</span>${now ? `<b class="num">${now.toFixed(1)}<small> kg</small></b>${change ? `<span class="chip-s">${change}${span ? ` · ${span >= 14 ? Math.round(span / 7) + ' wk' : span + ' d'}` : ''}</span>` : '<span class="muted">Add one more for a trend</span>'}` : '<b class="num">–</b><span class="muted">Add a weigh-in</span>'}</a>
-    <button class="tile mini plant-tile" data-act="plant" aria-label="Your plant: ${n} leaves">${plantSVG(n, 40)}<span><b class="num">${n}</b><span class="muted">${n === 1 ? 'leaf' : 'leaves'}</span></span></button>
+    <button class="tile mini" data-act="cksheet"><span class="label">Weekly check-in</span><b class="ck-when${ckIn <= 0 ? ' due' : ''}">${ckIn <= 0 ? 'Due now' : `In ${ckIn} day${ckIn > 1 ? 's' : ''}`}</b><span class="muted">Two minutes to fine-tune your plan</span></button>
   </div>
-  <button class="focus-row" data-act="cksheet"><span class="fr-txt"><b>Weekly check-in</b><span class="muted">Two minutes to fine-tune your plan.</span></span><span class="ck-pill${ckIn <= 0 ? ' due' : ''}">${ckIn <= 0 ? 'Check in' : `in ${ckIn} day${ckIn > 1 ? 's' : ''}`}</span></button>
   <section class="card stack" id="weight">
     <div class="row" style="justify-content:space-between"><h2>Weight</h2><span class="muted" style="font-size:.8rem">${w.length > 1 ? '7-day average' : 'Same time of day works best'}</span></div>
     ${w.length > 1 ? rangeSeg('wrange', S.wRange || '3M') + weightChart(S.wRange || '3M') : `<p class="muted" style="font-size:.9rem">${w.length ? 'One weigh-in so far. Add a couple more this week and the trend line appears.' : 'Weigh in 2–3 times a week. The trend line appears after two.'}</p>`}
@@ -181,8 +180,7 @@ function vProgress(){
       const prev = w[w.length - 2 - i], d = prev ? +x.weight - +prev.weight : null;
       return `<div class="wrow"><span class="wdate"><b>${fromKey(x.date).toLocaleDateString(undefined,{weekday:'short'})}</b> ${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</span>${d === null ? '' : `<span class="wdelta">${Math.abs(d) < 0.05 ? 'same' : (d < 0 ? '↓ ' : '↑ ') + Math.abs(d).toFixed(1)}</span>`}<b class="num wkg">${x.weight}<small> kg</small></b><button class="x small-x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in of ${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'long'})}">×</button></div>`; }).join('')}</div>` : ''}
   </section>
-  ${S.ckSheet ? checkinSheet() : ''}
-  ${S.plantOpen ? plantSheet() : ''}`;
+  ${S.ckSheet ? checkinSheet() : ''}`;
 }
 
 function checkinSheet(){

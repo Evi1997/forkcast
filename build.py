@@ -29,7 +29,7 @@ SCRIPTS = [
     "services/onboarding.js",
     "views/shell.js",
     "views/today.js",
-    "views/plant.js",
+    "views/apple.js",
     "views/coach.js",
     "views/plan.js",
     "views/shop.js",
