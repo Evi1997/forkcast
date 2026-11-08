@@ -190,7 +190,7 @@ input[type=email]:focus,input[type=password]:focus{outline:none;border-color:var
 .pfc .p{color:var(--pink)} .pfc .c{color:var(--amber)} .pfc .f{color:var(--blue)}
 
 /* Coach */
-.coach{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.coach{display:grid;grid-template-columns:minmax(0,1fr);max-width:760px;gap:20px;align-items:start}
 .chat{display:flex;flex-direction:column;height:min(74vh,780px);padding:0;overflow:hidden}
 .msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:12px}
 .msg{max-width:82%;padding:13px 16px;border-radius:20px;line-height:1.55}
@@ -1066,6 +1066,52 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .wbars{grid-template-columns:repeat(7,minmax(0,1fr))}
 /* Glow: round action buttons and your own chat bubbles share the main-action gradient */
 .addbtn,.sendbtn,.snap-ic,.msg.me{background:linear-gradient(120deg,var(--grad-a),var(--grad-b));color:#fff}
+
+/* Profile: header button and sheet */
+.avatar-btn{flex:none;width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:linear-gradient(120deg,var(--grad-a),var(--grad-b));color:#fff;font:inherit;font-weight:800;font-size:1rem;box-shadow:0 4px 14px -4px color-mix(in srgb,var(--grad-b) 60%,transparent)}
+.head > .avatar-btn{align-self:center}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.chat-head .avatar-btn{width:38px;height:38px;font-size:.95rem}
+.avatar-lg{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(120deg,var(--grad-a),var(--grad-b));color:#fff;font-weight:800;font-size:1.3rem}
+.profile-sheet{gap:18px;height:min(90vh,760px)}
+.profile-sheet .sheet-head{align-items:center;gap:12px}
+.pr-mail{display:block;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.back-x{display:grid;place-items:center}
+.pr-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px}
+.pr-tile{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:18px;background:var(--surface-2);min-width:0}
+.pr-tile .muted{font-size:.78rem}
+.pr-tile b{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-tile small{font-size:.75rem;font-weight:700;color:var(--muted)}
+.pr-group{display:flex;flex-direction:column;gap:8px}
+.pr-label{font-size:.78rem;font-weight:700;color:var(--muted);padding:0 4px}
+.pr-list{display:flex;flex-direction:column;border-radius:18px;background:var(--surface-2);overflow:hidden}
+.pr-row{display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 14px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;color:var(--ink);text-align:left;width:100%;cursor:pointer}
+.pr-row:last-child{border-bottom:0}
+.pr-row.static{cursor:default}
+.pr-row.pr-stack{flex-direction:column;align-items:stretch;gap:10px;cursor:default}
+.pr-row.pr-stack .seg{align-self:stretch}
+.pr-row.pr-stack .seg button{flex:1}
+.pr-l{flex:1;min-width:0;font-weight:700}
+.pr-v{color:var(--muted);font-size:.9rem;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr-chev{width:16px;height:16px;flex:none;color:var(--muted)}
+.pr-danger{color:#B42318}
+.pr-ic{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center}
+.pr-ic svg{width:18px;height:18px}
+.pr-ic.pink{background:var(--accent-soft);color:var(--accent)}
+.pr-ic.orange{background:var(--paprika-soft);color:var(--paprika)}
+.pr-ic.violet{background:color-mix(in srgb,var(--violet) 14%,var(--surface));color:var(--violet)}
+.pr-ic.green{background:color-mix(in srgb,#2E8B57 14%,var(--surface));color:#2E8B57}
+.pr-ic.ink{background:var(--surface);color:var(--ink)}
+.pr-note{font-size:.84rem;padding:0 4px}
+.pr-hero{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pr-hero .mascot{width:72px;height:72px}
+.pr-hero .mascot svg{width:100%;height:100%}
+.pr-hero b{font-size:1.2rem}
+.btn.danger{background:#B42318;color:#fff}
+.linkbtn{border:0;background:none;padding:0;font:inherit;font-weight:700;color:inherit;text-decoration:underline;cursor:pointer}
+:root[data-theme="dark"] .pr-danger{color:#FF8A80}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pr-danger{color:#FF8A80}}
+.pr-row[aria-checked="true"] .sw-radio{border:7px solid var(--accent)}
 </style>
 </head>
 <body>
@@ -1080,7 +1126,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794150434';
+const BUILD = '1794150624';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -2137,7 +2183,6 @@ function closeOnboarding(){ S.ob = null; S.obDone = false; S.view = 'today'; win
 function render(){
   const authed = S.auth.status === 'signed-in';
   document.body.classList.toggle('signed-out', !authed);
-  if (S.view !== 'coach' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); }
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
   document.body.classList.toggle('onboarding', !!S.ob);
   document.body.dataset.sec = S.ob && !S.obDone ? (obVisible()[Math.min(S.ob.q, obVisible().length - 1)]?.sec || '') : '';
@@ -2149,7 +2194,7 @@ function render(){
   const v = { today:vToday, coach:vCoach, plan:vPlan, progress:vProgress }[S.view]();
   const view = $('#view');
   if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
-  view.innerHTML = v + (S.toast ? `<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo ? '<button data-act="undo">Undo</button>' : ''}</div>` : '');
+  view.innerHTML = v + (S.aboutOpen ? profileSheet() : '') + (S.toast ? `<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo ? '<button data-act="undo">Undo</button>' : ''}</div>` : '');
   if (S.view === 'coach') scrollChat();
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
@@ -2180,7 +2225,7 @@ function vToday(){
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head today-head"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>
+  <div class="head today-head"><div class="title-row"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>${avatarBtn()}</div>
   ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
@@ -2408,7 +2453,6 @@ function vCoach(){
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
   const status = S.profile.onboarded ? 'Follow-up' : `Consultation · ${done}/${SECTIONS.length}`;
   const aiRow = (inner) => `<div class="msg-row"><span class="ai-dot mascot" aria-hidden="true">${MASCOT}</span><div class="msg ai">${inner}</div></div>`;
-  const enter = S.aboutOpen === 'enter' ? ' enter' : '';
   return `
   <div class="coach">
     <section class="card chat" aria-label="Conversation with your dietitian">
@@ -2416,7 +2460,7 @@ function vCoach(){
         <span class="ai-avatar mascot" aria-hidden="true">${MASCOT}</span>
         <div class="chat-title"><b>${esc(coachName())}</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
         <button class="newchat-btn" data-act="newchat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
-        <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+        ${avatarBtn()}
       </header>
       ${!S.profile.onboarded ? `<div class="consult-bar" aria-hidden="true"><span style="width:${Math.max(4, done / SECTIONS.length * 100)}%"></span></div>` : ''}
       <div class="msgs" aria-live="polite">
@@ -2434,38 +2478,8 @@ function vCoach(){
         <button class="sendbtn" data-act="send" aria-label="Send" ${S.busy.chat ? 'disabled' : ''}>${SEND}</button>
       </div>
     </section>
-    <aside class="stack about-side">${aboutYou(done)}</aside>
   </div>
-  ${S.aboutOpen ? `<div class="scrim${enter}" data-act="about"></div><div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="About you"><div class="grip" aria-hidden="true"></div><div class="sheet-head"><h2>About you</h2><button class="x close" data-act="about" aria-label="Close">×</button></div>${aboutYou(done)}</div>` : ''}`;
-}
-
-function aboutYou(done){
-  const t = targets(), d = S.profile.data, b = d.basics || {};
-  return `
-      <section class="card stack">
-        <div class="row" style="justify-content:space-between"><h3>What I know about you</h3><span class="num muted" style="font-size:.85rem">${done}/${SECTIONS.length}</span></div>
-        <div class="progressbar"><span style="width:${done / SECTIONS.length * 100}%"></span></div>
-        <div class="sections">${SECTIONS.map(([k, l]) => `<div class="sec"><span class="dot ${sectionDone(k) ? 'on' : ''}"></span>${l}</div>`).join('')}</div>
-      </section>
-      <section class="card stack">
-        <div class="row" style="justify-content:space-between"><h3>Daily targets</h3><span class="tag est">Estimated</span></div>
-        ${t ? `<dl class="kv"><dt>Energy</dt><dd>${t.kcal} kcal</dd><dt>Protein</dt><dd>${t.protein} g</dd><dt>Carbs</dt><dd>${t.carbs} g</dd><dt>Fat</dt><dd>${t.fat} g</dd><dt>Fiber</dt><dd>${t.fiber} g</dd>${t.tdee ? `<dt>BMR / TDEE</dt><dd>${t.bmr} / ${t.tdee}</dd>` : ''}</dl>
-        <p class="muted" style="font-size:.8rem">${S.profile.targets ? 'Set during your consultation.' : 'Mifflin-St Jeor, adjusted for activity and goal. Real needs vary; we refine from your weight trend.'}</p>` : `<p class="muted" style="font-size:.88rem">Appear once I know your age, sex, height, weight and goal.</p>`}
-        ${b.weight_kg ? `<dl class="kv"><dt>Weight</dt><dd>${esc(b.weight_kg)} kg</dd>${b.goal ? `<dt>Goal</dt><dd>${esc(b.goal)}</dd>` : ''}${d.shopping?.supermarkets ? `<dt>Shops at</dt><dd>${esc(d.shopping.supermarkets)}</dd>` : ''}</dl>` : ''}
-      </section>
-      ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
-      <section class="stack" style="padding:0 4px">
-        <section class="card stack"><h3>Your dietitian</h3>
-          <div class="field"><label for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
-          <div class="ob-chips">${COACH_TONES.map(([v, l]) => `<button class="chip" data-act="coachtone" data-v="${v}" aria-pressed="${coachTone()[0] === v}">${l}</button>`).join('')}</div>
-        </section>
-        <section class="card stack"><h3>Appearance</h3>
-          <div class="ob-chips" role="group" aria-label="Appearance">${[['auto','Match my phone'],['light','Light'],['dark','Dark']].map(([v, l]) => `<button class="chip" data-act="theme" data-v="${v}" aria-pressed="${themePref() === v}">${l}</button>`).join('')}</div>
-        </section>
-        <button class="btn small" data-act="editob">Edit my answers</button>
-        <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
-        ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
-      </section>`;
+`;
 }
 
 // Grow the message box with its text, up to about five lines.
@@ -2484,6 +2498,101 @@ function setTheme(v){
   if (v === 'auto') delete root.dataset.theme; else root.dataset.theme = v;
   const metas = document.querySelectorAll('meta[name=theme-color]');
   metas.forEach((m, i) => { m.content = v === 'dark' ? '#0F0D18' : v === 'light' ? '#FFF8F3' : (i ? '#0F0D18' : '#FFF8F3'); });
+}
+
+// === views/profile.js ===
+// Profile: a round button with your initial, top-right on every tab, opens one
+// sheet. Summary first (goal, weight, daily target), then grouped rows; each
+// row opens its own page inside the sheet. S.aboutOpen = 'enter' | true,
+// S.profilePage = null | 'targets' | 'known' | 'coach'.
+const CHEV_R = '<svg class="pr-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+const PR_IC = {
+  targets:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6" fill="currentColor"/>',
+  known:'<path d="M5 12.5 10 17l9-10"/>',
+  shop:'<path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+  coach:'<path d="M12 21a9 9 0 1 0-8-4.9L3 21l4.9-1A9 9 0 0 0 12 21z"/>',
+  theme:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>'
+};
+const prIcon = (k, tone) => `<span class="pr-ic ${tone}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${PR_IC[k]}</svg></span>`;
+
+function userInitial(){
+  const n = String(S.profile.data.basics?.name || S.auth.email || '?').trim();
+  return esc(n[0].toUpperCase());
+}
+const avatarBtn = () => `<button class="avatar-btn" data-act="about" aria-label="Your profile">${userInitial()}</button>`;
+
+function profileSheet(){
+  const enter = S.aboutOpen === 'enter' ? ' enter' : '', page = S.profilePage;
+  const titles = { targets:'Targets and macros', known:'What I know about you', coach:'Your dietitian' };
+  const head = page
+    ? `<div class="sheet-head"><button class="x back-x" data-act="profpage" data-p="" aria-label="Back to your profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><h2 style="flex:1">${titles[page]}</h2><button class="x close" data-act="about" aria-label="Close">×</button></div>`
+    : `<div class="sheet-head"><span class="avatar-lg" aria-hidden="true">${userInitial()}</span><div style="flex:1;min-width:0"><h2>${esc(S.profile.data.basics?.name || 'Your profile')}</h2><span class="muted pr-mail">${esc(S.auth.email || '')}</span></div><button class="x close" data-act="about" aria-label="Close">×</button></div>`;
+  return `<div class="scrim${enter}" data-act="about"></div>
+  <div class="sheet profile-sheet${enter}" role="dialog" aria-modal="true" aria-label="${page ? titles[page] : 'Your profile'}">
+    <div class="grip" aria-hidden="true"></div>${head}
+    ${page === 'targets' ? profTargets() : page === 'known' ? profKnown() : page === 'coach' ? profCoach() : profHome()}
+  </div>`;
+}
+
+function profHome(){
+  const t = targets(), d = S.profile.data, b = d.basics || {};
+  const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
+  const goal = b.goal ? String(b.goal)[0].toUpperCase() + String(b.goal).slice(1) : '–';
+  const row = (act, p, ic, tone, label, value) => `<button class="pr-row" data-act="${act}" ${p ? `data-p="${p}"` : ''}>${prIcon(ic, tone)}<span class="pr-l">${label}</span>${value ? `<span class="pr-v">${value}</span>` : ''}${CHEV_R}</button>`;
+  return `
+    <div class="pr-tiles">
+      <div class="pr-tile"><span class="muted">Goal</span><b>${esc(goal)}</b></div>
+      <div class="pr-tile"><span class="muted">Weight</span><b class="num">${b.weight_kg ? esc(b.weight_kg) + '<small> kg</small>' : '–'}</b></div>
+      <div class="pr-tile"><span class="muted">Daily</span><b class="num">${t ? t.kcal.toLocaleString() + '<small> kcal</small>' : '–'}</b></div>
+    </div>
+    ${S.profile.flags?.length ? `<div class="notice warn"><b>Needs medical review.</b> Some answers are best talked through with your doctor. <button class="linkbtn" data-act="profpage" data-p="known">See why</button></div>` : ''}
+    <div class="pr-group"><span class="pr-label">Your plan</span><div class="pr-list">
+      ${row('profpage', 'targets', 'targets', 'pink', 'Targets and macros', t ? `${t.protein} g protein` : '')}
+      ${row('profpage', 'known', 'known', 'orange', 'What I know about you', `${done}/${SECTIONS.length}`)}
+      ${row('editob', '', 'shop', 'violet', 'Shopping', esc(String(d.shopping?.supermarkets || 'Add your shop').split(',')[0]))}
+    </div></div>
+    <div class="pr-group"><span class="pr-label">App</span><div class="pr-list">
+      ${row('profpage', 'coach', 'coach', 'green', 'Your dietitian', esc(coachName()))}
+      <div class="pr-row pr-stack"><div class="row" style="gap:12px">${prIcon('theme', 'ink')}<span class="pr-l">Appearance</span></div>
+        <div class="seg" role="group" aria-label="Appearance">${[['auto','Auto'],['light','Light'],['dark','Dark']].map(([v, l]) => `<button data-act="theme" data-v="${v}" aria-pressed="${themePref() === v}">${l}</button>`).join('')}</div></div>
+    </div></div>
+    <div class="pr-group"><div class="pr-list">
+      <button class="pr-row" data-act="signout"><span class="pr-l">Sign out</span></button>
+      ${S.confirmReset ? `<div class="pr-row pr-stack"><b>Erase everything?</b><span class="muted" style="font-size:.88rem">Your profile, conversation, plan, meals and progress are deleted. This can't be undone.</span><div class="row"><button class="btn small danger" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>`
+        : `<button class="pr-row" data-act="reset"><span class="pr-l pr-danger">Start over</span></button>`}
+    </div></div>`;
+}
+
+function profTargets(){
+  const t = targets();
+  if (!t) return `<p class="muted">These appear once I know your age, sex, height, weight and goal.</p><button class="btn primary big-btn" data-act="editob">Answer a few questions</button>`;
+  return `<div class="pr-tiles">
+      <div class="pr-tile"><span class="muted">Energy</span><b class="num">${t.kcal.toLocaleString()}<small> kcal</small></b></div>
+      <div class="pr-tile"><span class="muted">Protein</span><b class="num">${t.protein}<small> g</small></b></div>
+    </div>
+    <div class="pr-list">
+      <div class="pr-row static"><span class="pr-l">Carbs</span><span class="pr-v num">${t.carbs} g</span></div>
+      <div class="pr-row static"><span class="pr-l">Fat</span><span class="pr-v num">${t.fat} g</span></div>
+      <div class="pr-row static"><span class="pr-l">Fiber</span><span class="pr-v num">${t.fiber} g</span></div>
+      ${t.tdee ? `<div class="pr-row static"><span class="pr-l">Resting / daily burn</span><span class="pr-v num">${t.bmr} / ${t.tdee}</span></div>` : ''}
+    </div>
+    <p class="muted pr-note"><span class="tag est">Estimated</span> ${S.profile.targets ? 'Set during your consultation.' : 'Worked out from your answers. Real needs vary; they are fine-tuned from your weight trend.'}</p>`;
+}
+
+function profKnown(){
+  const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
+  return `<div class="progressbar"><span style="width:${done / SECTIONS.length * 100}%"></span></div>
+    <div class="pr-list">${SECTIONS.map(([k, l]) => `<div class="pr-row static"><span class="dot ${sectionDone(k) ? 'on' : ''}"></span><span class="pr-l">${l}</span></div>`).join('')}</div>
+    ${S.profile.flags?.length ? `<div class="notice warn stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></div>` : ''}
+    <button class="btn primary big-btn" data-act="editob">Edit my answers</button>`;
+}
+
+function profCoach(){
+  return `<div class="pr-hero"><span class="mascot" aria-hidden="true">${MASCOT}</span><b>${esc(coachName())}</b></div>
+    <div class="pr-group"><label class="pr-label" for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
+    <div class="pr-group"><span class="pr-label">How ${esc(coachName())} talks to you</span>
+      <div class="pr-list" role="radiogroup">${COACH_TONES.map(([v, l]) => `<button class="pr-row" role="radio" aria-checked="${coachTone()[0] === v}" data-act="coachtone" data-v="${v}"><span class="pr-l">${l}</span><span class="sw-radio" aria-hidden="true"></span></button>`).join('')}</div>
+      <p class="muted pr-note">The advice stays the same; only the tone changes.</p></div>`;
 }
 
 // === views/plan.js ===
@@ -2506,7 +2615,7 @@ function vPlan(){
     <button class="wk-arrow" data-act="planweek" data-v="0" aria-label="This week" ${next ? '' : 'disabled'}>‹</button>
     <div class="weeksw-t"><b>${next ? 'Next week' : 'This week'}</b><span class="muted">${weekRange(weekOf)}</span></div>
     <button class="wk-arrow" data-act="planweek" data-v="1" aria-label="Next week" ${next ? 'disabled' : ''}>›</button></div>`;
-  const head = `<div class="head"><div><div class="label">Seven days, prepped ahead</div><h1>Week plan</h1></div></div>`;
+  const head = `<div class="head"><div><div class="label">Seven days, prepped ahead</div><h1>Week plan</h1></div>${avatarBtn()}</div>`;
   const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}`;
   if (S.busy.plan) return head + switcher + notes + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true"><span class="mascot">${MASCOT}</span></div><h2>${esc(S.busy.plan)}</h2><p>Picking meals around your targets, tastes and how often you like to cook.</p></section>`;
   if (!P) return head + switcher + notes + emptyWeek(next);
@@ -2915,7 +3024,7 @@ function vProgress(){
   const range = `${mon.toLocaleDateString(undefined,{day:'numeric',month:'short'})} – ${sun.toLocaleDateString(undefined,{day:'numeric',month:'short'})}`;
   const change = diff === null ? '' : Math.abs(diff) < 0.2 ? 'steady' : `${diff < 0 ? '↓' : '↑'} ${Math.abs(diff).toFixed(1)} kg`;
   return `
-  <div class="head"><div><div class="label">${range}</div><h1>Progress</h1></div></div>
+  <div class="head"><div><div class="label">${range}</div><h1>Progress</h1></div>${avatarBtn()}</div>
   <section class="story" aria-live="polite"><span class="label">This week</span><p class="story-t">${esc(story.title)}</p><p class="story-s">${esc(story.sub)}</p></section>
   ${calorieCard(week, t)}
   <div class="duo">
@@ -3256,7 +3365,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
-  if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.aboutOpen) { if (S.profilePage) { S.profilePage = null; render(); return; } S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
     if (e.target.id === 'chatText') sendChat(S.draft.chat);
@@ -3276,14 +3385,15 @@ document.addEventListener('click', e => {
   else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; S.logPhotoAfter = null; render(); }
   else if (a === 'noafter') { e.preventDefault(); S.logPhotoAfter = null; render(); }
   else if (a === 'about') {
-    if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
-    else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }
+    if (S.aboutOpen) { S.aboutOpen = null; S.profilePage = null; S.confirmReset = false; document.body.classList.remove('sheet-open'); render(); }
+    else { S.profilePage = null; S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'profpage') { S.profilePage = el.dataset.p || null; S.confirmReset = false; render(); $('.profile-sheet')?.scrollTo(0, 0); }
   else if (a === 'coachtone') { S.profile.data.coach = { ...(S.profile.data.coach || {}), tone: el.dataset.v }; save.profile(); render(); }
   else if (a === 'startob') startOnboarding();
-  else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
+  else if (a === 'editob') { S.aboutOpen = null; S.profilePage = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
   else if (a === 'obnext') obNext();
   else if (a === 'obskip') obNext(true);
   else if (a === 'obfinish') finishOnboarding();

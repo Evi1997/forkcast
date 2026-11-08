@@ -11,7 +11,6 @@ function vCoach(){
   const done = SECTIONS.filter(([k]) => sectionDone(k)).length;
   const status = S.profile.onboarded ? 'Follow-up' : `Consultation · ${done}/${SECTIONS.length}`;
   const aiRow = (inner) => `<div class="msg-row"><span class="ai-dot mascot" aria-hidden="true">${MASCOT}</span><div class="msg ai">${inner}</div></div>`;
-  const enter = S.aboutOpen === 'enter' ? ' enter' : '';
   return `
   <div class="coach">
     <section class="card chat" aria-label="Conversation with your dietitian">
@@ -19,7 +18,7 @@ function vCoach(){
         <span class="ai-avatar mascot" aria-hidden="true">${MASCOT}</span>
         <div class="chat-title"><b>${esc(coachName())}</b><span>${S.busy.chat ? 'Typing…' : status}</span></div>
         <button class="newchat-btn" data-act="newchat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
-        <button class="iconbtn2 about-btn" data-act="about" aria-label="About you" title="About you"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></button>
+        ${avatarBtn()}
       </header>
       ${!S.profile.onboarded ? `<div class="consult-bar" aria-hidden="true"><span style="width:${Math.max(4, done / SECTIONS.length * 100)}%"></span></div>` : ''}
       <div class="msgs" aria-live="polite">
@@ -37,38 +36,8 @@ function vCoach(){
         <button class="sendbtn" data-act="send" aria-label="Send" ${S.busy.chat ? 'disabled' : ''}>${SEND}</button>
       </div>
     </section>
-    <aside class="stack about-side">${aboutYou(done)}</aside>
   </div>
-  ${S.aboutOpen ? `<div class="scrim${enter}" data-act="about"></div><div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="About you"><div class="grip" aria-hidden="true"></div><div class="sheet-head"><h2>About you</h2><button class="x close" data-act="about" aria-label="Close">×</button></div>${aboutYou(done)}</div>` : ''}`;
-}
-
-function aboutYou(done){
-  const t = targets(), d = S.profile.data, b = d.basics || {};
-  return `
-      <section class="card stack">
-        <div class="row" style="justify-content:space-between"><h3>What I know about you</h3><span class="num muted" style="font-size:.85rem">${done}/${SECTIONS.length}</span></div>
-        <div class="progressbar"><span style="width:${done / SECTIONS.length * 100}%"></span></div>
-        <div class="sections">${SECTIONS.map(([k, l]) => `<div class="sec"><span class="dot ${sectionDone(k) ? 'on' : ''}"></span>${l}</div>`).join('')}</div>
-      </section>
-      <section class="card stack">
-        <div class="row" style="justify-content:space-between"><h3>Daily targets</h3><span class="tag est">Estimated</span></div>
-        ${t ? `<dl class="kv"><dt>Energy</dt><dd>${t.kcal} kcal</dd><dt>Protein</dt><dd>${t.protein} g</dd><dt>Carbs</dt><dd>${t.carbs} g</dd><dt>Fat</dt><dd>${t.fat} g</dd><dt>Fiber</dt><dd>${t.fiber} g</dd>${t.tdee ? `<dt>BMR / TDEE</dt><dd>${t.bmr} / ${t.tdee}</dd>` : ''}</dl>
-        <p class="muted" style="font-size:.8rem">${S.profile.targets ? 'Set during your consultation.' : 'Mifflin-St Jeor, adjusted for activity and goal. Real needs vary; we refine from your weight trend.'}</p>` : `<p class="muted" style="font-size:.88rem">Appear once I know your age, sex, height, weight and goal.</p>`}
-        ${b.weight_kg ? `<dl class="kv"><dt>Weight</dt><dd>${esc(b.weight_kg)} kg</dd>${b.goal ? `<dt>Goal</dt><dd>${esc(b.goal)}</dd>` : ''}${d.shopping?.supermarkets ? `<dt>Shops at</dt><dd>${esc(d.shopping.supermarkets)}</dd>` : ''}</dl>` : ''}
-      </section>
-      ${S.profile.flags?.length ? `<section class="card stack"><span class="tag med">Needs medical review</span>${S.profile.flags.map(f => `<p style="font-size:.88rem">${esc(f)}</p>`).join('')}<p class="muted" style="font-size:.8rem">Forkcast helps organise everyday eating. Changes for these points are best agreed with your doctor or a registered dietitian.</p></section>` : ''}
-      <section class="stack" style="padding:0 4px">
-        <section class="card stack"><h3>Your dietitian</h3>
-          <div class="field"><label for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
-          <div class="ob-chips">${COACH_TONES.map(([v, l]) => `<button class="chip" data-act="coachtone" data-v="${v}" aria-pressed="${coachTone()[0] === v}">${l}</button>`).join('')}</div>
-        </section>
-        <section class="card stack"><h3>Appearance</h3>
-          <div class="ob-chips" role="group" aria-label="Appearance">${[['auto','Match my phone'],['light','Light'],['dark','Dark']].map(([v, l]) => `<button class="chip" data-act="theme" data-v="${v}" aria-pressed="${themePref() === v}">${l}</button>`).join('')}</div>
-        </section>
-        <button class="btn small" data-act="editob">Edit my answers</button>
-        <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
-        ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
-      </section>`;
+`;
 }
 
 // Grow the message box with its text, up to about five lines.

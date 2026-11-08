@@ -31,6 +31,7 @@ SCRIPTS = [
     "views/today.js",
     "views/apple.js",
     "views/coach.js",
+    "views/profile.js",
     "views/plan.js",
     "views/shop.js",
     "views/progress.js",

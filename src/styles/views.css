@@ -42,7 +42,7 @@
 .pfc .p{color:var(--pink)} .pfc .c{color:var(--amber)} .pfc .f{color:var(--blue)}
 
 /* Coach */
-.coach{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+.coach{display:grid;grid-template-columns:minmax(0,1fr);max-width:760px;gap:20px;align-items:start}
 .chat{display:flex;flex-direction:column;height:min(74vh,780px);padding:0;overflow:hidden}
 .msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:12px}
 .msg{max-width:82%;padding:13px 16px;border-radius:20px;line-height:1.55}
@@ -918,3 +918,49 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .wbars{grid-template-columns:repeat(7,minmax(0,1fr))}
 /* Glow: round action buttons and your own chat bubbles share the main-action gradient */
 .addbtn,.sendbtn,.snap-ic,.msg.me{background:linear-gradient(120deg,var(--grad-a),var(--grad-b));color:#fff}
+
+/* Profile: header button and sheet */
+.avatar-btn{flex:none;width:40px;height:40px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;background:linear-gradient(120deg,var(--grad-a),var(--grad-b));color:#fff;font:inherit;font-weight:800;font-size:1rem;box-shadow:0 4px 14px -4px color-mix(in srgb,var(--grad-b) 60%,transparent)}
+.head > .avatar-btn{align-self:center}
+.title-row{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
+.chat-head .avatar-btn{width:38px;height:38px;font-size:.95rem}
+.avatar-lg{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(120deg,var(--grad-a),var(--grad-b));color:#fff;font-weight:800;font-size:1.3rem}
+.profile-sheet{gap:18px;height:min(90vh,760px)}
+.profile-sheet .sheet-head{align-items:center;gap:12px}
+.pr-mail{display:block;font-size:.85rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.back-x{display:grid;place-items:center}
+.pr-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px}
+.pr-tile{display:flex;flex-direction:column;gap:2px;padding:12px;border-radius:18px;background:var(--surface-2);min-width:0}
+.pr-tile .muted{font-size:.78rem}
+.pr-tile b{font-size:1.15rem;font-weight:800;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-tile small{font-size:.75rem;font-weight:700;color:var(--muted)}
+.pr-group{display:flex;flex-direction:column;gap:8px}
+.pr-label{font-size:.78rem;font-weight:700;color:var(--muted);padding:0 4px}
+.pr-list{display:flex;flex-direction:column;border-radius:18px;background:var(--surface-2);overflow:hidden}
+.pr-row{display:flex;align-items:center;gap:12px;min-height:54px;padding:10px 14px;border:0;border-bottom:1px solid var(--line);background:none;font:inherit;color:var(--ink);text-align:left;width:100%;cursor:pointer}
+.pr-row:last-child{border-bottom:0}
+.pr-row.static{cursor:default}
+.pr-row.pr-stack{flex-direction:column;align-items:stretch;gap:10px;cursor:default}
+.pr-row.pr-stack .seg{align-self:stretch}
+.pr-row.pr-stack .seg button{flex:1}
+.pr-l{flex:1;min-width:0;font-weight:700}
+.pr-v{color:var(--muted);font-size:.9rem;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr-chev{width:16px;height:16px;flex:none;color:var(--muted)}
+.pr-danger{color:#B42318}
+.pr-ic{flex:none;width:32px;height:32px;border-radius:10px;display:grid;place-items:center}
+.pr-ic svg{width:18px;height:18px}
+.pr-ic.pink{background:var(--accent-soft);color:var(--accent)}
+.pr-ic.orange{background:var(--paprika-soft);color:var(--paprika)}
+.pr-ic.violet{background:color-mix(in srgb,var(--violet) 14%,var(--surface));color:var(--violet)}
+.pr-ic.green{background:color-mix(in srgb,#2E8B57 14%,var(--surface));color:#2E8B57}
+.pr-ic.ink{background:var(--surface);color:var(--ink)}
+.pr-note{font-size:.84rem;padding:0 4px}
+.pr-hero{display:flex;flex-direction:column;align-items:center;gap:6px}
+.pr-hero .mascot{width:72px;height:72px}
+.pr-hero .mascot svg{width:100%;height:100%}
+.pr-hero b{font-size:1.2rem}
+.btn.danger{background:#B42318;color:#fff}
+.linkbtn{border:0;background:none;padding:0;font:inherit;font-weight:700;color:inherit;text-decoration:underline;cursor:pointer}
+:root[data-theme="dark"] .pr-danger{color:#FF8A80}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pr-danger{color:#FF8A80}}
+.pr-row[aria-checked="true"] .sw-radio{border:7px solid var(--accent)}

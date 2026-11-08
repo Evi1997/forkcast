@@ -7,7 +7,7 @@ function vToday(){
   const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
-  <div class="head today-head"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>
+  <div class="head today-head"><div class="title-row"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>${avatarBtn()}</div>
   ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}

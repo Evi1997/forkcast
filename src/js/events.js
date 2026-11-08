@@ -66,7 +66,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
-  if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.aboutOpen) { if (S.profilePage) { S.profilePage = null; render(); return; } S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
     e.preventDefault();
     if (e.target.id === 'chatText') sendChat(S.draft.chat);
@@ -86,14 +86,15 @@ document.addEventListener('click', e => {
   else if (a === 'nophoto') { e.preventDefault(); S.logPhoto = null; S.logPhotoAfter = null; render(); }
   else if (a === 'noafter') { e.preventDefault(); S.logPhotoAfter = null; render(); }
   else if (a === 'about') {
-    if (S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); }
-    else { S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }
+    if (S.aboutOpen) { S.aboutOpen = null; S.profilePage = null; S.confirmReset = false; document.body.classList.remove('sheet-open'); render(); }
+    else { S.profilePage = null; S.aboutOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.aboutOpen = true; }
   }
   else if (a === 'newchat') { maybeNewSession(true); render(); scrollChat(); }
   else if (a === 'history') { S.chat.history = true; render(); $('.msgs')?.scrollTo(0, 0); }
+  else if (a === 'profpage') { S.profilePage = el.dataset.p || null; S.confirmReset = false; render(); $('.profile-sheet')?.scrollTo(0, 0); }
   else if (a === 'coachtone') { S.profile.data.coach = { ...(S.profile.data.coach || {}), tone: el.dataset.v }; save.profile(); render(); }
   else if (a === 'startob') startOnboarding();
-  else if (a === 'editob') { S.aboutOpen = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
+  else if (a === 'editob') { S.aboutOpen = null; S.profilePage = null; document.body.classList.remove('sheet-open'); startOnboarding(true); }
   else if (a === 'obnext') obNext();
   else if (a === 'obskip') obNext(true);
   else if (a === 'obfinish') finishOnboarding();

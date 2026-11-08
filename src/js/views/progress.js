@@ -165,7 +165,7 @@ function vProgress(){
   const range = `${mon.toLocaleDateString(undefined,{day:'numeric',month:'short'})} – ${sun.toLocaleDateString(undefined,{day:'numeric',month:'short'})}`;
   const change = diff === null ? '' : Math.abs(diff) < 0.2 ? 'steady' : `${diff < 0 ? '↓' : '↑'} ${Math.abs(diff).toFixed(1)} kg`;
   return `
-  <div class="head"><div><div class="label">${range}</div><h1>Progress</h1></div></div>
+  <div class="head"><div><div class="label">${range}</div><h1>Progress</h1></div>${avatarBtn()}</div>
   <section class="story" aria-live="polite"><span class="label">This week</span><p class="story-t">${esc(story.title)}</p><p class="story-s">${esc(story.sub)}</p></section>
   ${calorieCard(week, t)}
   <div class="duo">

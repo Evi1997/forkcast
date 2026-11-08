@@ -2,7 +2,6 @@
 function render(){
   const authed = S.auth.status === 'signed-in';
   document.body.classList.toggle('signed-out', !authed);
-  if (S.view !== 'coach' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); }
   if (!authed) { $('#tabs').innerHTML = ''; $('#view').innerHTML = vAuth(); restoreAuthDraft(); return; }
   document.body.classList.toggle('onboarding', !!S.ob);
   document.body.dataset.sec = S.ob && !S.obDone ? (obVisible()[Math.min(S.ob.q, obVisible().length - 1)]?.sec || '') : '';
@@ -14,7 +13,7 @@ function render(){
   const v = { today:vToday, coach:vCoach, plan:vPlan, progress:vProgress }[S.view]();
   const view = $('#view');
   if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
-  view.innerHTML = v + (S.toast ? `<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo ? '<button data-act="undo">Undo</button>' : ''}</div>` : '');
+  view.innerHTML = v + (S.aboutOpen ? profileSheet() : '') + (S.toast ? `<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo ? '<button data-act="undo">Undo</button>' : ''}</div>` : '');
   if (S.view === 'coach') scrollChat();
   const lt = $('#logText'); if (lt) lt.value = S.draft.log;
   const ct = $('#chatText'); if (ct) { ct.value = S.draft.chat; fitChatBox(); }
