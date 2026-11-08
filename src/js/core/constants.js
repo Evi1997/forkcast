@@ -6,7 +6,7 @@ const ICONS = {
   shop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>',
   progress:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-7"/><path d="M15 7h4v4"/></svg>'
 };
-const TABS = [['today','Today'],['coach','Dietitian'],['plan','Week plan'],['shop','Shop & prep'],['progress','Progress']];
+const TABS = [['today','Today'],['coach','Dietitian'],['plan','Week plan'],['progress','Progress']];
 const SLOTS = ['Breakfast','Lunch','Snack','Dinner'];
 const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 const SECTIONS = [

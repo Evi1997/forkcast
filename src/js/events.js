@@ -24,8 +24,9 @@ document.addEventListener('change', e => {
   if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
     const k = e.target.dataset.k;
-    if (k.startsWith('x-')) { const x = (S.plan.extra || []).find(x => 'x-' + x.id === k); if (x) x.done = e.target.checked; }
-    else { S.plan.checked = S.plan.checked || {}; S.plan.checked[k] = e.target.checked; }
+    const P = curPlan(); if (!P) return;
+    if (k.startsWith('x-')) { const x = (P.extra || []).find(x => 'x-' + x.id === k); if (x) x.done = e.target.checked; }
+    else { P.checked = P.checked || {}; P.checked[k] = e.target.checked; }
     save.plan(); render();
   }
 });
@@ -41,7 +42,7 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'addItemForm') {
     e.preventDefault();
     const name = $('#extraName').value.trim(); if (!name) return;
-    S.plan.extra = [...(S.plan.extra || []), { id:uid(), name, done:false }]; save.plan(); render(); $('#extraName')?.focus(); return;
+    const P = curPlan(); if (!P) return; P.extra = [...(P.extra || []), { id:uid(), name, done:false }]; save.plan(); render(); $('#extraName')?.focus(); return;
   }
   if (e.target.id === 'storeForm') {
     e.preventDefault();
@@ -61,6 +62,8 @@ document.addEventListener('submit', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
   if (e.key === 'Escape' && S.appleOpen) { S.appleOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.prep) { closePrep(); return; }
+  if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Enter' && !e.shiftKey && ['chatText','askText','logText'].includes(e.target.id)) {
@@ -150,31 +153,41 @@ document.addEventListener('click', e => {
     showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
   else if (a === 'genplan') generatePlan();
+  else if (a === 'planweek') { S.planWeek = +el.dataset.v; S.planDay = S.planWeek ? 0 : (new Date().getDay() + 6) % 7; S.err.plan = null; render(); window.scrollTo(0, 0); }
+  else if (a === 'repeatweek') repeatWeek();
+  else if (a === 'swapmeal') swapMeal(+el.dataset.i, +el.dataset.j);
+  else if (a === 'shopopen') { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; }
+  else if (a === 'closeshop') { S.shopOpen = null; S.storePick = false; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
+  else if (a === 'storepick') { S.storePick = !S.storePick; S.shopStore = null; render(); }
+  else if (a === 'prepstart') {
+    if (!curPlan()?.prep?.length) { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; return; }
+    S.shopOpen = null; S.prep = { s:0, i:-1 }; document.body.classList.add('sheet-open', 'prepping'); prepWake(true); render();
+  }
+  else if (a === 'prepsession') { S.prep.s = +el.dataset.s; render(); }
+  else if (a === 'prepnext') { S.prep.i++; render(); $('.prep-body')?.scrollTo(0, 0); }
+  else if (a === 'prepback') { S.prep.i = Math.max(-1, S.prep.i - 1); render(); }
+  else if (a === 'prepclose') closePrep();
+  else if (a === 'preptimer') startTimer(+el.dataset.m);
+  else if (a === 'deltimer') { S.timers = (S.timers || []).filter(t => t.id !== el.dataset.id); render(); }
   else if (a === 'day') { S.planDay = +el.dataset.i; render(); }
   else if (a === 'planmeal') { S.planSheet = { i:+el.dataset.i, j:+el.dataset.j, enter:true }; document.body.classList.add('sheet-open'); render(); S.planSheet.enter = false; }
   else if (a === 'closeplan') { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); }
-  else if (a === 'recipe') loadRecipe(el.dataset.k, S.plan.days[+el.dataset.i].meals[+el.dataset.j]);
+  else if (a === 'recipe') loadRecipe(el.dataset.k, curPlan().days[+el.dataset.i].meals[+el.dataset.j]);
   else if (a === 'logmeal') {
-    const m = S.plan.days[+el.dataset.i].meals[+el.dataset.j];
+    const m = curPlan().days[+el.dataset.i].meals[+el.dataset.j];
     const slot = SLOTS.includes(m.slot) ? m.slot : slotNow();
     addItems([{ name:m.name, amount:m.portion, kcal:m.kcal, protein:m.p, carbs:m.c, fat:m.f, slot }], dkey());
     S.planSheet = null; document.body.classList.remove('sheet-open');
     showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }
-  else if (a === 'clearchecks') { S.plan.checked = {}; (S.plan.extra || []).forEach(x => x.done = false); save.plan(); render(); }
-  else if (a === 'genshop') { const st = S.shopStore || S.plan.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; S.storeSheet = null; document.body.classList.remove('sheet-open'); go('shop'); generateShopping(st).then(() => { S.shopStore = null; render(); }); }
+  else if (a === 'clearchecks') { const P = curPlan(); P.checked = {}; (P.extra || []).forEach(x => x.done = false); save.plan(); render(); }
+  else if (a === 'genshop') { const st = S.shopStore || curPlan()?.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; S.storePick = false; generateShopping(st).then(() => { S.shopStore = null; render(); }); }
   else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
-  else if (a === 'shoptab') { S.shopTab = el.dataset.t; render(); }
-  else if (a === 'storesheet') {
-    if (S.storeSheet) { S.storeSheet = null; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); }
-    else { S.storeSheet = 'enter'; document.body.classList.add('sheet-open'); }
-    render(); if (S.storeSheet) S.storeSheet = true;
-  }
   else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
   else if (a === 'delextra') {
-    const before = S.plan.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);
-    S.plan.extra = before.filter(x => x !== gone); save.plan();
-    if (gone) showToast(`Removed ${gone.name}`, () => { S.plan.extra = before; save.plan(); }); render();
+    const P = curPlan(), before = P.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);
+    P.extra = before.filter(x => x !== gone); save.plan();
+    if (gone) showToast(`Removed ${gone.name}`, () => { P.extra = before; save.plan(); }); render();
   }
   else if (a === 'weigh') {
     const kg = parseFloat($('#wKg').value), date = $('#wDate')?.value || dkey(), waist = parseFloat($('#wWaist')?.value);
@@ -211,9 +224,9 @@ document.addEventListener('click', e => {
   else if (a === 'reset') { S.confirmReset = true; render(); }
   else if (a === 'reset-no') { S.confirmReset = false; render(); }
   else if (a === 'reset-yes') {
-    ['profile','chat','plan','progress','log-' + dkey()].forEach(k => Store.remove(k));
+    ['profile','chat','plan','plan-next','progress','log-' + dkey()].forEach(k => Store.remove(k));
     S.profile = { data:{}, targets:null, targetsSource:null, nextQuestion:null, quick:[], onboarded:false, onboardedAt:null, flags:[] };
-    S.chat = { turns:[] }; S.plan = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
+    S.chat = { turns:[] }; S.plan = null; S.planNext = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
   }
 });
 // Hide the bottom menu only while the on-screen keyboard is really open.
@@ -233,3 +246,5 @@ document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
 
 // Text boxes that grow with their content (no clipped lines).
 function growBox(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }
+
+function closePrep(){ S.prep = null; document.body.classList.remove('sheet-open', 'prepping'); prepWake(false); render(); }

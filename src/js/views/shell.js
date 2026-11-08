@@ -9,8 +9,9 @@ function render(){
   if (S.ob) { $('#tabs').innerHTML = ''; $('#view').innerHTML = S.obDone ? vObDone() : vOnboarding(); document.querySelectorAll('textarea.grow').forEach(growBox); return; }
   $('#tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-act="nav" data-v="${k}" ${S.view === k ? 'aria-current="page"' : ''}>${ICONS[k]}<span>${l}</span></button>`).join('');
   $('#railFoot').innerHTML = `<span class="muted">${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button>`;
+  if (S.view === 'shop') S.view = 'plan'; // the old Shop & prep tab now lives inside the week plan
   if (S.view === 'coach' && !S.busy.chat) maybeNewSession();
-  const v = { today:vToday, coach:vCoach, plan:vPlan, shop:vShop, progress:vProgress }[S.view]();
+  const v = { today:vToday, coach:vCoach, plan:vPlan, progress:vProgress }[S.view]();
   const view = $('#view');
   if (render.last !== S.view) { render.last = S.view; view.classList.add('entering'); clearTimeout(render.t); render.t = setTimeout(() => view.classList.remove('entering'), 400); }
   view.innerHTML = v + (S.toast ? `<div class="toast" role="status"><span>${esc(S.toast)}</span>${S.toastUndo ? '<button data-act="undo">Undo</button>' : ''}</div>` : '');
@@ -21,9 +22,9 @@ function render(){
   document.body.classList.toggle('on-today', S.view === 'today');
   if (S.view === 'plan') keepDayInView();
   if (S.view !== 'progress' && S.ckSheet) { S.ckSheet = null; document.body.classList.remove('sheet-open'); }
-  if (S.view !== 'shop' && S.storeSheet) { S.storeSheet = null; document.body.classList.remove('sheet-open'); }
+  if (S.view !== 'plan' && (S.shopOpen || S.prep)) { S.shopOpen = null; S.prep = null; prepWake(false); document.body.classList.remove('sheet-open', 'prepping'); }
   if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
-  if (S.view === 'plan' && S.plan?.days) loadDayPhotos(Math.min(S.planDay, S.plan.days.length - 1));
+  if (S.view === 'plan' && curPlan()) loadDayPhotos(Math.min(S.planDay, curPlan().days.length - 1));
   const at = $('#askText'); if (at) at.value = S.draft.ask;
 }
 

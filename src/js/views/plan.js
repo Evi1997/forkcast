@@ -1,49 +1,101 @@
-// Week plan: a slim day picker that keeps the chosen day in view, the day's
-// meals as one-line rows, and the details (portion, swap, recipe) in a sheet.
+// Week plan: switch between this week and next, a day picker that keeps the
+// chosen day in view, the day's meals with photos and a swap button, then
+// shopping and guided prep for that week. Details live in sheets.
+const CHEV = '<svg class="tip-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
+const SWAP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4 3 8l4 4"/><path d="M3 8h13a4 4 0 0 1 4 4"/><path d="m17 20 4-4-4-4"/><path d="M21 16H8a4 4 0 0 1-4-4"/></svg>';
+const PREP_IC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16v3a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6z"/><path d="M2 11h2M20 11h2M9 7c0-1.5 1-2 1-3.5M14 7c0-1.5 1-2 1-3.5"/></svg>';
+
+function weekRange(weekOf){
+  const mon = fromKey(weekOf), sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+  const f = d => d.toLocaleDateString(undefined, { day:'numeric', month:'short' });
+  return `${f(mon)} – ${f(sun)}`;
+}
+
 function vPlan(){
-  const head = `<div class="head"><div><div class="label">${S.plan ? `Week of ${fromKey(S.plan.weekOf).toLocaleDateString(undefined,{day:'numeric',month:'long'})}` : 'Seven days, prepped ahead'}</div><h1>Week plan</h1></div>
-    <button class="btn ${S.plan ? 'small' : 'primary'}" data-act="genplan" ${S.busy.plan ? 'disabled' : ''}>${S.busy.plan ? `<span class="spinner"></span> ${esc(S.busy.plan)}` : S.plan ? '↻ New week' : 'Plan my week'}</button></div>`;
-  const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}${!S.profile.onboarded && !S.plan ? `<div class="notice accent">Your plan is built from your consultation. Finish it first for a plan that fits your tastes, schedule and supermarket. You can still plan now with what's known.</div>` : ''}`;
-  if (!S.plan?.days) return head + notes + `<section class="card empty"><div class="blob" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></div><h2>No plan yet</h2><p>Forkcast writes seven days of meals around the food you like, your targets and how often you want to cook, then turns them into one shopping list.</p></section>`;
-  const di = Math.min(S.planDay, S.plan.days.length - 1), day = S.plan.days[di], t = targets();
+  const next = S.planWeek === 1, P = curPlan(), weekOf = next ? nextMonday() : mondayOf();
+  const switcher = `<div class="weeksw" role="group" aria-label="Week">
+    <button class="wk-arrow" data-act="planweek" data-v="0" aria-label="This week" ${next ? '' : 'disabled'}>‹</button>
+    <div class="weeksw-t"><b>${next ? 'Next week' : 'This week'}</b><span class="muted">${weekRange(weekOf)}</span></div>
+    <button class="wk-arrow" data-act="planweek" data-v="1" aria-label="Next week" ${next ? 'disabled' : ''}>›</button></div>`;
+  const head = `<div class="head"><div><div class="label">Seven days, prepped ahead</div><h1>Week plan</h1></div></div>`;
+  const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}`;
+  if (S.busy.plan) return head + switcher + notes + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true"><span class="mascot">${MASCOT}</span></div><h2>${esc(S.busy.plan)}</h2><p>Picking meals around your targets, tastes and how often you like to cook.</p></section>`;
+  if (!P) return head + switcher + notes + emptyWeek(next);
+
+  const di = Math.min(S.planDay, P.days.length - 1), day = P.days[di];
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
-  const mon = fromKey(S.plan.weekOf), todayIdx = (new Date().getDay() + 6) % 7, thisWeek = S.plan.weekOf === mondayOf();
-  const chevron = '<svg class="tip-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
-  return head + notes + `
-  ${S.plan.grocery?.length ? '' : `<button class="tipcard" data-act="nav" data-v="shop"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.3 11.2a1 1 0 0 1-1 .8H7.3a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><span class="tip-txt"><b>Create your shopping list</b><span>One list for the whole week, for your supermarket.</span></span>${chevron}</button>`}
-  <div class="daypick" role="tablist" aria-label="Day">${S.plan.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${thisWeek && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
+  const mon = fromKey(P.weekOf), todayIdx = (new Date().getDay() + 6) % 7;
+  return head + switcher + notes + `
+  <div class="daypick" role="tablist" aria-label="Day">${P.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${!next && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
   <section class="card plan-day">
     <div class="day-sum"><b class="num">${tot.kcal.toLocaleString()} kcal</b>${pfc(tot)}</div>
-    ${day.meals.map((m, j) => `<button class="prow" data-act="planmeal" data-i="${di}" data-j="${j}">
-      ${SLOTS.includes(m.slot) ? mealIcon(m.slot) : ''}
-      <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${esc(m.name)}</b></span>
-      <span class="num">${r0(m.kcal)}</span>${chevron}
-    </button>`).join('')}
+    ${day.meals.map((m, j) => { const k = di + '-' + j, busy = S.busy.swap === k; return `<div class="prow${busy ? ' swapping' : ''}">
+      <button class="prow-main" data-act="planmeal" data-i="${di}" data-j="${j}">
+        ${dishThumb(P, k, m)}
+        <span class="prow-txt"><span class="label">${esc(m.slot)} · ${m.prep === 'fresh' ? 'cook fresh' : 'prepped'}</span><b>${busy ? 'Finding a swap…' : esc(m.name)}</b></span>
+        <span class="num">${r0(m.kcal)}</span>
+      </button>
+      <button class="swap-btn" data-act="swapmeal" data-i="${di}" data-j="${j}" aria-label="Swap ${esc(m.name)}" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : SWAP_IC}</button>
+    </div>`; }).join('')}
   </section>
-  ${S.plan.notes ? `<details class="plan-notes"><summary>How this week works</summary><p>${esc(S.plan.notes)}</p></details>` : ''}
-  ${S.planSheet ? planMealSheet() : ''}`;
+  ${weekTools(P)}
+  ${!next && !S.planNext?.days ? `<button class="tipcard" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="tip-txt"><b>Plan next week</b><span>Get it ready now. This week stays as it is.</span></span>${CHEV}</button>` : ''}
+  ${S.planSheet ? planMealSheet() : ''}
+  ${S.shopOpen ? shopSheet() : ''}
+  ${S.prep ? prepMode() : ''}`;
+}
+
+function emptyWeek(next){
+  const src = next ? thisWeekPlan() : S.plan?.days ? S.plan : null;
+  return `<section class="card empty"><div class="blob" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></div>
+    <h2>${next ? 'Next week isn\'t planned yet' : 'No plan for this week'}</h2>
+    <p>${next ? 'Plan it now and shop at the weekend. This week\'s plan stays as it is.' : 'Seven days of meals around the food you like, your targets and how often you want to cook, plus one shopping list.'}</p>
+    ${!S.profile.onboarded ? '<p class="muted" style="font-size:.86rem">Finish your consultation first for a plan that fits you better.</p>' : ''}
+    <button class="btn primary big-btn" data-act="genplan">${next ? 'Plan next week' : 'Plan this week'}</button>
+    ${src ? `<button class="btn ghost" data-act="repeatweek">Repeat ${next ? 'this' : 'last'} week's meals</button>` : ''}
+  </section>`;
+}
+
+// Shopping list and guided prep for the week shown.
+function weekTools(P){
+  const rows = shopRows(P), left = rows.filter(r => !r.done).length, prep = P.prep?.[0];
+  const steps = (P.prep || []).reduce((n, p) => n + (p.tasks || []).length, 0);
+  return `<div class="duo week-tools">
+    <button class="tile mini tool-tile" data-act="shopopen"><span class="tool-ic" aria-hidden="true">${CART}</span><b>Shopping list</b><span class="muted">${S.busy.shop ? 'Writing it…' : !P.grocery?.length ? 'Make it for your store' : P.listStale ? 'Meals changed · update' : left ? `${left} to buy` : 'All in the basket'}</span></button>
+    <button class="tile mini tool-tile" data-act="prepstart" ${P.grocery?.length ? '' : 'aria-describedby="prepNeedsList"'}><span class="tool-ic prep" aria-hidden="true">${PREP_IC}</span><b>Prep together</b><span class="muted" id="prepNeedsList">${prep ? `${steps} steps${prep.minutes ? ' · ' + esc(prep.minutes) : ''}` : 'Comes with the list'}</span></button>
+  </div>`;
 }
 
 function planMealSheet(){
-  const { i, j } = S.planSheet, m = S.plan.days[i]?.meals[j]; if (!m) return '';
-  const key = i + '-' + j, rec = S.plan.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '';
+  const P = curPlan(); if (!P) return '';
+  const { i, j } = S.planSheet, m = P.days[i]?.meals[j]; if (!m) return '';
+  const key = i + '-' + j, rec = P.recipes?.[key], enter = S.planSheet.enter ? ' enter' : '', busy = S.busy.swap === key;
   return `<div class="scrim${enter}" data-act="closeplan"></div>
   <div class="sheet${enter}" role="dialog" aria-modal="true" aria-label="${esc(m.name)}">
     <div class="grip" aria-hidden="true"></div>
-    <div class="sheet-head">${SLOTS.includes(m.slot) ? mealIcon(m.slot) : ''}<div style="min-width:0"><div class="label">${esc(S.plan.days[i].day)} · ${esc(m.slot)}</div><h2>${esc(m.name)}</h2></div><button class="x close" data-act="closeplan" aria-label="Close">×</button></div>
-    ${dishPhoto(key, m)}
+    <div class="sheet-head"><div style="min-width:0;flex:1"><div class="label">${esc(P.days[i].day)} · ${esc(m.slot)}</div><h2>${esc(m.name)}</h2></div><button class="x close" data-act="closeplan" aria-label="Close">×</button></div>
+    ${dishPhoto(P, key, m)}
     <div class="review-total"><span class="big num">${r0(m.kcal)}</span><span class="muted">kcal</span><span class="pfc" style="margin-left:auto">${pfc(m)}</span></div>
     <dl class="facts"><dt>Portion</dt><dd>${esc(m.portion)}</dd>${m.swap ? `<dt>Swap</dt><dd>${esc(m.swap)}</dd>` : ''}</dl>
     ${rec ? `<details class="plan-notes" open><summary>Recipe${rec.time ? ' · ' + esc(rec.time) : ''}</summary><div class="recipe-body"><div class="label">Ingredients</div><ul>${(rec.ingredients || []).map(x => `<li>${esc(x)}</li>`).join('')}</ul><div class="label">Method</div><ol>${(rec.steps || []).map(x => `<li>${esc(x)}</li>`).join('')}</ol>${rec.storage ? `<p class="muted">${esc(rec.storage)}</p>` : ''}</div></details>`
       : `<button class="btn" data-act="recipe" data-k="${key}" data-i="${i}" data-j="${j}" ${S.busy.recipe === key ? 'disabled' : ''}>${S.busy.recipe === key ? '<span class="spinner"></span> Writing the recipe…' : 'Show recipe'}</button>`}
-    <div class="sheet-actions"><button class="btn primary big-btn" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button></div>
+    <div class="sheet-actions" style="display:flex;flex-direction:row;gap:10px">
+      <button class="btn" data-act="swapmeal" data-i="${i}" data-j="${j}" ${S.busy.swap ? 'disabled' : ''}>${busy ? '<span class="spinner"></span> Swapping…' : SWAP_IC + ' Swap'}</button>
+      ${S.planWeek === 1 ? '' : `<button class="btn primary big-btn" style="flex:1" data-act="logmeal" data-i="${i}" data-j="${j}">I ate this</button>`}
+    </div>
   </div>`;
 }
 
-function dishPhoto(key, m){
-  const p = S.plan.photos?.[key];
-  if (!p) return '';
-  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(p.alt)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.by)} · Pexels</a></figcaption></figure>`;
+// Photo of the dish, or the meal's own colour and icon while there is none.
+function dishThumb(P, key, m){
+  const p = P.photos?.[key];
+  if (p?.thumb) return `<span class="pthumb"><img src="${esc(p.thumb)}" alt="" loading="lazy" onerror="this.parentNode.classList.add('ph');this.remove()"></span>`;
+  return `<span class="pthumb ph${key in (P.photos || {}) || S.photosOff ? '' : ' loading'}" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : ''}</span>`;
+}
+function dishPhoto(P, key, m){
+  const p = P.photos?.[key];
+  if (!p?.src) return `<figure class="dish ph" style="--c:${MEAL_COLOR[m.slot] || 'var(--accent)'}">${SLOTS.includes(m.slot) ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MEAL_ICON[m.slot]}</svg>` : ''}</figure>`;
+  return `<figure class="dish"><img src="${esc(p.src)}" alt="${esc(m.name)}" loading="lazy"><figcaption><a href="${esc(p.url)}" target="_blank" rel="noopener">Photo: ${esc(p.by)} · ${esc(p.lic)}</a></figcaption></figure>`;
 }
 
 // Keep the chosen day visible in the day picker after every redraw.

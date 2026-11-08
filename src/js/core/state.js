@@ -24,13 +24,15 @@ function resetState(){
     chat: { turns:[] }, plan: null, progress: { weighins:[], checkins:[] }, logs: {},
     busy: { chat:false, log:false, plan:false, recipe:null }, draft: { chat:'', log:'', ask:'' },
     logResult: null, logPhoto: null, logPhotoAfter: null, openRecipe: null, err: {}, synced: false, confirmReset: false,
-    hist: null, histLoading: false, weekAsked: null, kRange: null, wRange: null
+    hist: null, histLoading: false, weekAsked: null, kRange: null, wRange: null, planWeek: 0, planNext: null
   });
 }
 function loadLocal(){
   S.profile = merge(S.profile, Store.local('profile') || {});
   S.chat = Store.local('chat') || S.chat;
   S.plan = Store.local('plan');
+  S.planNext = Store.local('plan-next');
+  rollWeeks();
   S.progress = merge(S.progress, Store.local('progress') || {});
   const t = dkey(); S.logs[t] = Store.local('log-' + t) || {items:[]};
 }
@@ -42,19 +44,19 @@ const save = {
     if (cut) { S.chat.turns = S.chat.turns.slice(cut); S.chat.start = Math.max(0, (S.chat.start || 0) - cut); }
     Store.save('chat', S.chat);
   },
-  plan(){ Store.save('plan', S.plan); },
+  plan(){ if (S.planWeek === 1) Store.save('plan-next', S.planNext); else Store.save('plan', S.plan); },
   progress(){ Store.save('progress', S.progress); },
   log(k = dkey()){ Store.save('log-' + k, S.logs[k]); }
 };
 async function syncRemote(){
   const uid = Store.uid;
   const today = dkey(); S.logs[today] = S.logs[today] || Store.local('log-' + today) || { items:[] };
-  const keys = ['profile','chat','plan','progress','log-' + today];
+  const keys = ['profile','chat','plan','plan-next','progress','log-' + today];
   const vals = await Promise.all(keys.map(k => Store.remote(k)));
   if (uid !== Store.uid) return; // signed out meanwhile
   // Whichever copy was saved last wins, as a whole: merging would let an older
   // copy bring back values that were deliberately cleared (e.g. old targets).
-  const current = { profile:S.profile, chat:S.chat, plan:S.plan, progress:S.progress, ['log-' + today]:S.logs[today] };
+  const current = { profile:S.profile, chat:S.chat, plan:S.plan, 'plan-next':S.planNext, progress:S.progress, ['log-' + today]:S.logs[today] };
   vals.forEach((v, i) => {
     const k = keys[i], local = current[k];
     const localAt = local?._at || 0, remoteAt = v?._at || 0;
@@ -62,12 +64,14 @@ async function syncRemote(){
       if (k === 'profile') S.profile = { data:{}, targets:null, targetsSource:null, quick:[], onboarded:false, onboardedAt:null, flags:[], ...v };
       else if (k === 'chat') S.chat = v;
       else if (k === 'plan') S.plan = v;
+      else if (k === 'plan-next') S.planNext = v;
       else if (k === 'progress') S.progress = { weighins:[], checkins:[], ...v };
       else S.logs[today] = v;
     } else if (local && localAt) {
       Store.save(k, local); // this device has the newer copy: send it up
     }
   });
+  rollWeeks();
   S.synced = true;
   if (!S.profile.onboarded && !S.ob) { startOnboarding(); return; } // new users start with the quick setup
   render();

@@ -148,10 +148,9 @@ LATEST CHECK-IN: ${JSON.stringify(checkin || 'none')}`;
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
-
+${ctx.avoid?.length ? `\nThis is NEXT week's plan. For variety, don't repeat these dishes from this week: ${ctx.avoid.join('; ')}\n` : ''}
 Reply with only JSON:
-{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","photo":"2-4 word English search term for a photo of the finished dish, e.g. yogurt bowl berries"}]}],
- "notes":"ONE short sentence (max 20 words) on how this week's prep works"}
+{"days":[{"day":"Mon","meals":[{"slot":"Breakfast","name":"Greek yogurt bowl with berries and oats","portion":"200 g 2% yogurt, 40 g oats, 100 g berries","kcal":390,"p":28,"c":48,"f":9,"prep":"batch" or "fresh","swap":"one short swap, e.g. 150 g chicken → 160 g turkey → 180 g white fish → 200 g tofu","photo":"2-3 word English name of the finished dish as people photograph it, e.g. yogurt berries, lentil soup, chicken curry"}]}]}
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
@@ -167,9 +166,20 @@ SUPERMARKET: ${store || 'their usual supermarket'}. Use product names, own brand
 Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
 Reply with only JSON:
 {"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","note":"optional short note, e.g. own-brand product name"}]}],
- "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Roast 1 kg chicken thighs","Cook 400 g dry rice"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day"}],
+ "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Heat the oven to 200 °C","Roast 1 kg chicken thighs for 35 min","Meanwhile cook 400 g dry rice for 12 min","Portion into 4 boxes"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day","kit":"what to get out first, e.g. 2 baking trays, big pot, 7 boxes"}],
  "budget_note":"one sentence: rough total cost at this supermarket in local currency, clearly an estimate (prices not verified)"}
+Prep tasks are the steps of one guided session, in the order to do them: one short action each (max 12 words), with any timing written as "N min", parallel work starting with "Meanwhile".
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
+  },
+
+  swapMeal(ctx, meal, avoid){
+    return `${PLAN_RULES}
+
+${PROMPTS.planContext(ctx)}
+
+Swap this ${meal.slot}: "${meal.name}" (${meal.portion}; ${meal.kcal} kcal, ${meal.p} g protein).
+Suggest ONE different dish for the same slot, with about the same calories (±10%) and protein, that fits the person's tastes and cooking time. Not any of: ${avoid.join('; ')}.
+Reply with only JSON: {"name":"…","portion":"…","kcal":0,"p":0,"c":0,"f":0,"prep":"batch" or "fresh","swap":"one short swap","photo":"2-3 word English name of the finished dish"}`;
   },
 
   recipe(meal, person){
