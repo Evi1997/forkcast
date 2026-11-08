@@ -62,6 +62,9 @@ function aboutYou(done){
           <div class="field"><label for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
           <div class="ob-chips">${COACH_TONES.map(([v, l]) => `<button class="chip" data-act="coachtone" data-v="${v}" aria-pressed="${coachTone()[0] === v}">${l}</button>`).join('')}</div>
         </section>
+        <section class="card stack"><h3>Appearance</h3>
+          <div class="ob-chips" role="group" aria-label="Appearance">${[['auto','Match my phone'],['light','Light'],['dark','Dark']].map(([v, l]) => `<button class="chip" data-act="theme" data-v="${v}" aria-pressed="${themePref() === v}">${l}</button>`).join('')}</div>
+        </section>
         <button class="btn small" data-act="editob">Edit my answers</button>
         <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
@@ -74,4 +77,14 @@ function fitChatBox(){
   t.style.height = 'auto';
   t.style.height = Math.min(t.scrollHeight, 132) + 'px';
   t.style.overflowY = t.scrollHeight > 132 ? 'auto' : 'hidden';
+}
+
+// Appearance: follow the phone (auto) or force light or dark. Kept on this device.
+const themePref = () => { try { return localStorage.getItem('forkcast:theme') || 'auto'; } catch { return 'auto'; } };
+function setTheme(v){
+  try { v === 'auto' ? localStorage.removeItem('forkcast:theme') : localStorage.setItem('forkcast:theme', v); } catch {}
+  const root = document.documentElement;
+  if (v === 'auto') delete root.dataset.theme; else root.dataset.theme = v;
+  const metas = document.querySelectorAll('meta[name=theme-color]');
+  metas.forEach((m, i) => { m.content = v === 'dark' ? '#0F0D18' : v === 'light' ? '#FFF8F3' : (i ? '#0F0D18' : '#FFF8F3'); });
 }

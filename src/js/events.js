@@ -153,6 +153,7 @@ document.addEventListener('click', e => {
     addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot, amount:'manual entry' }]);
     showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
+  else if (a === 'theme') { setTheme(el.dataset.v); render(); }
   else if (a === 'genplan') generatePlan();
   else if (a === 'planweek') { S.planWeek = +el.dataset.v; S.planDay = S.planWeek ? 0 : (new Date().getDay() + 6) % 7; S.err.plan = null; render(); window.scrollTo(0, 0); }
   else if (a === 'repeatweek') repeatWeek();

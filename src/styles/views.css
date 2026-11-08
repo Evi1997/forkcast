@@ -828,7 +828,8 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 
 /* Your apple: Today pill and sheet */
 :root{--leaf:#2E8B57;--leaf-new:#8BC34A;--stem:#6B4A2B}
-@media (prefers-color-scheme:dark){:root{--leaf:#4CAF7A;--leaf-new:#A5D66B;--stem:#9A7350}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--leaf:#4CAF7A;--leaf-new:#A5D66B;--stem:#9A7350}}
+:root[data-theme="dark"]{--leaf:#4CAF7A;--leaf-new:#A5D66B;--stem:#9A7350}
 .apple-pill{display:flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;color:var(--ink);cursor:pointer;flex:none}
 .apple-pill .apple{flex:none;margin:-4px 0}
 .apple-pill > span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}

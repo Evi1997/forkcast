@@ -7,6 +7,7 @@
 <meta name="description" content="Your AI dietitian and meal-prep planner.">
 <meta name="theme-color" content="#FFF8F3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F0D18" media="(prefers-color-scheme: dark)">
+<script>/* Light / Dark / Auto from the in-app setting, applied before anything draws */try{var t=localStorage.getItem('forkcast:theme');if(t==='light'||t==='dark'){document.documentElement.dataset.theme=t;document.querySelectorAll('meta[name=theme-color]').forEach(function(m){m.content=t==='dark'?'#0F0D18':'#FFF8F3';});}}catch(e){}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -975,7 +976,8 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 
 /* Your apple: Today pill and sheet */
 :root{--leaf:#2E8B57;--leaf-new:#8BC34A;--stem:#6B4A2B}
-@media (prefers-color-scheme:dark){:root{--leaf:#4CAF7A;--leaf-new:#A5D66B;--stem:#9A7350}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--leaf:#4CAF7A;--leaf-new:#A5D66B;--stem:#9A7350}}
+:root[data-theme="dark"]{--leaf:#4CAF7A;--leaf-new:#A5D66B;--stem:#9A7350}
 .apple-pill{display:flex;align-items:center;gap:6px;border:0;background:none;padding:0;font:inherit;color:var(--ink);cursor:pointer;flex:none}
 .apple-pill .apple{flex:none;margin:-4px 0}
 .apple-pill > span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}
@@ -1078,7 +1080,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794150320';
+const BUILD = '1794150434';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -2457,6 +2459,9 @@ function aboutYou(done){
           <div class="field"><label for="coachName">Name</label><input type="text" id="coachName" value="${esc(coachName())}" maxlength="20" autocomplete="off"></div>
           <div class="ob-chips">${COACH_TONES.map(([v, l]) => `<button class="chip" data-act="coachtone" data-v="${v}" aria-pressed="${coachTone()[0] === v}">${l}</button>`).join('')}</div>
         </section>
+        <section class="card stack"><h3>Appearance</h3>
+          <div class="ob-chips" role="group" aria-label="Appearance">${[['auto','Match my phone'],['light','Light'],['dark','Dark']].map(([v, l]) => `<button class="chip" data-act="theme" data-v="${v}" aria-pressed="${themePref() === v}">${l}</button>`).join('')}</div>
+        </section>
         <button class="btn small" data-act="editob">Edit my answers</button>
         <div class="row" style="justify-content:space-between"><span class="muted" style="font-size:.85rem">Signed in as ${esc(S.auth.email || '')}</span><button class="btn ghost small" data-act="signout">Sign out</button></div>
         ${S.confirmReset ? `<div class="notice warn stack"><b>Erase everything?</b><span style="font-size:.88rem">Profile, conversation, plan, meals and progress are deleted.</span><div class="row"><button class="btn small" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>` : `<button class="btn ghost small" data-act="reset">Start over</button>`}
@@ -2469,6 +2474,16 @@ function fitChatBox(){
   t.style.height = 'auto';
   t.style.height = Math.min(t.scrollHeight, 132) + 'px';
   t.style.overflowY = t.scrollHeight > 132 ? 'auto' : 'hidden';
+}
+
+// Appearance: follow the phone (auto) or force light or dark. Kept on this device.
+const themePref = () => { try { return localStorage.getItem('forkcast:theme') || 'auto'; } catch { return 'auto'; } };
+function setTheme(v){
+  try { v === 'auto' ? localStorage.removeItem('forkcast:theme') : localStorage.setItem('forkcast:theme', v); } catch {}
+  const root = document.documentElement;
+  if (v === 'auto') delete root.dataset.theme; else root.dataset.theme = v;
+  const metas = document.querySelectorAll('meta[name=theme-color]');
+  metas.forEach((m, i) => { m.content = v === 'dark' ? '#0F0D18' : v === 'light' ? '#FFF8F3' : (i ? '#0F0D18' : '#FFF8F3'); });
 }
 
 // === views/plan.js ===
@@ -3328,6 +3343,7 @@ document.addEventListener('click', e => {
     addItems([{ name:n, kcal:$('#mK').value, protein:$('#mP').value, carbs:$('#mC').value, fat:$('#mF').value, slot, amount:'manual entry' }]);
     showToast(`Added to ${slot} · ${r0($('#mK').value)} kcal`); closeSheet();
   }
+  else if (a === 'theme') { setTheme(el.dataset.v); render(); }
   else if (a === 'genplan') generatePlan();
   else if (a === 'planweek') { S.planWeek = +el.dataset.v; S.planDay = S.planWeek ? 0 : (new Date().getDay() + 6) % 7; S.err.plan = null; render(); window.scrollTo(0, 0); }
   else if (a === 'repeatweek') repeatWeek();
