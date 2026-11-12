@@ -1112,6 +1112,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 :root[data-theme="dark"] .pr-danger{color:#FF8A80}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pr-danger{color:#FF8A80}}
 .pr-row[aria-checked="true"] .sw-radio{border:7px solid var(--accent)}
+.describe.note{min-height:0}
 </style>
 </head>
 <body>
@@ -1126,7 +1127,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794150624';
+const BUILD = '1794503879';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1914,7 +1915,7 @@ async function addToReview(text){
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.addItem = false; render();
 }
-function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
+function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; } // no automatic focus: the keyboard opens only when the text box is tapped
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; S.logPhotoAfter = null; document.body.classList.remove('sheet-open'); render(); }
 let toastTimer;
 function showToast(text, undo){ S.toast = text; S.toastUndo = undo || null; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; S.toastUndo = null; render(); }, undo ? 5000 : 2600); }
@@ -2336,9 +2337,9 @@ function logSheet(){
         <label class="snap tile" for="photo">${S.logPhoto ? `<img alt="Meal photo, before eating" src="${URL.createObjectURL(S.logPhoto)}"><button class="x" data-act="nophoto" aria-label="Remove before photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>`}<b>Before</b><span class="muted">${S.logPhoto ? 'Added' : 'Photo of your meal'}</span></label>
         <label class="snap tile after${S.logPhoto ? '' : ' off'}" ${S.logPhoto ? 'for="photoAfter"' : 'aria-disabled="true"'}>${S.logPhotoAfter ? `<img alt="Meal photo, after eating" src="${URL.createObjectURL(S.logPhotoAfter)}"><button class="x" data-act="noafter" aria-label="Remove after photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>`}<b>After <small>(optional)</small></b><span class="muted">${S.logPhotoAfter ? 'Only what you ate counts' : S.logPhoto ? 'Leftovers, if any' : 'Add the before photo first'}</span></label>
       </div><input class="hidden-file" type="file" id="photo" accept="image/*"><input class="hidden-file" type="file" id="photoAfter" accept="image/*">
-      <div class="or"><span>or describe it</span></div>` : ''}
-      <textarea id="logText" class="describe" rows="3" placeholder="Type what you ate, in your own words" aria-label="What you ate"></textarea>
-      <div class="examples">${EXAMPLES[slot].map(e => `<button class="chip" data-act="example" data-t="${esc(e)}">${esc(e)}</button>`).join('')}</div>
+      ${S.logPhoto ? '' : '<div class="or"><span>or describe it</span></div>'}` : ''}
+      <textarea id="logText" class="describe${S.logPhoto ? ' note' : ''}" rows="${S.logPhoto ? 1 : 3}" enterkeyhint="go" placeholder="${S.logPhoto ? 'Add a detail (optional)' : 'Type what you ate, in your own words'}" aria-label="${S.logPhoto ? 'Anything to add about the photo (optional)' : 'What you ate'}"></textarea>
+      ${S.logPhoto ? '' : `<div class="examples">${EXAMPLES[slot].map(e => `<button class="chip" data-act="example" data-t="${esc(e)}">${esc(e)}</button>`).join('')}</div>`}
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="log">Count calories</button><button class="btn ghost" data-act="manualmode">I know the calories</button></div>`;
   }
@@ -3317,8 +3318,9 @@ document.addEventListener('input', e => {
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
-  if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; render(); }
+  // After choosing a photo, keep the keyboard closed (iPhone can hand focus back to the text box).
+  if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; document.activeElement?.blur?.(); render(); }
+  if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; document.activeElement?.blur?.(); render(); }
   if (e.target.id === 'photoLeft') { leftoversFromPhoto(e.target.files?.[0]); e.target.value = ''; }
   if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
@@ -3549,6 +3551,13 @@ window.visualViewport?.addEventListener('resize', () => {
   if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
 });
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
+// In a sheet, tapping empty space closes the keyboard.
+document.addEventListener('pointerdown', e => {
+  const f = document.activeElement;
+  if (!f || !f.matches?.('input[type=text],input[type=number],textarea') || !f.closest('.sheet')) return;
+  if (e.target.closest('input,textarea,select,label,button,a')) return; // buttons keep their own tap
+  f.blur();
+}, true);
 
 // Text boxes that grow with their content (no clipped lines).
 function growBox(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }

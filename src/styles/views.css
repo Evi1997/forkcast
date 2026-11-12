@@ -964,3 +964,4 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 :root[data-theme="dark"] .pr-danger{color:#FF8A80}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pr-danger{color:#FF8A80}}
 .pr-row[aria-checked="true"] .sw-radio{border:7px solid var(--accent)}
+.describe.note{min-height:0}

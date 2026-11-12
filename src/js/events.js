@@ -18,8 +18,9 @@ document.addEventListener('input', e => {
   if (e.target.dataset.ck) { S.ck[e.target.dataset.ck] = +e.target.value; e.target.previousElementSibling.lastElementChild.textContent = e.target.value + '/10'; }
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; render(); }
-  if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; render(); }
+  // After choosing a photo, keep the keyboard closed (iPhone can hand focus back to the text box).
+  if (e.target.id === 'photo') { S.logPhoto = e.target.files?.[0] || null; document.activeElement?.blur?.(); render(); }
+  if (e.target.id === 'photoAfter') { S.logPhotoAfter = e.target.files?.[0] || null; document.activeElement?.blur?.(); render(); }
   if (e.target.id === 'photoLeft') { leftoversFromPhoto(e.target.files?.[0]); e.target.value = ''; }
   if (e.target.id === 'saveMeal' && S.logResult) S.logResult.save = e.target.checked;
   if (e.target.dataset.act === 'check') {
@@ -250,6 +251,13 @@ window.visualViewport?.addEventListener('resize', () => {
   if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
 });
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
+// In a sheet, tapping empty space closes the keyboard.
+document.addEventListener('pointerdown', e => {
+  const f = document.activeElement;
+  if (!f || !f.matches?.('input[type=text],input[type=number],textarea') || !f.closest('.sheet')) return;
+  if (e.target.closest('input,textarea,select,label,button,a')) return; // buttons keep their own tap
+  f.blur();
+}, true);
 
 // Text boxes that grow with their content (no clipped lines).
 function growBox(t){ t.style.height = 'auto'; t.style.height = t.scrollHeight + 2 + 'px'; }

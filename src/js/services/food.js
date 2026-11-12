@@ -102,7 +102,7 @@ async function addToReview(text){
   } catch (e) { hardFail(e); S.err.log = errText(e); }
   S.busy.addItem = false; render();
 }
-function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; setTimeout(() => $('#logText')?.focus(), 250); }
+function openSheet(slot){ S.sheet = { slot, enter:true }; S.logSlot = slot; S.logResult = null; S.err.log = null; document.body.classList.add('sheet-open'); render(); S.sheet.enter = false; } // no automatic focus: the keyboard opens only when the text box is tapped
 function closeSheet(){ S.sheet = null; S.logResult = null; S.err.log = null; S.draft.log = ''; S.logPhoto = null; S.logPhotoAfter = null; document.body.classList.remove('sheet-open'); render(); }
 let toastTimer;
 function showToast(text, undo){ S.toast = text; S.toastUndo = undo || null; clearTimeout(toastTimer); toastTimer = setTimeout(() => { S.toast = null; S.toastUndo = null; render(); }, undo ? 5000 : 2600); }
