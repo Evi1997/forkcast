@@ -1182,6 +1182,11 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .swaps-save b{color:var(--accent);margin-right:4px}
 .gname{display:flex;flex-direction:column}
 .gqty{font-size:.78rem;color:var(--muted);font-weight:600}
+.head-btns{display:flex;align-items:center;gap:8px;align-self:center}
+.next-btn{display:grid;place-items:center;width:44px;height:44px;padding:0;flex:none;border:0;border-radius:99px;background:var(--accent-soft);color:var(--accent);font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.next-btn svg{width:22px;height:22px}
+.src-opt.upgrade{background:var(--accent-soft)}
+.src-opt.upgrade .src-ic{background:var(--surface)}
 </style>
 </head>
 <body>
@@ -1196,7 +1201,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794765695';
+const BUILD = '1794765992';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -2703,7 +2708,8 @@ function vPlan(){
     <button class="wk-arrow" data-act="planweek" data-v="0" aria-label="This week" ${next ? '' : 'disabled'}>‹</button>
     <div class="weeksw-t"><b>${next ? 'Next week' : 'This week'}</b><span class="muted">${weekRange(weekOf)}</span></div>
     <button class="wk-arrow" data-act="planweek" data-v="1" aria-label="Next week" ${next ? 'disabled' : ''}>›</button></div>`;
-  const head = `<div class="head"><div><div class="label">Seven days, prepped ahead</div><h1>Week plan</h1></div>${avatarBtn()}</div>`;
+  const nextBtn = !next && !S.planNext?.days ? `<button class="icon-btn next-btn" data-act="planweek" data-v="1" aria-label="Plan next week" title="Plan next week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>` : '';
+  const head = `<div class="head"><div><div class="label">Seven days, prepped ahead</div><h1>Week plan</h1></div><div class="head-btns">${nextBtn}${avatarBtn()}</div></div>`;
   const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}`;
   if (S.busy.plan) return head + switcher + notes + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true"><span class="mascot">${MASCOT}</span></div><h2>${esc(S.busy.plan)}</h2><p>Picking meals around your targets, tastes and how often you like to cook.</p></section>`;
   if (!P) return head + switcher + notes + emptyWeek(next);
@@ -2711,7 +2717,7 @@ function vPlan(){
   const di = Math.min(S.planDay, P.days.length - 1), day = P.days[di];
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
   const mon = fromKey(P.weekOf), todayIdx = (new Date().getDay() + 6) % 7;
-  const planNext = !next && !S.planNext?.days ? `<button class="next-chip" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="next-t"><b>Plan next week</b><span class="muted">Ready for the weekend shop. This week stays as it is.</span></span>${CHEV}</button>` : '';
+  const planNext = '';
   return head + switcher + planNext + notes + `
   <div class="daypick" role="tablist" aria-label="Day">${P.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${!next && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
   <section class="card plan-day">
@@ -2895,6 +2901,7 @@ function shopList(P){
   const row = r => `<div class="gi ${r.done ? 'done' : ''}"><label><input type="checkbox" data-act="check" data-k="${r.k}" ${r.done ? 'checked' : ''}><span class="gname">${esc(r.name)}${r.qty ? `<small class="gqty">${esc(r.qty)}</small>` : ''}</span></label>${r.price ? `<span class="gq num">${money(r.price, cur)}</span>` : ''}${r.mine ? `<button class="x small-x" data-act="delextra" data-k="${r.k}" aria-label="Remove ${esc(r.name)}">×</button>` : ''}</div>`;
   const over = budget && total > budget;
   return `
+    ${P.grocery?.length && !total && !P.manualList ? `<button class="src-opt upgrade" data-act="shopedit"><span class="src-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M16.5 7.5c0-1.7-2-3-4.5-3s-4.5 1.3-4.5 3 2 2.6 4.5 3 4.5 1.3 4.5 3-2 3-4.5 3-4.5-1.3-4.5-3"/></svg></span><span><b>Add a budget and prices</b><span class="muted">Pick your store, budget and what's at home, then rebuild this list.</span></span>${CHEV}</button>` : ''}
     ${P.listStale ? `<div class="notice accent row" style="gap:10px;justify-content:space-between"><span>You swapped meals since this list was made.</span><button class="btn small" data-act="genshop">Update</button></div>` : ''}
     ${total ? `<div class="budget-card${over ? ' over' : ''}"><div class="row" style="justify-content:space-between"><span>About <b class="num">${money(total, cur)}</b></span><span class="muted">${budget ? `of ${money(budget, cur)} budget` : 'estimated'}</span></div>
       ${budget ? `<div class="basket-bar"><span style="width:${Math.min(total / budget, 1) * 100}%"></span></div>` : ''}

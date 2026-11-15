@@ -1034,3 +1034,8 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .swaps-save b{color:var(--accent);margin-right:4px}
 .gname{display:flex;flex-direction:column}
 .gqty{font-size:.78rem;color:var(--muted);font-weight:600}
+.head-btns{display:flex;align-items:center;gap:8px;align-self:center}
+.next-btn{display:grid;place-items:center;width:44px;height:44px;padding:0;flex:none;border:0;border-radius:99px;background:var(--accent-soft);color:var(--accent);font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.next-btn svg{width:22px;height:22px}
+.src-opt.upgrade{background:var(--accent-soft)}
+.src-opt.upgrade .src-ic{background:var(--surface)}
