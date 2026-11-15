@@ -69,8 +69,10 @@ function rememberMeal(r, items, slot){
   m.slots[slot] = (m.slots[slot] || 0) + 1;
   S.profile.savedMeals = meals.slice(0, 40); save.profile();
 }
-function savedFor(slot){
-  return [...(S.profile.savedMeals || [])].sort((a, b) => ((b.slots?.[slot] || 0) - (a.slots?.[slot] || 0)) || (b.last - a.last));
+// Only meals logged for this slot; newest first, or A to Z for the full list.
+function savedFor(slot, az){
+  const m = (S.profile.savedMeals || []).filter(x => x.slots?.[slot]);
+  return az ? m.sort((a, b) => a.name.localeCompare(b.name)) : m.sort((a, b) => (b.last || 0) - (a.last || 0));
 }
 function useSaved(id){
   const m = (S.profile.savedMeals || []).find(x => x.id === id); if (!m) return;

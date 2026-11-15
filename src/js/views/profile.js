@@ -20,7 +20,7 @@ const avatarBtn = () => `<button class="avatar-btn" data-act="about" aria-label=
 
 function profileSheet(){
   const enter = S.aboutOpen === 'enter' ? ' enter' : '', page = S.profilePage;
-  const titles = { targets:'Targets and macros', known:'What I know about you', coach:'Your dietitian' };
+  const titles = { targets:'Targets and macros', known:'Your details', coach:'Your dietitian' };
   const head = page
     ? `<div class="sheet-head"><button class="x back-x" data-act="profpage" data-p="" aria-label="Back to your profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><h2 style="flex:1">${titles[page]}</h2><button class="x close" data-act="about" aria-label="Close">×</button></div>`
     : `<div class="sheet-head"><span class="avatar-lg" aria-hidden="true">${userInitial()}</span><div style="flex:1;min-width:0"><h2>${esc(S.profile.data.basics?.name || 'Your profile')}</h2><span class="muted pr-mail">${esc(S.auth.email || '')}</span></div><button class="x close" data-act="about" aria-label="Close">×</button></div>`;
@@ -40,12 +40,11 @@ function profHome(){
     <div class="pr-tiles">
       <div class="pr-tile"><span class="muted">Goal</span><b>${esc(goal)}</b></div>
       <div class="pr-tile"><span class="muted">Weight</span><b class="num">${b.weight_kg ? esc(b.weight_kg) + '<small> kg</small>' : '–'}</b></div>
-      <div class="pr-tile"><span class="muted">Daily</span><b class="num">${t ? t.kcal.toLocaleString() + '<small> kcal</small>' : '–'}</b></div>
     </div>
     ${S.profile.flags?.length ? `<div class="notice warn"><b>Needs medical review.</b> Some answers are best talked through with your doctor. <button class="linkbtn" data-act="profpage" data-p="known">See why</button></div>` : ''}
+    <div class="pr-group"><span class="pr-label">Your daily targets</span>${dailyTargets(t)}</div>
     <div class="pr-group"><span class="pr-label">Your plan</span><div class="pr-list">
-      ${row('profpage', 'targets', 'targets', 'pink', 'Targets and macros', t ? `${t.protein} g protein` : '')}
-      ${row('profpage', 'known', 'known', 'orange', 'What I know about you', `${done}/${SECTIONS.length}`)}
+      ${row('profpage', 'known', 'known', 'orange', 'Your details', `${done} of ${SECTIONS.length} done`)}
       ${row('editob', '', 'shop', 'violet', 'Shopping', esc(String(d.shopping?.supermarkets || 'Add your shop').split(',')[0]))}
     </div></div>
     <div class="pr-group"><span class="pr-label">App</span><div class="pr-list">
@@ -55,9 +54,17 @@ function profHome(){
     </div></div>
     <div class="pr-group"><div class="pr-list">
       <button class="pr-row" data-act="signout"><span class="pr-l">Sign out</span></button>
-      ${S.confirmReset ? `<div class="pr-row pr-stack"><b>Erase everything?</b><span class="muted" style="font-size:.88rem">Your profile, conversation, plan, meals and progress are deleted. This can't be undone.</span><div class="row"><button class="btn small danger" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>`
-        : `<button class="pr-row" data-act="reset"><span class="pr-l pr-danger">Start over</span></button>`}
     </div></div>`;
+}
+
+// Energy and every macro at a glance, no extra tap.
+function dailyTargets(t){
+  if (!t) return `<div class="pr-list"><button class="pr-row" data-act="editob"><span class="pr-l">Answer a few questions to see them</span>${CHEV_R}</button></div>`;
+  const m = (l, v, c) => `<div class="dt-m"><span class="dt-dot" style="background:${c}"></span><span class="muted">${l}</span><b class="num">${v}<small> g</small></b></div>`;
+  return `<div class="pr-list dt">
+    <div class="dt-top"><b class="num">${t.kcal.toLocaleString()}</b><span class="muted">kcal a day</span><span class="tag est" title="${S.profile.targets ? 'Set during your consultation' : 'Worked out from your answers; fine-tuned from your weight trend'}">Estimated</span></div>
+    <div class="dt-grid">${m('Protein', t.protein, 'var(--pink)')}${m('Carbs', t.carbs, 'var(--amber)')}${m('Fat', t.fat, 'var(--blue)')}${m('Fiber', t.fiber, 'var(--accent)')}</div>
+  </div>`;
 }
 
 function profTargets(){

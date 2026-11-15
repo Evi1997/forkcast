@@ -4,6 +4,11 @@ document.addEventListener('input', e => {
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
+  if (id === 'mealSearch') { // filter the saved list in place, so the keyboard stays up
+    const q = e.target.value.trim().toLowerCase(); let n = 0;
+    document.querySelectorAll('.saved-list .saved').forEach(r => { const on = r.dataset.n.includes(q); r.hidden = !on; n += on; });
+    const none = $('.saved-none'); if (none) none.hidden = n > 0;
+  }
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
   if (id === 'coachName') { S.profile.data.coach = { ...(S.profile.data.coach || {}), name: e.target.value.slice(0, 20) }; clearTimeout(window._cn); window._cn = setTimeout(() => { save.profile(); const t = $('.chat-title b'); if (t) t.textContent = coachName(); }, 500); }
   if (e.target.classList?.contains('grow')) growBox(e.target);
@@ -138,6 +143,9 @@ document.addEventListener('click', e => {
   else if (a === 'usesaved') useSaved(el.dataset.id);
   else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
   else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; render(); }
+  else if (a === 'wadd') { S.wAdd = !S.wAdd; render(); if (S.wAdd) { const i = $('#wKg'); i?.focus(); i?.select?.(); } }
+  else if (a === 'wall') { S.wAll = !S.wAll; render(); }
+  else if (a === 'hidecheckin') { S.profile.ckHidden = dkey(); save.profile(); showToast('Hidden for this week. It stays in Progress.', () => { S.profile.ckHidden = null; save.profile(); render(); }); render(); }
   else if (a === 'editmeal') editMeal(el.dataset.s);
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
@@ -202,7 +210,7 @@ document.addEventListener('click', e => {
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
     S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
     if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }
-    save.progress(); showToast(`Saved ${Math.round(kg*10)/10} kg`); render();
+    S.wAdd = false; save.progress(); showToast(`Saved ${Math.round(kg*10)/10} kg`); render();
   }
   else if (a === 'delw') {
     const before = S.progress.weighins; S.progress.weighins = before.filter(x => x.date !== el.dataset.d); save.progress();
@@ -240,21 +248,28 @@ document.addEventListener('click', e => {
 // Hide the bottom menu only while the on-screen keyboard is really open.
 // (On iPhone a text box can stay focused after the keyboard closes, so focus
 // alone isn't a reliable signal; the visible viewport shrinking is.)
+// While it is open, sheets sit on top of the keyboard (iPhone keeps fixed
+// elements behind it) and the box being typed in is scrolled into view.
 function syncKeyboard(){
   const vv = window.visualViewport;
   const open = !!vv && window.innerWidth <= 820 && vv.height < window.innerHeight * 0.78;
   document.body.classList.toggle('kb-open', open);
+  const r = document.documentElement.style;
+  if (open) { r.setProperty('--kb', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px'); r.setProperty('--vvh', vv.height + 'px'); }
+  else { r.removeProperty('--kb'); r.removeProperty('--vvh'); }
 }
-window.visualViewport?.addEventListener('resize', () => {
+function keepFieldVisible(){
   syncKeyboard();
   const f = document.activeElement;
-  if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
-});
+  if (document.body.classList.contains('kb-open') && f && f.closest('.onboard,.sheet') && f.matches('input,textarea')) f.scrollIntoView({ block: f.closest('.sheet') ? 'nearest' : 'center', behavior:'instant' });
+}
+window.visualViewport?.addEventListener('resize', keepFieldVisible);
+window.visualViewport?.addEventListener('scroll', syncKeyboard);
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
 // In a sheet, tapping empty space closes the keyboard.
 document.addEventListener('pointerdown', e => {
   const f = document.activeElement;
-  if (!f || !f.matches?.('input[type=text],input[type=number],textarea') || !f.closest('.sheet')) return;
+  if (!f || !f.matches?.('input[type=text],input[type=search],input[type=number],textarea') || !f.closest('.sheet')) return;
   if (e.target.closest('input,textarea,select,label,button,a')) return; // buttons keep their own tap
   f.blur();
 }, true);

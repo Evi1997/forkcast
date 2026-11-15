@@ -4,14 +4,14 @@ function vToday(){
   const kcalT = t?.kcal || 0, left = kcalT - eaten.kcal, pct = kcalT ? Math.min(eaten.kcal / kcalT, 1) : 0;
   const C = 2 * Math.PI * 78;
   const now = new Date();
-  const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
+  const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; const hid = S.profile.ckHidden; return last && daysBetween(last, dkey()) >= 7 && !(hid && daysBetween(hid, dkey()) < 7); })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
   <div class="head today-head"><div class="title-row"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>${avatarBtn()}</div>
   ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
-  ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
+  ${overdue ? `<div class="notice accent row ck-notice"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button><button class="x small-x" data-act="hidecheckin" aria-label="Hide the check-in reminder for this week">×</button></div>` : ''}
     <section class="card hero balance" aria-label="Calories and macros">
       <div class="bal-top">
         <div class="bal-main">
@@ -109,10 +109,13 @@ function logSheet(){
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="manual">Add to ${slot}</button><button class="btn ghost" data-act="manualmode">Back to describing</button></div>`;
   } else {
-    const mine = savedFor(slot), all = S.sheet.allMeals;
+    const all = S.sheet.allMeals, mine = savedFor(slot, all);
+    const savedRow = m => `<div class="saved" data-n="${esc(m.name.toLowerCase())}"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`;
     body = `<div class="stack">
-      ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">My meals</span>${mine.length > 3 ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
-        ${(all ? mine : mine.slice(0, 3)).map(m => `<div class="saved"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`).join('')}
+      ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">${all ? `My ${slot.toLowerCase()}s · A to Z` : `My ${slot.toLowerCase()}s · latest`}</span>${mine.length > 3 || all ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
+        ${all ? `<input type="search" id="mealSearch" class="meal-search" placeholder="Search my ${slot.toLowerCase()}s" aria-label="Search my ${slot.toLowerCase()}s" autocomplete="off" enterkeyhint="search">` : ''}
+        <div class="saved-list">${(all ? mine : mine.slice(0, 3)).map(savedRow).join('')}</div>
+        ${all ? '<p class="muted saved-none" hidden>Nothing with that name.</p>' : ''}
       </div><div class="or"><span>or add something new</span></div>` : ''}
       ${S.canImages ? `<div class="snaps">
         <label class="snap tile" for="photo">${S.logPhoto ? `<img alt="Meal photo, before eating" src="${URL.createObjectURL(S.logPhoto)}"><button class="x" data-act="nophoto" aria-label="Remove before photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>`}<b>Before</b><span class="muted">${S.logPhoto ? 'Added' : 'Photo of your meal'}</span></label>

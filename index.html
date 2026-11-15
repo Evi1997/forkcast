@@ -419,6 +419,7 @@ textarea.describe{min-height:96px;border-radius:18px;padding:14px 16px;font-size
 @media (max-width:820px){
   body.kb-open .rail{display:none}
   body.kb-open main{padding-bottom:16px}
+  body.kb-open .sheet{bottom:var(--kb,0px);max-height:calc(var(--vvh,92vh) - 8px);padding-bottom:12px}
   body.kb-open.on-coach .chat{height:calc(100dvh - 10px - env(safe-area-inset-top,0px))}
 }
 
@@ -1113,6 +1114,35 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pr-danger{color:#FF8A80}}
 .pr-row[aria-checked="true"] .sw-radio{border:7px solid var(--accent)}
 .describe.note{min-height:0}
+
+/* My meals: search and check-in reminder close */
+.meal-search{width:100%;margin:8px 0 4px;background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;font:inherit;font-size:16px;font-weight:500;color:var(--ink);-webkit-appearance:none;appearance:none}
+.meal-search:focus{outline:none;border-color:var(--accent)}
+.saved[hidden]{display:none}
+.saved-none{font-size:.88rem;padding:6px 2px}
+.ck-notice{gap:10px}
+.ck-notice>span{flex:1;min-width:0}
+.ck-notice .small-x{flex:none;align-self:flex-start}
+.next-chip{border:0;display:flex;align-items:center;gap:10px;width:100%;margin:-4px 0 12px;padding:8px 12px 8px 8px;border-radius:16px;background:var(--accent-soft);color:var(--ink);font-size:.9rem;text-align:left}
+.next-chip>span:nth-child(2){flex:1;min-width:0}
+.next-chip b{color:var(--accent)}
+.next-chip .tip-ic{width:32px;height:32px;flex:none}
+.dt{padding:14px;gap:12px}
+.dt-top{display:flex;align-items:baseline;gap:8px}
+.dt-top b{font-size:1.6rem;font-weight:800;letter-spacing:-.02em}
+.dt-top .tag{margin-left:auto}
+.dt-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.dt-m{display:flex;flex-direction:column;gap:2px;min-width:0}
+.dt-m .muted{font-size:.78rem}
+.dt-m b{font-size:1.05rem;font-weight:800}
+.dt-m small{font-size:.72rem;color:var(--muted);font-weight:700}
+.dt-dot{width:8px;height:8px;border-radius:50%}
+.weigh-row.compact{align-items:center;gap:8px}
+.weigh-row.compact .unit-input{max-width:160px}
+.w-tip{font-size:.8rem;margin-top:-6px}
+.add-w{background:var(--accent-soft);color:var(--accent)}
+.next-t{display:flex;flex-direction:column;gap:1px}.next-t .muted{font-size:.8rem}
+.wlist .linkbtn{font-size:.85rem}
 </style>
 </head>
 <body>
@@ -1127,7 +1157,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794503879';
+const BUILD = '1794765318';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1882,8 +1912,10 @@ function rememberMeal(r, items, slot){
   m.slots[slot] = (m.slots[slot] || 0) + 1;
   S.profile.savedMeals = meals.slice(0, 40); save.profile();
 }
-function savedFor(slot){
-  return [...(S.profile.savedMeals || [])].sort((a, b) => ((b.slots?.[slot] || 0) - (a.slots?.[slot] || 0)) || (b.last - a.last));
+// Only meals logged for this slot; newest first, or A to Z for the full list.
+function savedFor(slot, az){
+  const m = (S.profile.savedMeals || []).filter(x => x.slots?.[slot]);
+  return az ? m.sort((a, b) => a.name.localeCompare(b.name)) : m.sort((a, b) => (b.last || 0) - (a.last || 0));
 }
 function useSaved(id){
   const m = (S.profile.savedMeals || []).find(x => x.id === id); if (!m) return;
@@ -2223,14 +2255,14 @@ function vToday(){
   const kcalT = t?.kcal || 0, left = kcalT - eaten.kcal, pct = kcalT ? Math.min(eaten.kcal / kcalT, 1) : 0;
   const C = 2 * Math.PI * 78;
   const now = new Date();
-  const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; return last && daysBetween(last, dkey()) >= 7; })();
+  const overdue = S.profile.onboarded && (() => { const last = S.progress.checkins.slice(-1)[0]?.date || S.profile.onboardedAt; const hid = S.profile.ckHidden; return last && daysBetween(last, dkey()) >= 7 && !(hid && daysBetween(hid, dkey()) < 7); })();
   const bar = (label, val, tgt, color) => `<div class="macro"><div class="top"><b>${label}</b><span class="num">${r0(val)}${tgt ? ` <span class="muted">/ ${tgt} g</span>` : ' g'}</span></div><div class="bar"><span style="width:${tgt ? Math.min(val/tgt*100,100) : 0}%;background:${color}"></span></div></div>`;
   return `
   <div class="head today-head"><div class="title-row"><h1>${isToday ? 'Today' : fromKey(day).toLocaleDateString(undefined,{weekday:'long'})}</h1>${avatarBtn()}</div>
   ${streakPill(day)}</div>
   ${statusBanner()}
   ${!S.profile.onboarded ? `<div class="notice accent row" style="justify-content:space-between"><span><b>Set up your plan.</b> A few quick questions about you, your routine and the food you like. About 3 minutes.</span><button class="btn primary small" data-act="startob">Start</button></div>` : ''}
-  ${overdue ? `<div class="notice accent row" style="justify-content:space-between"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button></div>` : ''}
+  ${overdue ? `<div class="notice accent row ck-notice"><span><b>It's check-in week.</b> A two-minute follow-up so your plan keeps fitting your life.</span><button class="btn primary small" data-act="startcheckin">Check in</button><button class="x small-x" data-act="hidecheckin" aria-label="Hide the check-in reminder for this week">×</button></div>` : ''}
     <section class="card hero balance" aria-label="Calories and macros">
       <div class="bal-top">
         <div class="bal-main">
@@ -2328,10 +2360,13 @@ function logSheet(){
     </div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="manual">Add to ${slot}</button><button class="btn ghost" data-act="manualmode">Back to describing</button></div>`;
   } else {
-    const mine = savedFor(slot), all = S.sheet.allMeals;
+    const all = S.sheet.allMeals, mine = savedFor(slot, all);
+    const savedRow = m => `<div class="saved" data-n="${esc(m.name.toLowerCase())}"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`;
     body = `<div class="stack">
-      ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">My meals</span>${mine.length > 3 ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
-        ${(all ? mine : mine.slice(0, 3)).map(m => `<div class="saved"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`).join('')}
+      ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">${all ? `My ${slot.toLowerCase()}s · A to Z` : `My ${slot.toLowerCase()}s · latest`}</span>${mine.length > 3 || all ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
+        ${all ? `<input type="search" id="mealSearch" class="meal-search" placeholder="Search my ${slot.toLowerCase()}s" aria-label="Search my ${slot.toLowerCase()}s" autocomplete="off" enterkeyhint="search">` : ''}
+        <div class="saved-list">${(all ? mine : mine.slice(0, 3)).map(savedRow).join('')}</div>
+        ${all ? '<p class="muted saved-none" hidden>Nothing with that name.</p>' : ''}
       </div><div class="or"><span>or add something new</span></div>` : ''}
       ${S.canImages ? `<div class="snaps">
         <label class="snap tile" for="photo">${S.logPhoto ? `<img alt="Meal photo, before eating" src="${URL.createObjectURL(S.logPhoto)}"><button class="x" data-act="nophoto" aria-label="Remove before photo">×</button>` : `<span class="snap-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.6l1.4-2h5l1.4 2h1.6A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.5"/></svg></span>`}<b>Before</b><span class="muted">${S.logPhoto ? 'Added' : 'Photo of your meal'}</span></label>
@@ -2524,7 +2559,7 @@ const avatarBtn = () => `<button class="avatar-btn" data-act="about" aria-label=
 
 function profileSheet(){
   const enter = S.aboutOpen === 'enter' ? ' enter' : '', page = S.profilePage;
-  const titles = { targets:'Targets and macros', known:'What I know about you', coach:'Your dietitian' };
+  const titles = { targets:'Targets and macros', known:'Your details', coach:'Your dietitian' };
   const head = page
     ? `<div class="sheet-head"><button class="x back-x" data-act="profpage" data-p="" aria-label="Back to your profile"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button><h2 style="flex:1">${titles[page]}</h2><button class="x close" data-act="about" aria-label="Close">×</button></div>`
     : `<div class="sheet-head"><span class="avatar-lg" aria-hidden="true">${userInitial()}</span><div style="flex:1;min-width:0"><h2>${esc(S.profile.data.basics?.name || 'Your profile')}</h2><span class="muted pr-mail">${esc(S.auth.email || '')}</span></div><button class="x close" data-act="about" aria-label="Close">×</button></div>`;
@@ -2544,12 +2579,11 @@ function profHome(){
     <div class="pr-tiles">
       <div class="pr-tile"><span class="muted">Goal</span><b>${esc(goal)}</b></div>
       <div class="pr-tile"><span class="muted">Weight</span><b class="num">${b.weight_kg ? esc(b.weight_kg) + '<small> kg</small>' : '–'}</b></div>
-      <div class="pr-tile"><span class="muted">Daily</span><b class="num">${t ? t.kcal.toLocaleString() + '<small> kcal</small>' : '–'}</b></div>
     </div>
     ${S.profile.flags?.length ? `<div class="notice warn"><b>Needs medical review.</b> Some answers are best talked through with your doctor. <button class="linkbtn" data-act="profpage" data-p="known">See why</button></div>` : ''}
+    <div class="pr-group"><span class="pr-label">Your daily targets</span>${dailyTargets(t)}</div>
     <div class="pr-group"><span class="pr-label">Your plan</span><div class="pr-list">
-      ${row('profpage', 'targets', 'targets', 'pink', 'Targets and macros', t ? `${t.protein} g protein` : '')}
-      ${row('profpage', 'known', 'known', 'orange', 'What I know about you', `${done}/${SECTIONS.length}`)}
+      ${row('profpage', 'known', 'known', 'orange', 'Your details', `${done} of ${SECTIONS.length} done`)}
       ${row('editob', '', 'shop', 'violet', 'Shopping', esc(String(d.shopping?.supermarkets || 'Add your shop').split(',')[0]))}
     </div></div>
     <div class="pr-group"><span class="pr-label">App</span><div class="pr-list">
@@ -2559,9 +2593,17 @@ function profHome(){
     </div></div>
     <div class="pr-group"><div class="pr-list">
       <button class="pr-row" data-act="signout"><span class="pr-l">Sign out</span></button>
-      ${S.confirmReset ? `<div class="pr-row pr-stack"><b>Erase everything?</b><span class="muted" style="font-size:.88rem">Your profile, conversation, plan, meals and progress are deleted. This can't be undone.</span><div class="row"><button class="btn small danger" data-act="reset-yes">Erase</button><button class="btn ghost small" data-act="reset-no">Keep</button></div></div>`
-        : `<button class="pr-row" data-act="reset"><span class="pr-l pr-danger">Start over</span></button>`}
     </div></div>`;
+}
+
+// Energy and every macro at a glance, no extra tap.
+function dailyTargets(t){
+  if (!t) return `<div class="pr-list"><button class="pr-row" data-act="editob"><span class="pr-l">Answer a few questions to see them</span>${CHEV_R}</button></div>`;
+  const m = (l, v, c) => `<div class="dt-m"><span class="dt-dot" style="background:${c}"></span><span class="muted">${l}</span><b class="num">${v}<small> g</small></b></div>`;
+  return `<div class="pr-list dt">
+    <div class="dt-top"><b class="num">${t.kcal.toLocaleString()}</b><span class="muted">kcal a day</span><span class="tag est" title="${S.profile.targets ? 'Set during your consultation' : 'Worked out from your answers; fine-tuned from your weight trend'}">Estimated</span></div>
+    <div class="dt-grid">${m('Protein', t.protein, 'var(--pink)')}${m('Carbs', t.carbs, 'var(--amber)')}${m('Fat', t.fat, 'var(--blue)')}${m('Fiber', t.fiber, 'var(--accent)')}</div>
+  </div>`;
 }
 
 function profTargets(){
@@ -2624,7 +2666,8 @@ function vPlan(){
   const di = Math.min(S.planDay, P.days.length - 1), day = P.days[di];
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
   const mon = fromKey(P.weekOf), todayIdx = (new Date().getDay() + 6) % 7;
-  return head + switcher + notes + `
+  const planNext = !next && !S.planNext?.days ? `<button class="next-chip" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="next-t"><b>Plan next week</b><span class="muted">Ready for the weekend shop. This week stays as it is.</span></span>${CHEV}</button>` : '';
+  return head + switcher + planNext + notes + `
   <div class="daypick" role="tablist" aria-label="Day">${P.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${!next && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
   <section class="card plan-day">
     <div class="day-sum"><b class="num">${tot.kcal.toLocaleString()} kcal</b>${pfc(tot)}</div>
@@ -2638,7 +2681,6 @@ function vPlan(){
     </div>`; }).join('')}
   </section>
   ${weekTools(P)}
-  ${!next && !S.planNext?.days ? `<button class="tipcard" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="tip-txt"><b>Plan next week</b><span>Get it ready now. This week stays as it is.</span></span>${CHEV}</button>` : ''}
   ${S.planSheet ? planMealSheet() : ''}
   ${S.swap ? swapSheet() : ''}
   ${S.shopOpen ? shopSheet() : ''}
@@ -3033,10 +3075,10 @@ function vProgress(){
     <button class="tile mini" data-act="cksheet"><span class="label">Weekly check-in</span><b class="ck-when${ckIn <= 0 ? ' due' : ''}">${ckIn <= 0 ? 'Due now' : `In ${ckIn} day${ckIn > 1 ? 's' : ''}`}</b><span class="muted">Two minutes to fine-tune your plan</span></button>
   </div>
   <section class="card stack" id="weight">
-    <div class="row" style="justify-content:space-between"><h2>Weight</h2><span class="muted" style="font-size:.8rem">${w.length > 1 ? '7-day average' : 'Same time of day works best'}</span></div>
+    <div class="row" style="justify-content:space-between"><h2>Weight</h2>${S.wAdd ? '' : `<button class="btn small add-w" data-act="wadd">+ Add weight</button>`}</div>
+    ${S.wAdd ? `<div class="weigh-row compact"><div class="unit-input sm"><input type="number" id="wKg" step="0.1" inputmode="decimal" enterkeyhint="done" aria-label="Weight in kg" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"><span>kg</span></div><button class="btn primary small" data-act="weigh">Save</button><button class="x small-x" data-act="wadd" aria-label="Cancel">×</button></div><p class="muted w-tip">Same time of day works best.</p>` : ''}
     ${w.length > 1 ? rangeSeg('wrange', S.wRange || '3M') + weightChart(S.wRange || '3M') : `<p class="muted" style="font-size:.9rem">${w.length ? 'One weigh-in so far. Add a couple more this week and the trend line appears.' : 'Weigh in 2–3 times a week. The trend line appears after two.'}</p>`}
-    <div class="weigh-row"><div class="unit-input"><input type="number" id="wKg" step="0.1" inputmode="decimal" aria-label="Weight in kg" value="${w.length ? w[w.length-1].weight : (S.profile.data.basics?.weight_kg || '')}"><span>kg</span></div><button class="btn primary" data-act="weigh">Save</button></div>
-    ${w.length ? `<div class="wlist"><span class="label">Recent</span>${w.slice(-4).reverse().map((x, i, arr) => {
+    ${w.length ? `<div class="wlist"><div class="row" style="justify-content:space-between"><span class="label">Recent</span>${w.length > 2 ? `<button class="linkbtn" data-act="wall">${S.wAll ? 'Show less' : `See all ${w.length}`}</button>` : ''}</div>${w.slice(S.wAll ? 0 : -2).reverse().map((x, i, arr) => {
       const prev = w[w.length - 2 - i], d = prev ? +x.weight - +prev.weight : null;
       return `<div class="wrow"><span class="wdate"><b>${fromKey(x.date).toLocaleDateString(undefined,{weekday:'short'})}</b> ${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'short'})}</span>${d === null ? '' : `<span class="wdelta">${Math.abs(d) < 0.05 ? 'same' : (d < 0 ? '↓ ' : '↑ ') + Math.abs(d).toFixed(1)}</span>`}<b class="num wkg">${x.weight}<small> kg</small></b><button class="x small-x" data-act="delw" data-d="${x.date}" aria-label="Remove weigh-in of ${fromKey(x.date).toLocaleDateString(undefined,{day:'numeric',month:'long'})}">×</button></div>`; }).join('')}</div>` : ''}
   </section>
@@ -3304,6 +3346,11 @@ document.addEventListener('input', e => {
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
+  if (id === 'mealSearch') { // filter the saved list in place, so the keyboard stays up
+    const q = e.target.value.trim().toLowerCase(); let n = 0;
+    document.querySelectorAll('.saved-list .saved').forEach(r => { const on = r.dataset.n.includes(q); r.hidden = !on; n += on; });
+    const none = $('.saved-none'); if (none) none.hidden = n > 0;
+  }
   if (id === 'mealName' && S.logResult) S.logResult.name = e.target.value;
   if (id === 'coachName') { S.profile.data.coach = { ...(S.profile.data.coach || {}), name: e.target.value.slice(0, 20) }; clearTimeout(window._cn); window._cn = setTimeout(() => { save.profile(); const t = $('.chat-title b'); if (t) t.textContent = coachName(); }, 500); }
   if (e.target.classList?.contains('grow')) growBox(e.target);
@@ -3438,6 +3485,9 @@ document.addEventListener('click', e => {
   else if (a === 'usesaved') useSaved(el.dataset.id);
   else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
   else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; render(); }
+  else if (a === 'wadd') { S.wAdd = !S.wAdd; render(); if (S.wAdd) { const i = $('#wKg'); i?.focus(); i?.select?.(); } }
+  else if (a === 'wall') { S.wAll = !S.wAll; render(); }
+  else if (a === 'hidecheckin') { S.profile.ckHidden = dkey(); save.profile(); showToast('Hidden for this week. It stays in Progress.', () => { S.profile.ckHidden = null; save.profile(); render(); }); render(); }
   else if (a === 'editmeal') editMeal(el.dataset.s);
   else if (a === 'slot') { S.logSlot = el.dataset.s; render(); }
   else if (a === 'log') { S.logResult = null; analyseFood(S.draft.log); }
@@ -3502,7 +3552,7 @@ document.addEventListener('click', e => {
     if (!kg || kg < 25 || kg > 350) { $('#wKg').focus(); return; }
     S.progress.weighins = S.progress.weighins.filter(x => x.date !== date).concat([{ date, weight: Math.round(kg*10)/10, ...(waist ? { waist } : {}) }]).sort((x, y) => x.date.localeCompare(y.date)).slice(-120);
     if (date === dkey()) { S.profile.data = merge(S.profile.data, { basics:{ weight_kg: Math.round(kg*10)/10 } }); save.profile(); }
-    save.progress(); showToast(`Saved ${Math.round(kg*10)/10} kg`); render();
+    S.wAdd = false; save.progress(); showToast(`Saved ${Math.round(kg*10)/10} kg`); render();
   }
   else if (a === 'delw') {
     const before = S.progress.weighins; S.progress.weighins = before.filter(x => x.date !== el.dataset.d); save.progress();
@@ -3540,21 +3590,28 @@ document.addEventListener('click', e => {
 // Hide the bottom menu only while the on-screen keyboard is really open.
 // (On iPhone a text box can stay focused after the keyboard closes, so focus
 // alone isn't a reliable signal; the visible viewport shrinking is.)
+// While it is open, sheets sit on top of the keyboard (iPhone keeps fixed
+// elements behind it) and the box being typed in is scrolled into view.
 function syncKeyboard(){
   const vv = window.visualViewport;
   const open = !!vv && window.innerWidth <= 820 && vv.height < window.innerHeight * 0.78;
   document.body.classList.toggle('kb-open', open);
+  const r = document.documentElement.style;
+  if (open) { r.setProperty('--kb', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px'); r.setProperty('--vvh', vv.height + 'px'); }
+  else { r.removeProperty('--kb'); r.removeProperty('--vvh'); }
 }
-window.visualViewport?.addEventListener('resize', () => {
+function keepFieldVisible(){
   syncKeyboard();
   const f = document.activeElement;
-  if (document.body.classList.contains('kb-open') && f && f.closest('.onboard')) f.scrollIntoView({ block:'center', behavior:'instant' });
-});
+  if (document.body.classList.contains('kb-open') && f && f.closest('.onboard,.sheet') && f.matches('input,textarea')) f.scrollIntoView({ block: f.closest('.sheet') ? 'nearest' : 'center', behavior:'instant' });
+}
+window.visualViewport?.addEventListener('resize', keepFieldVisible);
+window.visualViewport?.addEventListener('scroll', syncKeyboard);
 document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
 // In a sheet, tapping empty space closes the keyboard.
 document.addEventListener('pointerdown', e => {
   const f = document.activeElement;
-  if (!f || !f.matches?.('input[type=text],input[type=number],textarea') || !f.closest('.sheet')) return;
+  if (!f || !f.matches?.('input[type=text],input[type=search],input[type=number],textarea') || !f.closest('.sheet')) return;
   if (e.target.closest('input,textarea,select,label,button,a')) return; // buttons keep their own tap
   f.blur();
 }, true);

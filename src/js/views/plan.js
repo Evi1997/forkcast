@@ -25,7 +25,8 @@ function vPlan(){
   const di = Math.min(S.planDay, P.days.length - 1), day = P.days[di];
   const tot = day.meals.reduce((a, m) => ({kcal:a.kcal+r0(m.kcal), p:a.p+r0(m.p), c:a.c+r0(m.c), f:a.f+r0(m.f)}), {kcal:0,p:0,c:0,f:0});
   const mon = fromKey(P.weekOf), todayIdx = (new Date().getDay() + 6) % 7;
-  return head + switcher + notes + `
+  const planNext = !next && !S.planNext?.days ? `<button class="next-chip" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="next-t"><b>Plan next week</b><span class="muted">Ready for the weekend shop. This week stays as it is.</span></span>${CHEV}</button>` : '';
+  return head + switcher + planNext + notes + `
   <div class="daypick" role="tablist" aria-label="Day">${P.days.map((d, i) => { const date = new Date(mon); date.setDate(date.getDate() + i); return `<button class="dp" role="tab" data-act="day" data-i="${i}" aria-selected="${i === di}"><span>${esc(d.day)}</span><b>${date.getDate()}</b>${!next && i === todayIdx ? '<i aria-label="today"></i>' : ''}</button>`; }).join('')}</div>
   <section class="card plan-day">
     <div class="day-sum"><b class="num">${tot.kcal.toLocaleString()} kcal</b>${pfc(tot)}</div>
@@ -39,7 +40,6 @@ function vPlan(){
     </div>`; }).join('')}
   </section>
   ${weekTools(P)}
-  ${!next && !S.planNext?.days ? `<button class="tipcard" data-act="planweek" data-v="1"><span class="tip-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v4M10 15h4"/></svg></span><span class="tip-txt"><b>Plan next week</b><span>Get it ready now. This week stays as it is.</span></span>${CHEV}</button>` : ''}
   ${S.planSheet ? planMealSheet() : ''}
   ${S.swap ? swapSheet() : ''}
   ${S.shopOpen ? shopSheet() : ''}
