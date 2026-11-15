@@ -61,7 +61,7 @@ function shopSetupView(P){
   const su = S.shopSetup, cur = currency();
   return `<div class="pr-group"><span class="pr-label">Store</span>${storeChips(su.store)}</div>
     <div class="pr-group"><label class="pr-label" for="shopBudget">Weekly budget <span class="muted">(optional)</span></label>
-      <div class="unit-input budget-in"><span>${esc(cur.trim())}</span><input type="number" id="shopBudget" inputmode="decimal" min="0" step="5" placeholder="60" value="${esc(su.budget || '')}"><span>a week</span></div></div>
+      <label class="unit-input budget-in"><span>${esc(cur.trim())}</span><input type="text" id="shopBudget" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="60" value="${esc(su.budget || '')}"><span>a week</span></label></div>
     <div class="pr-group"><span class="pr-label">Already at home? These are left off</span>
       <div class="stores" role="group" aria-label="Already at home">${PANTRY.map(x => `<button class="chip" data-act="pantry" data-v="${esc(x)}" aria-pressed="${su.have.includes(x)}">${su.have.includes(x) ? '✓ ' : ''}${esc(x)}</button>`).join('')}</div></div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="genshop">${P.grocery?.length ? 'Rebuild my list' : 'Make my list'}</button></div>

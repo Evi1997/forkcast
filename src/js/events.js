@@ -1,12 +1,12 @@
 // All user interactions, wired by data-act attributes
 // Search key on the saved-meals search closes the keyboard and keeps the results.
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'mealSearch') { e.preventDefault(); e.target.blur(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && ['mealSearch','shopBudget'].includes(e.target.id)) { e.preventDefault(); e.target.blur(); } });
 document.addEventListener('input', e => {
   const id = e.target.id;
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
-  if (id === 'shopBudget' && S.shopSetup) S.shopSetup.budget = e.target.value;
+  if (id === 'shopBudget' && S.shopSetup) { const v = e.target.value.replace(',', '.').replace(/[^\d.]/g, ''); if (v !== e.target.value) e.target.value = v; S.shopSetup.budget = v; }
   if (id === 'mealSearch') { // filter the saved list in place, so the keyboard stays up
     const q = e.target.value.trim().toLowerCase(); let n = 0;
     document.querySelectorAll('.saved-list .saved').forEach(r => { const on = r.dataset.n.includes(q); r.hidden = !on; n += on; });

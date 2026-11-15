@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Forkcast</title>
 <meta name="description" content="Your AI dietitian and meal-prep planner.">
 <meta name="theme-color" content="#FFF8F3" media="(prefers-color-scheme: light)">
@@ -1203,7 +1203,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794766361';
+const BUILD = '1794766663';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -2711,7 +2711,7 @@ function vPlan(){
     <button class="wk-arrow" data-act="planweek" data-v="0" aria-label="This week" ${next ? '' : 'disabled'}>‹</button>
     <div class="weeksw-t"><b>${next ? 'Next week' : 'This week'}</b><span class="muted">${weekRange(weekOf)}</span></div>
     <button class="wk-arrow" data-act="planweek" data-v="1" aria-label="Next week" ${next ? 'disabled' : ''}>›</button></div>`;
-  const nextBtn = !next && !S.planNext?.days ? `<button class="icon-btn next-btn" data-act="planweek" data-v="1" aria-label="Plan next week" title="Plan next week"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>` : '';
+  const nextBtn = !next ? `<button class="icon-btn next-btn" data-act="planweek" data-v="1" aria-label="${S.planNext?.days ? 'See next week' : 'Plan next week'}" title="${S.planNext?.days ? 'See next week' : 'Plan next week'}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button>` : '';
   const head = `<div class="head"><div><div class="label">Seven days, prepped ahead</div><h1>Week plan</h1></div><div class="head-btns">${nextBtn}${avatarBtn()}</div></div>`;
   const notes = `${statusBanner()}${S.err.plan ? `<div class="notice warn">${esc(S.err.plan)}</div>` : ''}`;
   if (S.busy.plan) return head + switcher + notes + `<section class="card empty"><div class="blob pulse-blob" aria-hidden="true"><span class="mascot">${MASCOT}</span></div><h2>${esc(S.busy.plan)}</h2><p>Picking meals around your targets, tastes and how often you like to cook.</p></section>`;
@@ -2888,7 +2888,7 @@ function shopSetupView(P){
   const su = S.shopSetup, cur = currency();
   return `<div class="pr-group"><span class="pr-label">Store</span>${storeChips(su.store)}</div>
     <div class="pr-group"><label class="pr-label" for="shopBudget">Weekly budget <span class="muted">(optional)</span></label>
-      <div class="unit-input budget-in"><span>${esc(cur.trim())}</span><input type="number" id="shopBudget" inputmode="decimal" min="0" step="5" placeholder="60" value="${esc(su.budget || '')}"><span>a week</span></div></div>
+      <label class="unit-input budget-in"><span>${esc(cur.trim())}</span><input type="text" id="shopBudget" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" enterkeyhint="done" autocomplete="off" placeholder="60" value="${esc(su.budget || '')}"><span>a week</span></label></div>
     <div class="pr-group"><span class="pr-label">Already at home? These are left off</span>
       <div class="stores" role="group" aria-label="Already at home">${PANTRY.map(x => `<button class="chip" data-act="pantry" data-v="${esc(x)}" aria-pressed="${su.have.includes(x)}">${su.have.includes(x) ? '✓ ' : ''}${esc(x)}</button>`).join('')}</div></div>
     <div class="sheet-actions"><button class="btn primary big-btn" data-act="genshop">${P.grocery?.length ? 'Rebuild my list' : 'Make my list'}</button></div>
@@ -3458,13 +3458,13 @@ function vObDone(){
 // === events.js ===
 // All user interactions, wired by data-act attributes
 // Search key on the saved-meals search closes the keyboard and keeps the results.
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'mealSearch') { e.preventDefault(); e.target.blur(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && ['mealSearch','shopBudget'].includes(e.target.id)) { e.preventDefault(); e.target.blur(); } });
 document.addEventListener('input', e => {
   const id = e.target.id;
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
-  if (id === 'shopBudget' && S.shopSetup) S.shopSetup.budget = e.target.value;
+  if (id === 'shopBudget' && S.shopSetup) { const v = e.target.value.replace(',', '.').replace(/[^\d.]/g, ''); if (v !== e.target.value) e.target.value = v; S.shopSetup.budget = v; }
   if (id === 'mealSearch') { // filter the saved list in place, so the keyboard stays up
     const q = e.target.value.trim().toLowerCase(); let n = 0;
     document.querySelectorAll('.saved-list .saved').forEach(r => { const on = r.dataset.n.includes(q); r.hidden = !on; n += on; });
