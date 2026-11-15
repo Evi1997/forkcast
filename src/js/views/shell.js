@@ -26,6 +26,7 @@ function render(){
   if (S.view !== 'plan' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); }
   if (S.view === 'plan' && curPlan()) loadWeekPhotos();
   const at = $('#askText'); if (at) at.value = S.draft.ask;
+  syncKeyboard(); // a redraw can drop the focused box; never leave a sheet lifted for a closed keyboard
 }
 
 function statusBanner(){

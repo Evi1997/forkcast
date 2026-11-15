@@ -266,27 +266,33 @@ document.addEventListener('click', e => {
     S.chat = { turns:[] }; S.plan = null; S.planNext = null; S.progress = { weighins:[], checkins:[] }; S.logs = { [dkey()]: { items:[] } }; S.confirmReset = false; render();
   }
 });
-// Hide the bottom menu only while the on-screen keyboard is really open.
-// (On iPhone a text box can stay focused after the keyboard closes, so focus
-// alone isn't a reliable signal; the visible viewport shrinking is.)
-// While it is open, sheets sit on top of the keyboard (iPhone keeps fixed
-// elements behind it) and the box being typed in is scrolled into view.
+// On-screen keyboard (phones). The keyboard counts as open only while a text
+// box has focus AND the visible area is really shorter than the page; both are
+// checked again on every change, so the state can't get stuck after it closes.
+// While open: the bottom menu hides, sheets sit on top of the keyboard (iPhone
+// keeps fixed elements behind it) and the box being typed in is scrolled into view.
+const typingIn = () => { const f = document.activeElement; return f && f.matches?.('textarea,input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=button])') ? f : null; };
 function syncKeyboard(){
-  const vv = window.visualViewport;
-  const open = !!vv && window.innerWidth <= 820 && vv.height < window.innerHeight * 0.78;
+  const vv = window.visualViewport, r = document.documentElement.style;
+  const kb = vv ? Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop)) : 0;
+  const open = !!vv && window.innerWidth <= 820 && !!typingIn() && (kb > 120 || vv.height < window.innerHeight * 0.78);
   document.body.classList.toggle('kb-open', open);
-  const r = document.documentElement.style;
-  if (open) { r.setProperty('--kb', Math.max(0, window.innerHeight - vv.height - vv.offsetTop) + 'px'); r.setProperty('--vvh', vv.height + 'px'); }
+  if (open) { r.setProperty('--kb', kb + 'px'); r.setProperty('--vvh', Math.round(vv.height) + 'px'); }
   else { r.removeProperty('--kb'); r.removeProperty('--vvh'); }
+  return open;
 }
 function keepFieldVisible(){
-  syncKeyboard();
-  const f = document.activeElement;
-  if (document.body.classList.contains('kb-open') && f && f.closest('.onboard,.sheet') && f.matches('input,textarea')) f.scrollIntoView({ block: f.closest('.sheet') ? 'nearest' : 'center', behavior:'instant' });
+  const f = typingIn();
+  if (syncKeyboard() && f && f.closest('.onboard,.sheet')) f.scrollIntoView({ block:'center', behavior:'instant' });
 }
+// The keyboard animates in and out, so look again a few times after focus changes.
+const kbLater = fn => [60, 300, 650].forEach(t => setTimeout(fn, t));
 window.visualViewport?.addEventListener('resize', keepFieldVisible);
 window.visualViewport?.addEventListener('scroll', syncKeyboard);
-document.addEventListener('focusout', () => setTimeout(syncKeyboard, 300));
+document.addEventListener('focusin', () => kbLater(keepFieldVisible));
+document.addEventListener('focusout', () => kbLater(syncKeyboard));
+// Any tap re-checks too, so a missed keyboard event can never leave a sheet lifted.
+document.addEventListener('pointerdown', () => syncKeyboard(), { passive:true });
 // In a sheet, tapping empty space closes the keyboard.
 document.addEventListener('pointerdown', e => {
   const f = document.activeElement;
