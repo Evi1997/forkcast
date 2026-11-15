@@ -99,17 +99,19 @@ function storeOptions(){
 }
 
 // Build the shopping list and prep schedule from the current week plan, for one supermarket.
-async function generateShopping(store){
+async function generateShopping(store, opts = {}){
   const P = curPlan();
   if (!P?.days || S.busy.shop) return;
   if (!S.sampleOK) { S.err.shop = 'Sign in to create your shopping list.'; render(); return; }
   store = store || P.store || storeOptions()[0] || '';
+  const budget = opts.budget ?? P.budget ?? 0, have = opts.have ?? S.profile.data.shopping?.pantry ?? [];
   S.busy.shop = true; S.err.shop = null; render();
   try {
-    const shop = await S.sample.json(PROMPTS.shopping(planContext(), P.days, store), { modelTier:'default', cache:false });
+    const shop = await S.sample.json(PROMPTS.shopping(planContext(), P.days, store, { budget, have, currency: currency() }), { modelTier:'default', cache:false });
     if (!Array.isArray(shop?.grocery) || !shop.grocery.length) throw { code:'invalid_json' };
-    Object.assign(P, { store, grocery: shop.grocery, prep: Array.isArray(shop?.prep) ? shop.prep : [], budget_note: shop?.budget_note || '', checked:{}, listStale:false });
+    Object.assign(P, { store, budget, grocery: shop.grocery, prep: Array.isArray(shop?.prep) ? shop.prep : [], swaps: Array.isArray(shop?.swaps) ? shop.swaps : [], currency: shop?.currency || currency(), budget_note: shop?.budget_note || '', checked:{}, listStale:false, manualList:false });
     save.plan();
+    S.profile.lastList = { weekOf:P.weekOf, store, budget, currency:P.currency, grocery:P.grocery, extra:(P.extra || []).map(({ id, name }) => ({ id, name })) }; save.profile();
   } catch (e) { hardFail(e); S.err.shop = errText(e); }
   S.busy.shop = false; render();
 }

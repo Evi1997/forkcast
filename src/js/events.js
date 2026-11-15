@@ -1,9 +1,12 @@
 // All user interactions, wired by data-act attributes
+// Search key on the saved-meals search closes the keyboard and keeps the results.
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'mealSearch') { e.preventDefault(); e.target.blur(); } });
 document.addEventListener('input', e => {
   const id = e.target.id;
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
+  if (id === 'shopBudget' && S.shopSetup) S.shopSetup.budget = e.target.value;
   if (id === 'mealSearch') { // filter the saved list in place, so the keyboard stays up
     const q = e.target.value.trim().toLowerCase(); let n = 0;
     document.querySelectorAll('.saved-list .saved').forEach(r => { const on = r.dataset.n.includes(q); r.hidden = !on; n += on; });
@@ -53,7 +56,7 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'storeForm') {
     e.preventDefault();
     const name = $('#storeName').value.trim(); if (!name) return;
-    S.shopStore = name; S.storeOther = false;
+    if (S.shopSetup) S.shopSetup.store = name; S.storeOther = false;
     const sh = S.profile.data.shopping || {};
     if (!String(sh.supermarkets || '').toLowerCase().includes(name.toLowerCase())) { S.profile.data = merge(S.profile.data, { shopping:{ supermarkets: [sh.supermarkets, name].filter(Boolean).join(', ') } }); save.profile(); }
     render(); return;
@@ -69,7 +72,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
   if (e.key === 'Escape' && S.appleOpen) { S.appleOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.prep) { closePrep(); return; }
-  if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.shopSetup = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { if (S.profilePage) { S.profilePage = null; render(); return; } S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
@@ -142,7 +145,8 @@ document.addEventListener('click', e => {
   else if (a === 'doneedit') { S.logResult.editing = null; render(); }
   else if (a === 'usesaved') useSaved(el.dataset.id);
   else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
-  else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; render(); }
+  else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; document.activeElement?.blur?.(); render(); }
+  else if (a === 'closesearch') { document.activeElement?.blur?.(); S.sheet.allMeals = false; render(); }
   else if (a === 'wadd') { S.wAdd = !S.wAdd; render(); if (S.wAdd) { const i = $('#wKg'); i?.focus(); i?.select?.(); } }
   else if (a === 'wall') { S.wAll = !S.wAll; render(); }
   else if (a === 'hidecheckin') { S.profile.ckHidden = dkey(); save.profile(); showToast('Hidden for this week. It stays in Progress.', () => { S.profile.ckHidden = null; save.profile(); render(); }); render(); }
@@ -173,8 +177,20 @@ document.addEventListener('click', e => {
   else if (a === 'swapuse') useSwap();
   else if (a === 'closeswap') { S.swap = null; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'shopopen') { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; }
-  else if (a === 'closeshop') { S.shopOpen = null; S.storePick = false; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
-  else if (a === 'storepick') { S.storePick = !S.storePick; S.shopStore = null; render(); }
+  else if (a === 'closeshop') { S.shopOpen = null; S.shopSetup = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
+  else if (a === 'shopedit') { S.shopSetup = shopSetupDefaults(curPlan()); render(); }
+  else if (a === 'shopnew') { S.shopSetup = { ...shopSetupDefaults(curPlan()), step:'start' }; render(); }
+  else if (a === 'shopcancel') { S.shopSetup = null; S.storeOther = false; render(); }
+  else if (a === 'shopstartback') { S.shopSetup.step = 'start'; S.storeOther = false; render(); }
+  else if (a === 'shopsrc') {
+    const P = curPlan(), v = el.dataset.v, last = S.profile.lastList;
+    if (v === 'plan') { S.shopSetup.step = 'setup'; render(); return; }
+    // Repeat or empty: no AI needed; the old list is replaced, ticks cleared.
+    Object.assign(P, v === 'repeat' ? { store:last.store, grocery:last.grocery, currency:last.currency, budget:last.budget, swaps:[], extra:(last.extra || []).map(x => ({ ...x, done:false })), manualList:true }
+      : { grocery:[], extra:[], swaps:[], manualList:true, budget_note:'' }, { checked:{}, listStale:false });
+    save.plan(); S.shopSetup = null; render(); if (v === 'empty') $('#extraName')?.focus();
+  }
+  else if (a === 'pantry') { const h = S.shopSetup.have, v = el.dataset.v; S.shopSetup.have = h.includes(v) ? h.filter(x => x !== v) : [...h, v]; render(); }
   else if (a === 'prepstart') {
     if (!curPlan()?.prep?.length) { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; return; }
     S.shopOpen = null; S.prep = { s:0, i:-1 }; document.body.classList.add('sheet-open', 'prepping'); prepWake(true); render();
@@ -197,8 +213,13 @@ document.addEventListener('click', e => {
     showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }
   else if (a === 'clearchecks') { const P = curPlan(); P.checked = {}; (P.extra || []).forEach(x => x.done = false); save.plan(); render(); }
-  else if (a === 'genshop') { const st = S.shopStore || curPlan()?.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; S.storePick = false; generateShopping(st).then(() => { S.shopStore = null; render(); }); }
-  else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
+  else if (a === 'genshop') {
+    const su = S.shopSetup || shopSetupDefaults(curPlan()); S.shopSetup = { ...su, step:'busy' }; S.storeOther = false;
+    // Remember budget and what's at home for next time.
+    S.profile.data = merge(S.profile.data, { shopping:{ pantry: su.have, ...(su.budget ? { week_budget: +su.budget } : {}) } }); save.profile();
+    generateShopping(su.store || storeOptions()[0], { budget: +su.budget || 0, have: su.have }).then(() => { S.shopSetup = S.err.shop ? { ...su, step:'setup' } : null; render(); });
+  }
+  else if (a === 'store') { if (S.shopSetup) S.shopSetup.store = el.dataset.s; S.storeOther = false; render(); }
   else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
   else if (a === 'delextra') {
     const P = curPlan(), before = P.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);

@@ -1116,7 +1116,10 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .describe.note{min-height:0}
 
 /* My meals: search and check-in reminder close */
-.meal-search{width:100%;margin:8px 0 4px;background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;font:inherit;font-size:16px;font-weight:500;color:var(--ink);-webkit-appearance:none;appearance:none}
+.meal-search-wrap{position:relative;margin:8px 0 4px}
+.meal-search::-webkit-search-cancel-button{display:none}
+.ms-x{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--muted);font-size:1.4rem;cursor:pointer}
+.meal-search{width:100%;padding-right:44px!important;background:var(--surface-2);border:2px solid transparent;border-radius:14px;padding:11px 14px;font:inherit;font-size:16px;font-weight:500;color:var(--ink);-webkit-appearance:none;appearance:none}
 .meal-search:focus{outline:none;border-color:var(--accent)}
 .saved[hidden]{display:none}
 .saved-none{font-size:.88rem;padding:6px 2px}
@@ -1158,6 +1161,27 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .ps-timer{display:inline-flex;align-items:center;gap:8px;font-size:1.05rem;padding:14px 20px}
 .ps-meanwhile{margin:0;padding:10px 16px;border-radius:16px;background:var(--surface-2);font-size:.95rem;max-width:100%}
 .ps-meanwhile b{color:var(--paprika);margin-right:4px}
+
+/* Shopping: how to start, your shop, budget */
+.src-list{display:flex;flex-direction:column;gap:10px}
+.src-opt{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border:0;border-radius:18px;background:var(--surface-2);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.src-opt>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.src-opt .muted{font-size:.86rem}
+.src-ic{width:44px;height:44px;flex:none;border-radius:14px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.src-ic svg{width:22px;height:22px}
+.budget-in{max-width:260px;gap:6px;padding-left:14px}
+.budget-in span{white-space:nowrap}
+.budget-in input{font-size:1.2rem;padding:10px 4px}
+.budget-card{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:16px;background:var(--surface-2)}
+.budget-card b{font-size:1.15rem}
+.budget-card .basket-bar{background:var(--line);height:8px}
+.budget-card .basket-bar span{background:#3E9A6B;box-shadow:none}
+.budget-card.over .basket-bar span{background:var(--paprika)}
+.swaps-save{display:flex;flex-direction:column;gap:6px}
+.swaps-save p{margin:0;padding:8px 12px;border-radius:12px;background:var(--accent-soft);font-size:.88rem}
+.swaps-save b{color:var(--accent);margin-right:4px}
+.gname{display:flex;flex-direction:column}
+.gqty{font-size:.78rem;color:var(--muted);font-weight:600}
 </style>
 </head>
 <body>
@@ -1172,7 +1196,7 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-const BUILD = '1794765533';
+const BUILD = '1794765695';
 
 // === core/constants.js ===
 // Icons, tabs, meal slots and consultation sections
@@ -1359,7 +1383,7 @@ Reply with only JSON:
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
-  shopping(ctx, days, store){
+  shopping(ctx, days, store, o = {}){
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
@@ -1368,11 +1392,15 @@ THE WEEK'S PLAN:
 ${days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
 
 SUPERMARKET: ${store || 'their usual supermarket'}. Use product names, own brands and package sizes typical of this supermarket where you know them, and estimate prices in local currency (never claim they are verified).
-Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
+${o.budget ? `WEEKLY BUDGET: about ${o.currency || ''}${o.budget}. Stay under it where you can: own brands, frozen or tinned where it makes sense, no waste. Never cut protein or vegetables below the plan to save money.
+` : ''}${o.have?.length ? `ALREADY AT HOME, leave these off the list: ${o.have.join(', ')}.
+` : ''}Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
 Reply with only JSON:
-{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","note":"optional short note, e.g. own-brand product name"}]}],
+{"currency":"€","grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","price":7.5,"note":"optional short note, e.g. own-brand product name"}]}],
+ "swaps":[{"save":3,"text":"Frozen salmon fillets instead of fresh"}],
  "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Heat the oven to 200 °C","Roast 1 kg chicken thighs for 35 min","Meanwhile cook 400 g dry rice for 12 min","Portion into 4 boxes"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day","kit":"what to get out first, e.g. 2 baking trays, big pot, 7 boxes"}],
  "budget_note":"one sentence: rough total cost at this supermarket in local currency, clearly an estimate (prices not verified)"}
+"price" is your estimated shelf price for that quantity at this supermarket, a plain number in local currency. "swaps": up to 3 cheaper alternatives for the priciest items with roughly how much each saves ([] if none make sense).
 Prep tasks are the steps of one guided session, in the order to do them: one short action each (max 12 words), with any timing written as "N min", parallel work starting with "Meanwhile".
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
   },
@@ -2080,17 +2108,19 @@ function storeOptions(){
 }
 
 // Build the shopping list and prep schedule from the current week plan, for one supermarket.
-async function generateShopping(store){
+async function generateShopping(store, opts = {}){
   const P = curPlan();
   if (!P?.days || S.busy.shop) return;
   if (!S.sampleOK) { S.err.shop = 'Sign in to create your shopping list.'; render(); return; }
   store = store || P.store || storeOptions()[0] || '';
+  const budget = opts.budget ?? P.budget ?? 0, have = opts.have ?? S.profile.data.shopping?.pantry ?? [];
   S.busy.shop = true; S.err.shop = null; render();
   try {
-    const shop = await S.sample.json(PROMPTS.shopping(planContext(), P.days, store), { modelTier:'default', cache:false });
+    const shop = await S.sample.json(PROMPTS.shopping(planContext(), P.days, store, { budget, have, currency: currency() }), { modelTier:'default', cache:false });
     if (!Array.isArray(shop?.grocery) || !shop.grocery.length) throw { code:'invalid_json' };
-    Object.assign(P, { store, grocery: shop.grocery, prep: Array.isArray(shop?.prep) ? shop.prep : [], budget_note: shop?.budget_note || '', checked:{}, listStale:false });
+    Object.assign(P, { store, budget, grocery: shop.grocery, prep: Array.isArray(shop?.prep) ? shop.prep : [], swaps: Array.isArray(shop?.swaps) ? shop.swaps : [], currency: shop?.currency || currency(), budget_note: shop?.budget_note || '', checked:{}, listStale:false, manualList:false });
     save.plan();
+    S.profile.lastList = { weekOf:P.weekOf, store, budget, currency:P.currency, grocery:P.grocery, extra:(P.extra || []).map(({ id, name }) => ({ id, name })) }; save.profile();
   } catch (e) { hardFail(e); S.err.shop = errText(e); }
   S.busy.shop = false; render();
 }
@@ -2379,7 +2409,7 @@ function logSheet(){
     const savedRow = m => `<div class="saved" data-n="${esc(m.name.toLowerCase())}"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`;
     body = `<div class="stack">
       ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">${all ? `My ${slot.toLowerCase()}s · A to Z` : `My ${slot.toLowerCase()}s · latest`}</span>${mine.length > 3 || all ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
-        ${all ? `<input type="search" id="mealSearch" class="meal-search" placeholder="Search my ${slot.toLowerCase()}s" aria-label="Search my ${slot.toLowerCase()}s" autocomplete="off" enterkeyhint="search">` : ''}
+        ${all ? `<div class="meal-search-wrap"><input type="search" id="mealSearch" class="meal-search" placeholder="Search my ${slot.toLowerCase()}s" aria-label="Search my ${slot.toLowerCase()}s" autocomplete="off" enterkeyhint="search"><button class="ms-x" data-act="closesearch" aria-label="Close search">×</button></div>` : ''}
         <div class="saved-list">${(all ? mine : mine.slice(0, 3)).map(savedRow).join('')}</div>
         ${all ? '<p class="muted saved-none" hidden>Nothing with that name.</p>' : ''}
       </div><div class="or"><span>or add something new</span></div>` : ''}
@@ -2794,50 +2824,91 @@ function shopRows(P){
   const ch = P.checked || {};
   return [
     ...(P.extra || []).map(x => ({ k:'x-' + x.id, group:'My items', name:x.name, qty:'', done:!!x.done, mine:true })),
-    ...(P.grocery || []).flatMap((g, gi) => (g.items || []).map((it, ii) => ({ k:gi + '-' + ii, group:g.group, name:it.name, qty:it.qty, done:!!ch[gi + '-' + ii] })))
+    ...(P.grocery || []).flatMap((g, gi) => (g.items || []).map((it, ii) => ({ k:gi + '-' + ii, group:g.group, name:it.name, qty:it.qty, price:+it.price || 0, done:!!ch[gi + '-' + ii] })))
   ];
+}
+
+// Shopping list in three steps: how to start (week plan, last list or empty),
+// your shop (store, weekly budget, what's already at home), then the list by
+// aisle with an estimated cost against the budget and cheaper swaps.
+// S.shopSetup = null | { step:'start'|'setup', store, budget, have:[] }
+const PANTRY = ['Olive oil','Salt and pepper','Spices','Rice','Pasta','Oats','Flour','Eggs','Soy sauce','Honey','Garlic','Onions'];
+function currency(){
+  const c = String(S.profile.data.shopping?.country || '').toLowerCase();
+  return /united kingdom|uk|england|scotland|wales/.test(c) ? '£' : /united states|usa|canada|australia|new zealand/.test(c) ? '$' : /switzerland/.test(c) ? 'CHF ' : /sweden|norway|denmark/.test(c) ? 'kr ' : '€';
+}
+const money = (n, cur) => (cur || currency()) + (Math.round(n * 100) / 100).toFixed(n % 1 ? 2 : 0);
+const hasList = P => !!(P.grocery?.length || P.manualList || P.extra?.length);
+function shopSetupDefaults(P){
+  const sh = S.profile.data.shopping || {};
+  return { step: hasList(P) ? 'setup' : 'start', store: P.store || storeOptions()[0] || '', budget: P.budget || sh.week_budget || parseFloat(String(sh.budget || '').replace(/[^\d.]/g, '')) || '', have: [...(sh.pantry || ['Olive oil','Salt and pepper','Spices'])] };
 }
 
 function shopSheet(){
   const P = curPlan(); if (!P) return '';
-  const enter = S.shopOpen === 'enter' ? ' enter' : '', store = P.store || storeOptions()[0] || '';
+  const enter = S.shopOpen === 'enter' ? ' enter' : '', store = P.store || '';
   const err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
-  const shell = (title, body) => `<div class="scrim${enter}" data-act="closeshop"></div>
+  const shell = (title, body, back) => `<div class="scrim${enter}" data-act="closeshop"></div>
   <div class="sheet shop-sheet${enter}" role="dialog" aria-modal="true" aria-label="Shopping list">
     <div class="grip" aria-hidden="true"></div>
-    <div class="sheet-head"><div style="min-width:0;flex:1"><div class="label">${S.planWeek === 1 ? 'Next week' : 'This week'}</div><h2>${title}</h2></div>
-      ${P.grocery?.length && !S.busy.shop ? `<button class="store-btn" data-act="storepick" aria-expanded="${!!S.storePick}">${CART}<span><small>Shopping at</small>${esc(store || 'Choose store')}</span></button>` : ''}
+    <div class="sheet-head">${back ? `<button class="x back-x" data-act="${back}" aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>` : ''}<div style="min-width:0;flex:1"><div class="label">${S.planWeek === 1 ? 'Next week' : 'This week'}</div><h2>${title}</h2></div>
+      ${hasList(P) && !S.busy.shop && !S.shopSetup ? `<button class="store-btn" data-act="shopedit" aria-label="Change store, budget or what you have">${CART}<span><small>Shopping at</small>${esc(store || 'Choose store')}</span></button>` : ''}
       <button class="x close" data-act="closeshop" aria-label="Close">×</button></div>
     ${err}${body}
   </div>`;
-  if (S.busy.shop) return shell('Writing your list…', `<div class="empty" style="padding:24px 0"><div class="blob pulse-blob" aria-hidden="true">${CART}</div><p>Adding up every ingredient in your week${S.shopStore ? ` for ${esc(S.shopStore)}` : ''}, and writing a prep plan to go with it.</p></div>`);
-  if (!P.grocery?.length) return shell('Shopping list', askForList(P));
-
-  const rows = shopRows(P), todo = rows.filter(r => !r.done), done = rows.filter(r => r.done);
-  const groups = [...new Set(todo.map(r => r.group))];
-  const row = r => `<div class="gi ${r.done ? 'done' : ''}"><label><input type="checkbox" data-act="check" data-k="${r.k}" ${r.done ? 'checked' : ''}><span class="gname">${esc(r.name)}</span></label><span class="gq">${esc(r.qty || '')}</span>${r.mine ? `<button class="x small-x" data-act="delextra" data-k="${r.k}" aria-label="Remove ${esc(r.name)}">×</button>` : ''}</div>`;
-  return shell(todo.length ? `${todo.length} to buy` : 'All in the basket', `
-    ${S.storePick ? `<div class="store-pick">${storeChips(S.shopStore || store)}
-      <button class="btn primary" data-act="genshop" ${S.shopStore && S.shopStore !== store ? '' : 'disabled'}>${S.shopStore && S.shopStore !== store ? `Rebuild for ${esc(S.shopStore)}` : `Using ${esc(store)}`}</button>
-      <p class="muted" style="font-size:.84rem">Rebuilding uses that store's products and pack sizes. Your own items stay.</p></div>` : ''}
-    ${P.listStale ? `<div class="notice accent row" style="gap:10px;justify-content:space-between"><span>You swapped meals since this list was made.</span><button class="btn small" data-act="genshop">Update</button></div>` : ''}
-    <div class="basket"><div class="basket-bar"><span style="width:${rows.length ? done.length / rows.length * 100 : 0}%"></span></div><span class="muted num">${done.length}/${rows.length}</span></div>
-    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add an item, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
-    <div class="shoplist">
-    ${groups.map(g => `<div class="grp"><h3>${esc(g)}</h3>${todo.filter(r => r.group === g).map(row).join('')}</div>`).join('')}
-    ${!todo.length ? `<div class="empty" style="padding:12px 0"><h3>All done</h3><p>Everything's in the basket. Ready to prep together?</p><button class="btn primary" data-act="prepstart">Start prepping</button></div>` : ''}
-    ${done.length ? `<details class="basket-done"><summary>In the basket · ${done.length}</summary>${done.map(row).join('')}<button class="btn ghost small" data-act="clearchecks">Untick all</button></details>` : ''}
-    </div>
-    ${P.budget_note ? `<p class="foot-note"><span class="tag est">Estimated</span> ${esc(P.budget_note)} Prices for ${esc(store || 'your supermarket')} are estimates, not checked live.</p>` : ''}`);
+  if (S.busy.shop) return shell('Writing your list…', `<div class="empty" style="padding:24px 0"><div class="blob pulse-blob" aria-hidden="true">${CART}</div><p>Adding up every ingredient in your week for ${esc(S.shopSetup?.store || store || 'your shop')}${S.shopSetup?.budget ? `, keeping it near ${money(+S.shopSetup.budget)}` : ''}, and writing a prep plan to go with it.</p></div>`);
+  if (!S.shopSetup && !hasList(P)) S.shopSetup = shopSetupDefaults(P);
+  const su = S.shopSetup;
+  if (su?.step === 'start') return shell('New shopping list', shopStart(P));
+  if (su?.step === 'setup') return shell('Your shop', shopSetupView(P), hasList(P) ? 'shopcancel' : 'shopstartback');
+  return shell(shopTitle(P), shopList(P));
 }
 
-// No list yet: pick a supermarket and make it (the prep plan comes with it).
-function askForList(P){
-  return `<div class="stack ask-list">
-    <div class="asker"><span class="ai-avatar mascot" aria-hidden="true">${MASCOT}</span><div class="bubble">One list for the whole week, and a prep plan to cook it together. Where are you shopping?</div></div>
-    ${storeChips(S.shopStore || P.store || storeOptions()[0])}
-    <button class="btn primary big-btn" data-act="genshop">Make my shopping list</button>
-  </div>`;
+function shopStart(P){
+  const last = S.profile.lastList, canRepeat = last?.grocery?.length && last.weekOf !== P.weekOf;
+  const opt = (v, ic, t, sub) => `<button class="src-opt" data-act="shopsrc" data-v="${v}"><span class="src-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic}</svg></span><span><b>${t}</b><span class="muted">${sub}</span></span>${CHEV}</button>`;
+  return `<p class="muted">How do you want to start?</p>
+    <div class="src-list">
+      ${opt('plan', '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', 'From my week plan', 'Everything for your 7 days of meals')}
+      ${canRepeat ? opt('repeat', '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>', 'Repeat last list', `${last.grocery.reduce((n, g) => n + (g.items || []).length, 0)} items${last.store ? ' from ' + esc(last.store) : ''}`) : ''}
+      ${opt('empty', '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>', 'Start empty', 'Add items yourself')}
+    </div>`;
+}
+
+function shopSetupView(P){
+  const su = S.shopSetup, cur = currency();
+  return `<div class="pr-group"><span class="pr-label">Store</span>${storeChips(su.store)}</div>
+    <div class="pr-group"><label class="pr-label" for="shopBudget">Weekly budget <span class="muted">(optional)</span></label>
+      <div class="unit-input budget-in"><span>${esc(cur.trim())}</span><input type="number" id="shopBudget" inputmode="decimal" min="0" step="5" placeholder="60" value="${esc(su.budget || '')}"><span>a week</span></div></div>
+    <div class="pr-group"><span class="pr-label">Already at home? These are left off</span>
+      <div class="stores" role="group" aria-label="Already at home">${PANTRY.map(x => `<button class="chip" data-act="pantry" data-v="${esc(x)}" aria-pressed="${su.have.includes(x)}">${su.have.includes(x) ? '✓ ' : ''}${esc(x)}</button>`).join('')}</div></div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="genshop">${P.grocery?.length ? 'Rebuild my list' : 'Make my list'}</button></div>
+    ${P.grocery?.length ? '<p class="muted" style="font-size:.84rem;text-align:center">Your own items and ticks on them stay.</p>' : ''}`;
+}
+
+function shopTitle(P){ const rows = shopRows(P), left = rows.filter(r => !r.done).length; return !rows.length ? 'Your list' : !left ? 'All in the basket' : `${left} to buy`; }
+
+function shopList(P){
+  const rows = shopRows(P), todo = rows.filter(r => !r.done), done = rows.filter(r => r.done);
+  const groups = [...new Set(todo.map(r => r.group))], cur = P.currency || currency();
+  const total = rows.reduce((n, r) => n + (r.price || 0), 0), budget = +P.budget || 0;
+  const row = r => `<div class="gi ${r.done ? 'done' : ''}"><label><input type="checkbox" data-act="check" data-k="${r.k}" ${r.done ? 'checked' : ''}><span class="gname">${esc(r.name)}${r.qty ? `<small class="gqty">${esc(r.qty)}</small>` : ''}</span></label>${r.price ? `<span class="gq num">${money(r.price, cur)}</span>` : ''}${r.mine ? `<button class="x small-x" data-act="delextra" data-k="${r.k}" aria-label="Remove ${esc(r.name)}">×</button>` : ''}</div>`;
+  const over = budget && total > budget;
+  return `
+    ${P.listStale ? `<div class="notice accent row" style="gap:10px;justify-content:space-between"><span>You swapped meals since this list was made.</span><button class="btn small" data-act="genshop">Update</button></div>` : ''}
+    ${total ? `<div class="budget-card${over ? ' over' : ''}"><div class="row" style="justify-content:space-between"><span>About <b class="num">${money(total, cur)}</b></span><span class="muted">${budget ? `of ${money(budget, cur)} budget` : 'estimated'}</span></div>
+      ${budget ? `<div class="basket-bar"><span style="width:${Math.min(total / budget, 1) * 100}%"></span></div>` : ''}
+      ${over ? `<p class="muted" style="font-size:.84rem">About ${money(total - budget, cur)} over. The swaps below help.</p>` : ''}</div>` : ''}
+    ${(P.swaps || []).length ? `<div class="swaps-save">${P.swaps.slice(0, 3).map(w => `<p><b>${w.save ? 'Save ' + money(+w.save, cur) : 'Cheaper'}</b> ${esc(w.text)}</p>`).join('')}</div>` : ''}
+    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add an item, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
+    ${rows.length ? `<div class="basket"><div class="basket-bar"><span style="width:${done.length / rows.length * 100}%"></span></div><span class="muted num">${done.length}/${rows.length} in basket</span></div>` : '<p class="muted" style="text-align:center;padding:8px 0">Your list is empty. Add what you need above.</p>'}
+    <div class="shoplist">
+    ${groups.map(g => `<div class="grp"><h3>${esc(g)}</h3>${todo.filter(r => r.group === g).map(row).join('')}</div>`).join('')}
+    ${rows.length && !todo.length ? `<div class="empty" style="padding:12px 0"><h3>All done</h3><p>Everything's in the basket.${P.prep?.length ? ' Ready to prep together?' : ''}</p>${P.prep?.length ? '<button class="btn primary" data-act="prepstart">Start prepping</button>' : ''}</div>` : ''}
+    ${done.length ? `<details class="basket-done"><summary>In the basket · ${done.length}</summary>${done.map(row).join('')}<button class="btn ghost small" data-act="clearchecks">Untick all</button></details>` : ''}
+    </div>
+    ${total ? `<p class="foot-note"><span class="tag est">Estimated</span> Prices for ${esc(P.store || 'your supermarket')} are rough guesses, not checked live.</p>` : P.budget_note ? `<p class="foot-note"><span class="tag est">Estimated</span> ${esc(P.budget_note)}</p>` : ''}
+    <button class="btn ghost small" data-act="shopnew" style="align-self:center">Start a new list</button>`;
 }
 
 function storeChips(pick){
@@ -3376,11 +3447,14 @@ function vObDone(){
 
 // === events.js ===
 // All user interactions, wired by data-act attributes
+// Search key on the saved-meals search closes the keyboard and keeps the results.
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'mealSearch') { e.preventDefault(); e.target.blur(); } });
 document.addEventListener('input', e => {
   const id = e.target.id;
   if (id === 'logText') S.draft.log = e.target.value;
   if (id === 'chatText') { S.draft.chat = e.target.value; fitChatBox(); }
   if (id === 'askText') S.draft.ask = e.target.value;
+  if (id === 'shopBudget' && S.shopSetup) S.shopSetup.budget = e.target.value;
   if (id === 'mealSearch') { // filter the saved list in place, so the keyboard stays up
     const q = e.target.value.trim().toLowerCase(); let n = 0;
     document.querySelectorAll('.saved-list .saved').forEach(r => { const on = r.dataset.n.includes(q); r.hidden = !on; n += on; });
@@ -3430,7 +3504,7 @@ document.addEventListener('submit', e => {
   if (e.target.id === 'storeForm') {
     e.preventDefault();
     const name = $('#storeName').value.trim(); if (!name) return;
-    S.shopStore = name; S.storeOther = false;
+    if (S.shopSetup) S.shopSetup.store = name; S.storeOther = false;
     const sh = S.profile.data.shopping || {};
     if (!String(sh.supermarkets || '').toLowerCase().includes(name.toLowerCase())) { S.profile.data = merge(S.profile.data, { shopping:{ supermarkets: [sh.supermarkets, name].filter(Boolean).join(', ') } }); save.profile(); }
     render(); return;
@@ -3446,7 +3520,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
   if (e.key === 'Escape' && S.appleOpen) { S.appleOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.prep) { closePrep(); return; }
-  if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.storePick = false; document.body.classList.remove('sheet-open'); render(); return; }
+  if (e.key === 'Escape' && S.shopOpen) { S.shopOpen = null; S.shopSetup = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.swap) { S.swap = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.planSheet) { S.planSheet = null; document.body.classList.remove('sheet-open'); render(); return; }
   if (e.key === 'Escape' && S.aboutOpen) { if (S.profilePage) { S.profilePage = null; render(); return; } S.aboutOpen = null; document.body.classList.remove('sheet-open'); render(); return; }
@@ -3519,7 +3593,8 @@ document.addEventListener('click', e => {
   else if (a === 'doneedit') { S.logResult.editing = null; render(); }
   else if (a === 'usesaved') useSaved(el.dataset.id);
   else if (a === 'forgetsaved') forgetSaved(el.dataset.id);
-  else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; render(); }
+  else if (a === 'allmeals') { S.sheet.allMeals = !S.sheet.allMeals; document.activeElement?.blur?.(); render(); }
+  else if (a === 'closesearch') { document.activeElement?.blur?.(); S.sheet.allMeals = false; render(); }
   else if (a === 'wadd') { S.wAdd = !S.wAdd; render(); if (S.wAdd) { const i = $('#wKg'); i?.focus(); i?.select?.(); } }
   else if (a === 'wall') { S.wAll = !S.wAll; render(); }
   else if (a === 'hidecheckin') { S.profile.ckHidden = dkey(); save.profile(); showToast('Hidden for this week. It stays in Progress.', () => { S.profile.ckHidden = null; save.profile(); render(); }); render(); }
@@ -3550,8 +3625,20 @@ document.addEventListener('click', e => {
   else if (a === 'swapuse') useSwap();
   else if (a === 'closeswap') { S.swap = null; document.body.classList.remove('sheet-open'); render(); }
   else if (a === 'shopopen') { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; }
-  else if (a === 'closeshop') { S.shopOpen = null; S.storePick = false; S.shopStore = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
-  else if (a === 'storepick') { S.storePick = !S.storePick; S.shopStore = null; render(); }
+  else if (a === 'closeshop') { S.shopOpen = null; S.shopSetup = null; S.storeOther = false; document.body.classList.remove('sheet-open'); render(); }
+  else if (a === 'shopedit') { S.shopSetup = shopSetupDefaults(curPlan()); render(); }
+  else if (a === 'shopnew') { S.shopSetup = { ...shopSetupDefaults(curPlan()), step:'start' }; render(); }
+  else if (a === 'shopcancel') { S.shopSetup = null; S.storeOther = false; render(); }
+  else if (a === 'shopstartback') { S.shopSetup.step = 'start'; S.storeOther = false; render(); }
+  else if (a === 'shopsrc') {
+    const P = curPlan(), v = el.dataset.v, last = S.profile.lastList;
+    if (v === 'plan') { S.shopSetup.step = 'setup'; render(); return; }
+    // Repeat or empty: no AI needed; the old list is replaced, ticks cleared.
+    Object.assign(P, v === 'repeat' ? { store:last.store, grocery:last.grocery, currency:last.currency, budget:last.budget, swaps:[], extra:(last.extra || []).map(x => ({ ...x, done:false })), manualList:true }
+      : { grocery:[], extra:[], swaps:[], manualList:true, budget_note:'' }, { checked:{}, listStale:false });
+    save.plan(); S.shopSetup = null; render(); if (v === 'empty') $('#extraName')?.focus();
+  }
+  else if (a === 'pantry') { const h = S.shopSetup.have, v = el.dataset.v; S.shopSetup.have = h.includes(v) ? h.filter(x => x !== v) : [...h, v]; render(); }
   else if (a === 'prepstart') {
     if (!curPlan()?.prep?.length) { S.shopOpen = 'enter'; document.body.classList.add('sheet-open'); render(); S.shopOpen = true; return; }
     S.shopOpen = null; S.prep = { s:0, i:-1 }; document.body.classList.add('sheet-open', 'prepping'); prepWake(true); render();
@@ -3574,8 +3661,13 @@ document.addEventListener('click', e => {
     showToast(`Added to today's ${slot.toLowerCase()} · ${r0(m.kcal)} kcal`); render();
   }
   else if (a === 'clearchecks') { const P = curPlan(); P.checked = {}; (P.extra || []).forEach(x => x.done = false); save.plan(); render(); }
-  else if (a === 'genshop') { const st = S.shopStore || curPlan()?.store || storeOptions()[0]; S.shopStore = st; S.storeOther = false; S.storePick = false; generateShopping(st).then(() => { S.shopStore = null; render(); }); }
-  else if (a === 'store') { S.shopStore = el.dataset.s; S.storeOther = false; render(); }
+  else if (a === 'genshop') {
+    const su = S.shopSetup || shopSetupDefaults(curPlan()); S.shopSetup = { ...su, step:'busy' }; S.storeOther = false;
+    // Remember budget and what's at home for next time.
+    S.profile.data = merge(S.profile.data, { shopping:{ pantry: su.have, ...(su.budget ? { week_budget: +su.budget } : {}) } }); save.profile();
+    generateShopping(su.store || storeOptions()[0], { budget: +su.budget || 0, have: su.have }).then(() => { S.shopSetup = S.err.shop ? { ...su, step:'setup' } : null; render(); });
+  }
+  else if (a === 'store') { if (S.shopSetup) S.shopSetup.store = el.dataset.s; S.storeOther = false; render(); }
   else if (a === 'storeother') { S.storeOther = !S.storeOther; render(); $('#storeName')?.focus(); }
   else if (a === 'delextra') {
     const P = curPlan(), before = P.extra || [], gone = before.find(x => 'x-' + x.id === el.dataset.k);

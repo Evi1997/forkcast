@@ -6,50 +6,91 @@ function shopRows(P){
   const ch = P.checked || {};
   return [
     ...(P.extra || []).map(x => ({ k:'x-' + x.id, group:'My items', name:x.name, qty:'', done:!!x.done, mine:true })),
-    ...(P.grocery || []).flatMap((g, gi) => (g.items || []).map((it, ii) => ({ k:gi + '-' + ii, group:g.group, name:it.name, qty:it.qty, done:!!ch[gi + '-' + ii] })))
+    ...(P.grocery || []).flatMap((g, gi) => (g.items || []).map((it, ii) => ({ k:gi + '-' + ii, group:g.group, name:it.name, qty:it.qty, price:+it.price || 0, done:!!ch[gi + '-' + ii] })))
   ];
+}
+
+// Shopping list in three steps: how to start (week plan, last list or empty),
+// your shop (store, weekly budget, what's already at home), then the list by
+// aisle with an estimated cost against the budget and cheaper swaps.
+// S.shopSetup = null | { step:'start'|'setup', store, budget, have:[] }
+const PANTRY = ['Olive oil','Salt and pepper','Spices','Rice','Pasta','Oats','Flour','Eggs','Soy sauce','Honey','Garlic','Onions'];
+function currency(){
+  const c = String(S.profile.data.shopping?.country || '').toLowerCase();
+  return /united kingdom|uk|england|scotland|wales/.test(c) ? '£' : /united states|usa|canada|australia|new zealand/.test(c) ? '$' : /switzerland/.test(c) ? 'CHF ' : /sweden|norway|denmark/.test(c) ? 'kr ' : '€';
+}
+const money = (n, cur) => (cur || currency()) + (Math.round(n * 100) / 100).toFixed(n % 1 ? 2 : 0);
+const hasList = P => !!(P.grocery?.length || P.manualList || P.extra?.length);
+function shopSetupDefaults(P){
+  const sh = S.profile.data.shopping || {};
+  return { step: hasList(P) ? 'setup' : 'start', store: P.store || storeOptions()[0] || '', budget: P.budget || sh.week_budget || parseFloat(String(sh.budget || '').replace(/[^\d.]/g, '')) || '', have: [...(sh.pantry || ['Olive oil','Salt and pepper','Spices'])] };
 }
 
 function shopSheet(){
   const P = curPlan(); if (!P) return '';
-  const enter = S.shopOpen === 'enter' ? ' enter' : '', store = P.store || storeOptions()[0] || '';
+  const enter = S.shopOpen === 'enter' ? ' enter' : '', store = P.store || '';
   const err = S.err.shop ? `<div class="notice warn">${esc(S.err.shop)}</div>` : '';
-  const shell = (title, body) => `<div class="scrim${enter}" data-act="closeshop"></div>
+  const shell = (title, body, back) => `<div class="scrim${enter}" data-act="closeshop"></div>
   <div class="sheet shop-sheet${enter}" role="dialog" aria-modal="true" aria-label="Shopping list">
     <div class="grip" aria-hidden="true"></div>
-    <div class="sheet-head"><div style="min-width:0;flex:1"><div class="label">${S.planWeek === 1 ? 'Next week' : 'This week'}</div><h2>${title}</h2></div>
-      ${P.grocery?.length && !S.busy.shop ? `<button class="store-btn" data-act="storepick" aria-expanded="${!!S.storePick}">${CART}<span><small>Shopping at</small>${esc(store || 'Choose store')}</span></button>` : ''}
+    <div class="sheet-head">${back ? `<button class="x back-x" data-act="${back}" aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg></button>` : ''}<div style="min-width:0;flex:1"><div class="label">${S.planWeek === 1 ? 'Next week' : 'This week'}</div><h2>${title}</h2></div>
+      ${hasList(P) && !S.busy.shop && !S.shopSetup ? `<button class="store-btn" data-act="shopedit" aria-label="Change store, budget or what you have">${CART}<span><small>Shopping at</small>${esc(store || 'Choose store')}</span></button>` : ''}
       <button class="x close" data-act="closeshop" aria-label="Close">×</button></div>
     ${err}${body}
   </div>`;
-  if (S.busy.shop) return shell('Writing your list…', `<div class="empty" style="padding:24px 0"><div class="blob pulse-blob" aria-hidden="true">${CART}</div><p>Adding up every ingredient in your week${S.shopStore ? ` for ${esc(S.shopStore)}` : ''}, and writing a prep plan to go with it.</p></div>`);
-  if (!P.grocery?.length) return shell('Shopping list', askForList(P));
-
-  const rows = shopRows(P), todo = rows.filter(r => !r.done), done = rows.filter(r => r.done);
-  const groups = [...new Set(todo.map(r => r.group))];
-  const row = r => `<div class="gi ${r.done ? 'done' : ''}"><label><input type="checkbox" data-act="check" data-k="${r.k}" ${r.done ? 'checked' : ''}><span class="gname">${esc(r.name)}</span></label><span class="gq">${esc(r.qty || '')}</span>${r.mine ? `<button class="x small-x" data-act="delextra" data-k="${r.k}" aria-label="Remove ${esc(r.name)}">×</button>` : ''}</div>`;
-  return shell(todo.length ? `${todo.length} to buy` : 'All in the basket', `
-    ${S.storePick ? `<div class="store-pick">${storeChips(S.shopStore || store)}
-      <button class="btn primary" data-act="genshop" ${S.shopStore && S.shopStore !== store ? '' : 'disabled'}>${S.shopStore && S.shopStore !== store ? `Rebuild for ${esc(S.shopStore)}` : `Using ${esc(store)}`}</button>
-      <p class="muted" style="font-size:.84rem">Rebuilding uses that store's products and pack sizes. Your own items stay.</p></div>` : ''}
-    ${P.listStale ? `<div class="notice accent row" style="gap:10px;justify-content:space-between"><span>You swapped meals since this list was made.</span><button class="btn small" data-act="genshop">Update</button></div>` : ''}
-    <div class="basket"><div class="basket-bar"><span style="width:${rows.length ? done.length / rows.length * 100 : 0}%"></span></div><span class="muted num">${done.length}/${rows.length}</span></div>
-    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add an item, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
-    <div class="shoplist">
-    ${groups.map(g => `<div class="grp"><h3>${esc(g)}</h3>${todo.filter(r => r.group === g).map(row).join('')}</div>`).join('')}
-    ${!todo.length ? `<div class="empty" style="padding:12px 0"><h3>All done</h3><p>Everything's in the basket. Ready to prep together?</p><button class="btn primary" data-act="prepstart">Start prepping</button></div>` : ''}
-    ${done.length ? `<details class="basket-done"><summary>In the basket · ${done.length}</summary>${done.map(row).join('')}<button class="btn ghost small" data-act="clearchecks">Untick all</button></details>` : ''}
-    </div>
-    ${P.budget_note ? `<p class="foot-note"><span class="tag est">Estimated</span> ${esc(P.budget_note)} Prices for ${esc(store || 'your supermarket')} are estimates, not checked live.</p>` : ''}`);
+  if (S.busy.shop) return shell('Writing your list…', `<div class="empty" style="padding:24px 0"><div class="blob pulse-blob" aria-hidden="true">${CART}</div><p>Adding up every ingredient in your week for ${esc(S.shopSetup?.store || store || 'your shop')}${S.shopSetup?.budget ? `, keeping it near ${money(+S.shopSetup.budget)}` : ''}, and writing a prep plan to go with it.</p></div>`);
+  if (!S.shopSetup && !hasList(P)) S.shopSetup = shopSetupDefaults(P);
+  const su = S.shopSetup;
+  if (su?.step === 'start') return shell('New shopping list', shopStart(P));
+  if (su?.step === 'setup') return shell('Your shop', shopSetupView(P), hasList(P) ? 'shopcancel' : 'shopstartback');
+  return shell(shopTitle(P), shopList(P));
 }
 
-// No list yet: pick a supermarket and make it (the prep plan comes with it).
-function askForList(P){
-  return `<div class="stack ask-list">
-    <div class="asker"><span class="ai-avatar mascot" aria-hidden="true">${MASCOT}</span><div class="bubble">One list for the whole week, and a prep plan to cook it together. Where are you shopping?</div></div>
-    ${storeChips(S.shopStore || P.store || storeOptions()[0])}
-    <button class="btn primary big-btn" data-act="genshop">Make my shopping list</button>
-  </div>`;
+function shopStart(P){
+  const last = S.profile.lastList, canRepeat = last?.grocery?.length && last.weekOf !== P.weekOf;
+  const opt = (v, ic, t, sub) => `<button class="src-opt" data-act="shopsrc" data-v="${v}"><span class="src-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ic}</svg></span><span><b>${t}</b><span class="muted">${sub}</span></span>${CHEV}</button>`;
+  return `<p class="muted">How do you want to start?</p>
+    <div class="src-list">
+      ${opt('plan', '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', 'From my week plan', 'Everything for your 7 days of meals')}
+      ${canRepeat ? opt('repeat', '<path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5"/>', 'Repeat last list', `${last.grocery.reduce((n, g) => n + (g.items || []).length, 0)} items${last.store ? ' from ' + esc(last.store) : ''}`) : ''}
+      ${opt('empty', '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13 7 4 4"/>', 'Start empty', 'Add items yourself')}
+    </div>`;
+}
+
+function shopSetupView(P){
+  const su = S.shopSetup, cur = currency();
+  return `<div class="pr-group"><span class="pr-label">Store</span>${storeChips(su.store)}</div>
+    <div class="pr-group"><label class="pr-label" for="shopBudget">Weekly budget <span class="muted">(optional)</span></label>
+      <div class="unit-input budget-in"><span>${esc(cur.trim())}</span><input type="number" id="shopBudget" inputmode="decimal" min="0" step="5" placeholder="60" value="${esc(su.budget || '')}"><span>a week</span></div></div>
+    <div class="pr-group"><span class="pr-label">Already at home? These are left off</span>
+      <div class="stores" role="group" aria-label="Already at home">${PANTRY.map(x => `<button class="chip" data-act="pantry" data-v="${esc(x)}" aria-pressed="${su.have.includes(x)}">${su.have.includes(x) ? '✓ ' : ''}${esc(x)}</button>`).join('')}</div></div>
+    <div class="sheet-actions"><button class="btn primary big-btn" data-act="genshop">${P.grocery?.length ? 'Rebuild my list' : 'Make my list'}</button></div>
+    ${P.grocery?.length ? '<p class="muted" style="font-size:.84rem;text-align:center">Your own items and ticks on them stay.</p>' : ''}`;
+}
+
+function shopTitle(P){ const rows = shopRows(P), left = rows.filter(r => !r.done).length; return !rows.length ? 'Your list' : !left ? 'All in the basket' : `${left} to buy`; }
+
+function shopList(P){
+  const rows = shopRows(P), todo = rows.filter(r => !r.done), done = rows.filter(r => r.done);
+  const groups = [...new Set(todo.map(r => r.group))], cur = P.currency || currency();
+  const total = rows.reduce((n, r) => n + (r.price || 0), 0), budget = +P.budget || 0;
+  const row = r => `<div class="gi ${r.done ? 'done' : ''}"><label><input type="checkbox" data-act="check" data-k="${r.k}" ${r.done ? 'checked' : ''}><span class="gname">${esc(r.name)}${r.qty ? `<small class="gqty">${esc(r.qty)}</small>` : ''}</span></label>${r.price ? `<span class="gq num">${money(r.price, cur)}</span>` : ''}${r.mine ? `<button class="x small-x" data-act="delextra" data-k="${r.k}" aria-label="Remove ${esc(r.name)}">×</button>` : ''}</div>`;
+  const over = budget && total > budget;
+  return `
+    ${P.listStale ? `<div class="notice accent row" style="gap:10px;justify-content:space-between"><span>You swapped meals since this list was made.</span><button class="btn small" data-act="genshop">Update</button></div>` : ''}
+    ${total ? `<div class="budget-card${over ? ' over' : ''}"><div class="row" style="justify-content:space-between"><span>About <b class="num">${money(total, cur)}</b></span><span class="muted">${budget ? `of ${money(budget, cur)} budget` : 'estimated'}</span></div>
+      ${budget ? `<div class="basket-bar"><span style="width:${Math.min(total / budget, 1) * 100}%"></span></div>` : ''}
+      ${over ? `<p class="muted" style="font-size:.84rem">About ${money(total - budget, cur)} over. The swaps below help.</p>` : ''}</div>` : ''}
+    ${(P.swaps || []).length ? `<div class="swaps-save">${P.swaps.slice(0, 3).map(w => `<p><b>${w.save ? 'Save ' + money(+w.save, cur) : 'Cheaper'}</b> ${esc(w.text)}</p>`).join('')}</div>` : ''}
+    <form class="additem" id="addItemForm"><input type="text" id="extraName" placeholder="Add an item, e.g. coffee" aria-label="Add an item" autocomplete="off"><button class="sendbtn" type="submit" aria-label="Add item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></form>
+    ${rows.length ? `<div class="basket"><div class="basket-bar"><span style="width:${done.length / rows.length * 100}%"></span></div><span class="muted num">${done.length}/${rows.length} in basket</span></div>` : '<p class="muted" style="text-align:center;padding:8px 0">Your list is empty. Add what you need above.</p>'}
+    <div class="shoplist">
+    ${groups.map(g => `<div class="grp"><h3>${esc(g)}</h3>${todo.filter(r => r.group === g).map(row).join('')}</div>`).join('')}
+    ${rows.length && !todo.length ? `<div class="empty" style="padding:12px 0"><h3>All done</h3><p>Everything's in the basket.${P.prep?.length ? ' Ready to prep together?' : ''}</p>${P.prep?.length ? '<button class="btn primary" data-act="prepstart">Start prepping</button>' : ''}</div>` : ''}
+    ${done.length ? `<details class="basket-done"><summary>In the basket · ${done.length}</summary>${done.map(row).join('')}<button class="btn ghost small" data-act="clearchecks">Untick all</button></details>` : ''}
+    </div>
+    ${total ? `<p class="foot-note"><span class="tag est">Estimated</span> Prices for ${esc(P.store || 'your supermarket')} are rough guesses, not checked live.</p>` : P.budget_note ? `<p class="foot-note"><span class="tag est">Estimated</span> ${esc(P.budget_note)}</p>` : ''}
+    <button class="btn ghost small" data-act="shopnew" style="align-self:center">Start a new list</button>`;
 }
 
 function storeChips(pick){

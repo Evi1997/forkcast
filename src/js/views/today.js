@@ -113,7 +113,7 @@ function logSheet(){
     const savedRow = m => `<div class="saved" data-n="${esc(m.name.toLowerCase())}"><button class="saved-main" data-act="usesaved" data-id="${m.id}"><b>${esc(m.name)}</b><span class="muted">${sumItems(m.items).kcal} kcal · ${m.items.length} item${m.items.length > 1 ? 's' : ''}</span></button>${all ? `<button class="x small-x" data-act="forgetsaved" data-id="${m.id}" aria-label="Delete ${esc(m.name)} from My meals">×</button>` : '<span class="saved-plus" aria-hidden="true">+</span>'}</div>`;
     body = `<div class="stack">
       ${mine.length ? `<div class="mymeals"><div class="row" style="justify-content:space-between"><span class="label">${all ? `My ${slot.toLowerCase()}s · A to Z` : `My ${slot.toLowerCase()}s · latest`}</span>${mine.length > 3 || all ? `<button class="btn ghost small" data-act="allmeals">${all ? 'Show less' : `See all ${mine.length}`}</button>` : ''}</div>
-        ${all ? `<input type="search" id="mealSearch" class="meal-search" placeholder="Search my ${slot.toLowerCase()}s" aria-label="Search my ${slot.toLowerCase()}s" autocomplete="off" enterkeyhint="search">` : ''}
+        ${all ? `<div class="meal-search-wrap"><input type="search" id="mealSearch" class="meal-search" placeholder="Search my ${slot.toLowerCase()}s" aria-label="Search my ${slot.toLowerCase()}s" autocomplete="off" enterkeyhint="search"><button class="ms-x" data-act="closesearch" aria-label="Close search">×</button></div>` : ''}
         <div class="saved-list">${(all ? mine : mine.slice(0, 3)).map(savedRow).join('')}</div>
         ${all ? '<p class="muted saved-none" hidden>Nothing with that name.</p>' : ''}
       </div><div class="or"><span>or add something new</span></div>` : ''}

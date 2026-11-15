@@ -154,7 +154,7 @@ Reply with only JSON:
 Exactly 7 days Mon..Sun; slots from Breakfast, Lunch, Snack, Dinner (snack optional). Keep names and portions concise.`;
   },
 
-  shopping(ctx, days, store){
+  shopping(ctx, days, store, o = {}){
     return `${PLAN_RULES}
 
 ${PROMPTS.planContext(ctx)}
@@ -163,11 +163,15 @@ THE WEEK'S PLAN:
 ${days.map(d => d.day + ': ' + d.meals.map(m => `${m.slot} – ${m.name} (${m.portion})`).join('; ')).join('\n')}
 
 SUPERMARKET: ${store || 'their usual supermarket'}. Use product names, own brands and package sizes typical of this supermarket where you know them, and estimate prices in local currency (never claim they are verified).
-Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
+${o.budget ? `WEEKLY BUDGET: about ${o.currency || ''}${o.budget}. Stay under it where you can: own brands, frozen or tinned where it makes sense, no waste. Never cut protein or vegetables below the plan to save money.
+` : ''}${o.have?.length ? `ALREADY AT HOME, leave these off the list: ${o.have.join(', ')}.
+` : ''}Write ONE consolidated grocery list for this week with approximate quantities to buy (round up to real package sizes, metric unless the person's country uses imperial), and a meal-prep schedule matching their prep style.
 Reply with only JSON:
-{"grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","note":"optional short note, e.g. own-brand product name"}]}],
+{"currency":"€","grocery":[{"group":"Protein","items":[{"name":"Chicken breast","qty":"1.2 kg (2 packs)","price":7.5,"note":"optional short note, e.g. own-brand product name"}]}],
+ "swaps":[{"save":3,"text":"Frozen salmon fillets instead of fresh"}],
  "prep":[{"when":"Sunday","minutes":"60–90 min","tasks":["Heat the oven to 200 °C","Roast 1 kg chicken thighs for 35 min","Meanwhile cook 400 g dry rice for 12 min","Portion into 4 boxes"],"fridge":"what keeps 3–4 days in the fridge","freeze":"what to freeze","fresh":"what to make fresh on the day","kit":"what to get out first, e.g. 2 baking trays, big pot, 7 boxes"}],
  "budget_note":"one sentence: rough total cost at this supermarket in local currency, clearly an estimate (prices not verified)"}
+"price" is your estimated shelf price for that quantity at this supermarket, a plain number in local currency. "swaps": up to 3 cheaper alternatives for the priciest items with roughly how much each saves ([] if none make sense).
 Prep tasks are the steps of one guided session, in the order to do them: one short action each (max 12 words), with any timing written as "N min", parallel work starting with "Meanwhile".
 Groups in this order, skipping empty ones: Protein, Vegetables, Fruit, Carbohydrates & grains, Dairy / alternatives, Pantry, Snacks, Sauces / condiments, Frozen, Optional.`;
   },
