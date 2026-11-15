@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Draw the Forkcast app icons (no dependencies): green tile, white plate."""
+"""Old plate icon generator (no longer used). The icon is now icons/icon.svg
+(fork + sunrise); render it with: qlmanage -t -s 512 -o OUT icons/icon.svg,
+then sips -z 192 192 / sips -z 180 180 for the smaller sizes."""
 import struct, zlib
 from pathlib import Path
 
