@@ -283,7 +283,7 @@ function syncKeyboard(){
 }
 function keepFieldVisible(){
   const f = typingIn();
-  if (syncKeyboard() && f && f.closest('.onboard,.sheet')) f.scrollIntoView({ block:'center', behavior:'instant' });
+  if (syncKeyboard() && f && f.closest('.onboard,.sheet')) f.scrollIntoView({ block: f.closest('.sheet') ? 'nearest' : 'center', behavior:'instant' });
 }
 // The keyboard animates in and out, so look again a few times after focus changes.
 const kbLater = fn => [60, 300, 650].forEach(t => setTimeout(fn, t));
