@@ -67,9 +67,9 @@ const stepMinutes = t => { const m = String(t).match(/(\d+)(?:\s*[–-]\s*\d+)?\
 function prepMode(){
   const P = curPlan(), sessions = P?.prep || [], p = sessions[S.prep.s]; if (!p) return '';
   const tasks = p.tasks || [], i = S.prep.i;
-  const timers = (S.timers || []).map(t => `<span class="tmr${t.end <= Date.now() ? ' up' : ''}" data-end="${t.end}"><b>${esc(t.label)}</b> <span class="num">${fmtLeft(t.end)}</span><button class="x small-x" data-act="deltimer" data-id="${t.id}" aria-label="Stop ${esc(t.label)} timer">×</button></span>`).join('');
+  const timers = (S.timers || []).filter(t => t.step !== S.prep.s + '-' + i).map(t => `<span class="tmr${t.end <= Date.now() ? ' up' : ''}" data-end="${t.end}"><b>${esc(t.label)}</b> <span class="num">${fmtLeft(t.end)}</span><button class="x small-x" data-act="deltimer" data-id="${t.id}" aria-label="Stop ${esc(t.label)} timer">×</button></span>`).join('');
   const top = `<div class="prep-top"><button class="x close" data-act="prepclose" aria-label="Close prep">×</button><span class="label">${i < 0 ? esc(p.when) + (p.minutes ? ' · ' + esc(p.minutes) : '') : i >= tasks.length ? 'Done' : `Step ${i + 1} of ${tasks.length}`}</span></div>
-    ${i >= 0 && i < tasks.length ? `<div class="prep-bar" aria-hidden="true"><span style="width:${(i + 1) / tasks.length * 100}%"></span></div>` : ''}
+    ${i >= 0 && i < tasks.length ? `<div class="ps-dots" aria-hidden="true">${tasks.map((_, k) => `<span class="${k < i ? 'on' : k === i ? 'now' : ''}"></span>`).join('')}</div>` : ''}
     ${timers ? `<div class="tmrs" aria-live="polite">${timers}</div>` : ''}`;
   let body, foot;
   if (i < 0) {
@@ -88,12 +88,32 @@ function prepMode(){
       <dl class="facts">${p.fridge ? `<dt>Fridge</dt><dd>${esc(p.fridge)}</dd>` : ''}${p.freeze ? `<dt>Freeze</dt><dd>${esc(p.freeze)}</dd>` : ''}${p.fresh ? `<dt>Fresh</dt><dd>${esc(p.fresh)}</dd>` : ''}</dl>`;
     foot = `<button class="btn primary big-btn" data-act="prepclose">Done</button>`;
   } else {
-    const t = tasks[i], mins = stepMinutes(t), running = (S.timers || []).some(x => x.step === S.prep.s + '-' + i);
-    body = `<p class="prep-step">${esc(t)}</p>
-      ${mins ? `<button class="btn prep-timer" data-act="preptimer" data-m="${mins}" ${running ? 'disabled' : ''}><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg> ${running ? 'Timer running' : `Start ${mins} min timer`}</button>` : ''}`;
+    // One step, centred: what it's for (icon), the action, a big timer, and what to do meanwhile.
+    const t = tasks[i], mins = stepMinutes(t), stepId = S.prep.s + '-' + i, run = (S.timers || []).find(x => x.step === stepId);
+    const [main, ...rest] = String(t).split(/\s*\bmeanwhile\b[,:]?\s*/i), meanwhile = rest.join(' ').trim();
+    body = `<div class="ps-center">
+        <span class="ps-ic" aria-hidden="true">${stepIcon(main)}</span>
+        <p class="prep-step">${esc(main.replace(/[.;,]\s*$/, ''))}</p>
+        ${run ? `<div class="ps-clock tmr${run.end <= Date.now() ? ' up' : ''}" data-end="${run.end}" aria-live="polite"><span class="num">${fmtLeft(run.end)}</span></div>`
+          : mins ? `<button class="btn ps-timer" data-act="preptimer" data-m="${mins}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M10 2h4"/></svg> Start ${mins} min timer</button>` : ''}
+        ${meanwhile ? `<p class="ps-meanwhile"><b>Meanwhile</b> ${esc(meanwhile)}</p>` : ''}
+      </div>`;
     foot = `<button class="btn" data-act="prepback">Back</button><button class="btn primary big-btn" data-act="prepnext">${i === tasks.length - 1 ? 'Finish' : 'Next step'}</button>`;
   }
   return `<div class="prepmode" role="dialog" aria-modal="true" aria-label="Prep together">${top}<div class="prep-body">${body}</div><div class="prep-foot">${foot}</div></div>`;
+}
+
+const STEP_IC = {
+  heat:'<path d="M12 3c1 3 4 4.5 4 8.5a4 4 0 0 1-8 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 0-7.5z"/><path d="M6 21h12"/>',
+  pan:'<path d="M3 12h13a0 0 0 0 1 0 0 5 5 0 0 1-5 5H8a5 5 0 0 1-5-5z"/><path d="M16 12h5M7 8c0-1 1-1 1-2M11 8c0-1 1-1 1-2"/>',
+  knife:'<path d="M4 20 15 9l2 2c-2 4-6 7-10 8z"/><path d="m15 9 4-4a1.4 1.4 0 0 1 2 2l-4 4"/>',
+  box:'<path d="M4 8h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><path d="M3 5h18v3H3zM10 12h4"/>',
+  bowl:'<path d="M3 11h18a9 9 0 0 1-18 0z"/><path d="M8 7c0-1.5 1-2 1-3M12 7c0-1.5 1-2 1-3"/>'
+};
+function stepIcon(t){
+  const k = /oven|roast|bake|grill|preheat|air.?fry/i.test(t) ? 'heat' : /boil|simmer|fry|saut|cook|toast|steam|pan/i.test(t) ? 'pan'
+    : /chop|slice|dice|cut|grate|peel|mince/i.test(t) ? 'knife' : /portion|pack|box|jar|container|store|fridge|freez|label|cool/i.test(t) ? 'box' : 'bowl';
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${STEP_IC[k]}</svg>`;
 }
 
 const fmtLeft = end => { const s = Math.max(0, Math.round((end - Date.now()) / 1000)); return s ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : 'Time’s up'; };
@@ -106,7 +126,7 @@ function startTimer(mins){
   render();
 }
 function tickTimers(){
-  document.querySelectorAll('.tmr[data-end]').forEach(el => { el.querySelector('.num').textContent = fmtLeft(+el.dataset.end); });
+  document.querySelectorAll('.tmr[data-end]').forEach(el => { el.querySelector('.num').textContent = fmtLeft(+el.dataset.end); el.classList.toggle('up', +el.dataset.end <= Date.now()); });
   (S.timers || []).forEach(t => {
     if (t.end > Date.now() || t.rang) return;
     t.rang = true;

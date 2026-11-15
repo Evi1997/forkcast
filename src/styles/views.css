@@ -995,3 +995,18 @@ body.onboarding .ob-top{background:color-mix(in srgb,var(--sec) 16%,var(--bg));t
 .add-w{background:var(--accent-soft);color:var(--accent)}
 .next-t{display:flex;flex-direction:column;gap:1px}.next-t .muted{font-size:.8rem}
 .wlist .linkbtn{font-size:.85rem}
+.ps-dots{display:flex;gap:4px;justify-content:center;margin:2px 0 6px}
+.ps-dots span{width:6px;height:6px;border-radius:99px;background:var(--line);transition:width .25s}
+.ps-dots .on{background:var(--accent)}
+.ps-dots .now{background:var(--accent);width:20px}
+.prep-top{justify-content:center;position:relative}
+.prep-top .close{position:absolute;left:0}
+.ps-center{margin:auto 0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:8px 4px}
+.ps-ic{width:72px;height:72px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.ps-ic svg{width:34px;height:34px}
+.ps-center .prep-step{margin:0;font-size:clamp(1.5rem,6.4vw,2.1rem);text-wrap:balance}
+.ps-clock{font-size:2.8rem;font-weight:800;letter-spacing:-.02em;color:var(--accent);background:none;padding:0}
+.ps-clock.up{color:var(--paprika)}
+.ps-timer{display:inline-flex;align-items:center;gap:8px;font-size:1.05rem;padding:14px 20px}
+.ps-meanwhile{margin:0;padding:10px 16px;border-radius:16px;background:var(--surface-2);font-size:.95rem;max-width:100%}
+.ps-meanwhile b{color:var(--paprika);margin-right:4px}
