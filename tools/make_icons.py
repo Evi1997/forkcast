@@ -34,6 +34,6 @@ def png(n, path, ss=3):
     Path(path).write_bytes(data)
 
 out = Path(__file__).resolve().parent.parent / "icons"
-for n, name in [(192, "icon-192.png"), (512, "icon-512.png"), (180, "apple-touch-icon.png")]:
+for n, name in [(192, "icon-sunrise-192.png"), (512, "icon-sunrise-512.png"), (180, "touch-icon-sunrise.png")]:
     png(n, out / name)
     print("wrote", name)
